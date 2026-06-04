@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ECHOES_FEED // 賽博朋克風格個人社群貼文終端。發佈想法、交流靈感、探索數位意識邊界。">
+  <title>LYKYOU — 社群貼文牆</title>
+
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cg transform='translate%2810, 10%29'%3E%3Ccircle cx='140' cy='60' r='22' fill='%23ffb020'/%3E%3Cpath d='M 50 140 C 50 110, 70 100, 90 100 C 110 100, 120 120, 130 140 Z' fill='%232c3e50'/%3E%3Cpath d='M 90 100 C 90 70, 110 50, 125 40 C 135 32, 145 42, 135 50 C 120 62, 125 80, 115 100 Z' fill='%2334495e'/%3E%3Cpath d='M 105 55 L 95 35 L 112 45 Z' fill='%232c3e50'/%3E%3Ccircle cx='115' cy='52' r='5' fill='%23ffb020'/%3E%3Cpath d='M 110 90 C 100 90, 95 98, 98 105 C 105 105, 112 100, 112 90' fill='%231877f2'/%3E%3Cpath d='M 100 102 L 90 120 L 102 118 Z' fill='%231877f2'/%3E%3C/g%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+  <!-- Scan Line Overlay -->
+  <div class="scanline-overlay"></div>
+
+  <!-- Header / Navigation -->
+  <header class="navbar">
+    <div class="nav-container">git config --global user.email "judy0508123@gmail.com"
+      <a href="#/" class="logo">
+        <span class="logo-bracket">[</span>ECHOES<span class="logo-dot">_</span>FEED<span class="logo-bracket">]</span>
+      </a>
+
+      <nav class="nav-links-wrapper">
+        <ul class="nav-links">
+          <li><a href="#/" class="nav-link active" id="nav-home">&gt; 貼文牆</a></li>
+          <li><a href="#/write" class="nav-link" id="nav-write">&gt; 發表想法</a></li>
+          <li><a href="#/about" class="nav-link" id="nav-about">&gt; 關於我</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="theme-toggle" class="theme-toggle-btn" aria-label="切換深淺色主題">
+          <i data-lucide="moon" class="theme-icon moon-icon"></i>
+          <i data-lucide="sun" class="theme-icon sun-icon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <!-- Main Content Container -->
+  <main id="app-container">
+    <div class="layout-wrapper">
+
+      <!-- 左側邊欄：個人資訊與導覽 -->
+      <aside class="sidebar-left">
+        <div class="sidebar-card">
+          <div class="user-profile-preview">
+            <div class="avatar-placeholder">ME</div>
+            <h3>你的名字</h3>
+            <p>@your_handle</p>
+          </div>
+          <hr class="divider">
+          <ul class="sidebar-menu">
+            <li class="active">🏠 首頁動態</li>
+            <li>🔔 通知訊息</li>
+            <li>✉️ 私訊功能</li>
+            <li>🔖 我的收藏</li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- 中間：原本的貼文牆（AI 注入內容的地方） -->
+      <section class="main-feed">
+        <!-- Views will be dynamically injected here by app.js -->
+      </section>
+
+      <!-- 右側邊欄：熱門話題與推薦 -->
+      <aside class="sidebar-right">
+        <div class="sidebar-card">
+          <h3>🔥 熱門話題</h3>
+          <ul class="trending-list">
+            <li># 重新認識CSS變數 <span>1.2k 貼文</span></li>
+            <li># 賽博朋克網頁 <span>842 貼文</span></li>
+            <li># 減少數位焦慮 <span>520 貼文</span></li>
+            <li># 科技美學 <span>311 貼文</span></li>
+          </ul>
+        </div>
+        <div class="sidebar-card">
+          <h3>👤 推薦追蹤</h3>
+          <div class="recommend-user">GHOST_RUNNER</div>
+          <div class="recommend-user">NEON_CODER</div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <p class="copyright">© 2026 ECHOES://FEED <span class="neon-green">|</span> SYS.STATUS: <span
+          class="neon-green">ONLINE</span></p>
+      <div class="footer-links">
+        <a href="#/" class="footer-link">[貼文牆]</a>
+        <a href="#/write" class="footer-link">[發表想法]</a>
+        <a href="#/about" class="footer-link">[關於我]</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script src="js/app.js"></script>
+</body>
+
+</html>
