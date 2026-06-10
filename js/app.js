@@ -906,3 +906,73 @@ window.addEventListener("DOMContentLoaded", init);
     }
   });
 })();
+
+// ====== 本地圖片上傳功能 ======
+const imageBtn = document.getElementById('btn-trigger-image-popup');
+const fileInput = document.getElementById('file-upload-input');
+const previewBox = document.getElementById('image-preview-box');
+const previewImg = document.getElementById('image-preview-img');
+
+
+// 1. 當點擊圖片圖示時，模擬點擊隱藏的檔案上傳欄位
+if (imageBtn && fileInput) {
+  imageBtn.addEventListener('click', (e) => {
+    e.preventDefault(); // 阻止原本跳出 URL 視窗的預設行為
+    e.stopPropagation();
+    fileInput.click();
+  });
+}
+
+
+// 2. 當使用者選擇好照片後，讀取照片並顯示在預覽視窗
+if (fileInput) {
+  fileInput.addEventListener('change', function () {
+    const file = this.files[0];
+
+    if (file) {
+      const reader = new FileReader();
+
+      reader.addEventListener('load', function () {
+        // 將讀取到的圖片 Base64 編碼塞入原本的預覽圖片標籤
+        if (previewImg && previewBox) {
+          previewImg.src = this.result;
+          previewBox.style.display = 'block'; // 顯示預覽區塊
+
+          // 如果你的專案有給預覽區塊加上 active 或是 show 的 class，也可以在這裡加上
+          previewBox.classList.add('active');
+        }
+      });
+
+      reader.readAsDataURL(file); // 開始讀取檔案
+    }
+  });
+}
+
+const imageInput = document.getElementById('image-input');
+const uploadBtn = document.getElementById('upload-btn');
+const previewContainer = document.getElementById('image-preview-container');
+
+// 點擊自訂按鈕時，觸發真正的檔案選擇框
+if (uploadBtn) {
+  uploadBtn.addEventListener('click', () => imageInput.click());
+}
+
+// 當使用者選好圖片時
+if (imageInput) {
+  imageInput.addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        // 清除舊預覽並顯示新預覽
+        previewContainer.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+      }
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+// 記得呼叫 lucide.createIcons() 讓圖標顯示
+if (window.lucide) {
+  lucide.createIcons();
+}
