@@ -1,31 +1,63 @@
 <!DOCTYPE html>
-<html lang="zh-TW" data-theme="light">
+<html lang="zh-TW" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LYKYOU — 後台管理面板</title>
+    <title>ECHOES_FEED // 後台管理終端</title>
+    
+    <!-- Firewall script at top of head to prevent page flashing -->
+    <script>
+        if (sessionStorage.getItem('admin_authenticated') !== 'true') {
+            document.documentElement.style.display = 'none'; // Hide content immediately
+            window.addEventListener('DOMContentLoaded', () => {
+                document.body.innerHTML = `
+                    <div style="font-family: monospace; background: #0b0f19; color: #f87171; padding: 40px; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-sizing: border-box;">
+                        <h1 style="font-size: 36px; margin-bottom: 20px; border: 2px dashed #f87171; padding: 20px; text-shadow: 0 0 10px rgba(248, 113, 113, 0.5);">[ACCESS_DENIED] // 403 FORBIDDEN</h1>
+                        <p style="font-size: 16px; margin-bottom: 25px; color: #cbd5e1;">權限認證失敗！非 Administrator 帳號禁止讀取此管理面板。</p>
+                        <p style="font-size: 14px; color: #64748b; animation: blink 1s step-end infinite;">系統安全機制已啟動，正將您導回首頁...</p>
+                    </div>
+                    <style>
+                        @keyframes blink { 50% { opacity: 0; } }
+                    </style>
+                `;
+                document.documentElement.style.display = 'block';
+                setTimeout(() => {
+                    location.href = 'index.html';
+                }, 2000);
+            });
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --bg-main: #f8fafc;
-            --bg-card: #ffffff;
-            --border-color: #e2e8f0;
-            --text-main: #1e293b;
+            --bg-main: #181f2a;
+            --bg-card: #202938;
+            --border-color: #2d3748;
+            --text-main: #cbd5e1;
+            --text-bright: #f8fafc;
             --text-muted: #64748b;
-            --primary: #22c55e;
-            --danger: #ef4444;
+            --primary: #4ade80;
+            --danger: #f87171;
+            --cyan: #38bdf8;
+            --magenta: #f472b6;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'JetBrains Mono', monospace;
             background-color: var(--bg-main);
             color: var(--text-main);
             margin: 0;
             padding: 40px 20px;
+            line-height: 1.6;
         }
 
         .admin-container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
@@ -40,24 +72,31 @@
 
         .admin-title h1 {
             margin: 0;
+            font-family: 'Orbitron', sans-serif;
             font-size: 24px;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+            letter-spacing: 1px;
         }
 
         .admin-title p {
             margin: 5px 0 0 0;
             color: var(--text-muted);
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .btn {
             padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 14px;
+            border-radius: 4px;
+            font-size: 13px;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             transition: all 0.2s;
+            font-family: inherit;
         }
 
         .btn-outline {
@@ -67,17 +106,30 @@
         }
 
         .btn-outline:hover {
-            background: rgba(34, 197, 94, 0.05);
+            background: rgba(74, 222, 128, 0.1);
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.2);
         }
 
         .btn-danger {
             border: 1px solid var(--danger);
-            background: var(--danger);
-            color: white;
+            background: transparent;
+            color: var(--danger);
         }
 
         .btn-danger:hover {
-            background: #dc2626;
+            background: rgba(248, 113, 113, 0.1);
+            box-shadow: 0 0 8px rgba(248, 113, 113, 0.2);
+        }
+
+        .btn-logout {
+            border: 1px solid var(--text-muted);
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .btn-logout:hover {
+            border-color: var(--text-bright);
+            color: var(--text-bright);
         }
 
         .stats-grid {
@@ -90,27 +142,43 @@
         .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 6px;
             padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .stat-card .label {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .stat-card .value {
-            font-size: 28px;
-            font-weight: bold;
+            font-size: 32px;
+            font-weight: 700;
             margin-top: 5px;
-            color: var(--primary);
+            color: var(--cyan);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .section-header {
+            margin: 40px 0 15px 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            color: var(--text-bright);
+            border-left: 3px solid var(--cyan);
+            padding-left: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .data-table-container {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         table {
@@ -120,39 +188,63 @@
 
         th,
         td {
-            padding: 14px 20px;
+            padding: 12px 16px;
             border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
+            font-size: 13px;
             text-align: left;
         }
 
         th {
-            background-color: #f1f5f9;
-            color: var(--text-main);
+            background-color: #1e2530;
+            color: var(--text-bright);
             font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
         }
 
         .post-preview {
-            max-width: 400px;
+            max-width: 300px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            color: var(--text-main);
         }
 
         .badge {
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
         }
 
         .badge-user {
-            background: #e0f2fe;
-            color: #0369a1;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--cyan);
+            border: 1px solid rgba(56, 189, 248, 0.2);
         }
 
         .badge-system {
-            background: #f1f5f9;
-            color: #475569;
+            background: rgba(100, 116, 139, 0.1);
+            color: var(--text-muted);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+        }
+
+        .badge-public {
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        .badge-private {
+            background: rgba(244, 114, 182, 0.1);
+            color: var(--magenta);
+            border: 1px solid rgba(244, 114, 182, 0.2);
         }
 
         .action-delete {
@@ -160,17 +252,37 @@
             background: none;
             border: none;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: inherit;
         }
 
         .action-delete:hover {
             text-decoration: underline;
+            text-shadow: 0 0 5px rgba(248, 113, 113, 0.3);
         }
 
         .empty-state {
-            padding: 40px;
+            padding: 30px;
             text-align: center;
             color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .thumb-preview {
+            width: 50px;
+            height: 35px;
+            object-fit: cover;
+            border-radius: 3px;
+            border: 1px solid var(--border-color);
+            background-color: #0d1117;
+            display: block;
+        }
+
+        .no-thumb {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-style: italic;
         }
     </style>
 </head>
@@ -180,51 +292,97 @@
     <div class="admin-container">
         <div class="admin-header">
             <div class="admin-title">
-                <h1>LYKYOU 後台管理終端</h1>
-                <p>獨立頁面管理：即時移除、管控前端貼文數據</p>
+                <h1>SYS.ADMIN_CONSOLE // 貼文內容審查</h1>
+                <p>權限：系統管理員 (ADMINISTRATOR) | 資料庫同步模式：LocalStorage</p>
             </div>
-            <div>
-                <a href="index.html" class="btn btn-outline">⬅️ 回到前台首頁</a>
-                <button class="btn btn-danger" id="btn-purge" style="margin-left: 10px;">☢️ 清空全部數據</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-logout" id="btn-logout">登出安全模式</button>
+                <button class="btn btn-danger" id="btn-purge">清空資料庫</button>
             </div>
         </div>
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="label">當前總貼文數</div>
+                <div class="label">當前貼文總數</div>
                 <div class="value" id="stat-total">0</div>
             </div>
             <div class="stat-card">
-                <div class="label">使用者建立</div>
-                <div class="value" id="stat-user" style="color: #0369a1;">0</div>
+                <div class="label">用戶建立</div>
+                <div class="value" id="stat-user" style="color: var(--cyan);">0</div>
             </div>
             <div class="stat-card">
                 <div class="label">系統預設貼文</div>
-                <div class="value" id="stat-system" style="color: #475569;">0</div>
+                <div class="value" id="stat-system" style="color: var(--text-muted);">0</div>
             </div>
         </div>
 
+        <div class="section-header">貼文目錄清單 (Post Catalog)</div>
         <div class="data-table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>發佈者</th>
-                        <th>分類</th>
+                        <th style="width: 15%;">發佈者</th>
+                        <th style="width: 10%;">分類</th>
+                        <th style="width: 10%;">權限</th>
+                        <th style="width: 10%;">附圖</th>
                         <th>內容摘要</th>
-                        <th>按讚數</th>
-                        <th>屬性</th>
-                        <th>操作選項</th>
+                        <th style="width: 10%;">按讚</th>
+                        <th style="width: 10%;">來源</th>
+                        <th style="width: 12%;">操作</th>
                     </tr>
                 </thead>
                 <tbody id="admin-table-body"></tbody>
             </table>
-            <div id="empty-msg" class="empty-state" style="display: none;">目前資料庫中沒有任何貼文。</div>
+            <div id="empty-msg" class="empty-state" style="display: none;">資料庫中尚無任何貼文。</div>
+        </div>
+
+        <!-- Content Moderation & Reports Section -->
+        <div class="section-header">內容檢舉與審查中心 (Report Queue)</div>
+        <div class="data-table-container" style="margin-bottom: 40px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">被檢舉貼文 ID</th>
+                        <th style="width: 15%;">發佈者</th>
+                        <th style="width: 20%;">檢舉原因</th>
+                        <th style="width: 15%;">提報人</th>
+                        <th style="width: 15%;">狀態</th>
+                        <th style="width: 20%;">審查管理</th>
+                    </tr>
+                </thead>
+                <tbody id="reports-table-body">
+                    <!-- Dynamic or mock report cases -->
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        // 預設與前台同步的 Key
         const STORAGE_KEY = 'echoes_posts';
+        
+        // Mock report logs stored in LocalStorage if not exists
+        const REPORTS_KEY = 'echoes_reports';
+        const DEFAULT_REPORTS = [
+            { id: "rep-1", postId: "def-post-1", author: "GHOST_RUNNER", reason: "廣告與垃圾訊息 (Spam)", reporter: "@neon_dev", status: "待處理" },
+            { id: "rep-2", postId: "def-post-3", author: "SIGNAL_LOST", reason: "敏感或有害內容 (Harassment)", reporter: "@sig_lost", status: "待處理" }
+        ];
+
+        function getReports() {
+            const stored = localStorage.getItem(REPORTS_KEY);
+            if (!stored) {
+                localStorage.setItem(REPORTS_KEY, JSON.stringify(DEFAULT_REPORTS));
+                return DEFAULT_REPORTS;
+            }
+            try {
+                return JSON.parse(stored);
+            } catch (e) {
+                return DEFAULT_REPORTS;
+            }
+        }
+
+        function saveReports(reports) {
+            localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+        }
 
         function loadAndRenderAdminData() {
             const tableBody = document.getElementById('admin-table-body');
@@ -246,27 +404,94 @@
             if (posts.length === 0) {
                 tableBody.innerHTML = '';
                 emptyMsg.style.display = 'block';
+                renderReports([]);
                 return;
             }
 
             emptyMsg.style.display = 'none';
             tableBody.innerHTML = posts.map(post => {
                 const isSystem = post.isDefault || post.id.toString().startsWith('def-');
+                const hasImage = !!post.image;
+                const privacy = post.privacy || 'public';
+                
                 return `
-          <tr>
-            <td><strong>${escapeHTML(post.author || '匿名')}</strong><br><span style="font-size:12px;color:var(--text-muted);">${post.handle || ''}</span></td>
-            <td><span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:12px;">${post.category || 'Thoughts'}</span></td>
-            <td><div class="post-preview">${escapeHTML(post.content || '')}</div></td>
-            <td>❤️ ${post.likes || 0}</td>
-            <td><span class="badge ${isSystem ? 'badge-system' : 'badge-user'}">${isSystem ? '預設常駐' : '用戶新增'}</span></td>
-            <td><button class="action-delete" onclick="deletePostById('${post.id}')">🗑️ 強制刪除</button></td>
-          </tr>
-        `;
+                    <tr>
+                        <td>
+                            <strong>${escapeHTML(post.author || '匿名')}</strong><br>
+                            <span style="font-size:11px;color:var(--text-muted);">${post.handle || ''}</span>
+                        </td>
+                        <td>
+                            <span style="background:var(--bg-input); border: 1px solid var(--border-color); padding:2px 6px; border-radius:4px; font-size:11px;">
+                                ${post.category || 'Thoughts'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge ${privacy === 'private' ? 'badge-private' : 'badge-public'}">
+                                ${privacy === 'private' ? '🔒 私人' : '🌐 公開'}
+                            </span>
+                        </td>
+                        <td>
+                            ${hasImage ? `<img src="${post.image}" class="thumb-preview" alt="Preview">` : `<span class="no-thumb">無</span>`}
+                        </td>
+                        <td>
+                            <div class="post-preview">${escapeHTML(post.content || '')}</div>
+                        </td>
+                        <td>❤️ ${post.likes || 0}</td>
+                        <td>
+                            <span class="badge ${isSystem ? 'badge-system' : 'badge-user'}">
+                                ${isSystem ? '系統常駐' : '用戶建立'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="action-delete" onclick="deletePostById('${post.id}')">強制刪除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Also load and render reports
+            renderReports(posts);
+        }
+
+        function renderReports(posts) {
+            const reportsBody = document.getElementById('reports-table-body');
+            const reports = getReports();
+
+            if (reports.length === 0) {
+                reportsBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">尚無待審查的檢舉案件。</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            reportsBody.innerHTML = reports.map(rep => {
+                const postExists = posts.some(p => p.id === rep.postId);
+                const statusColor = rep.status === '已處理' ? 'var(--text-muted)' : 'var(--danger)';
+                
+                return `
+                    <tr>
+                        <td><code>${rep.postId}</code></td>
+                        <td><strong>${escapeHTML(rep.author)}</strong></td>
+                        <td><span style="color: #fda4af;">${escapeHTML(rep.reason)}</span></td>
+                        <td><span style="color: var(--text-muted);">${escapeHTML(rep.reporter)}</span></td>
+                        <td><span style="color: ${statusColor}; font-weight: 600;">${rep.status}</span></td>
+                        <td>
+                            ${rep.status === '待處理' && postExists ? `
+                                <button class="action-delete" style="margin-right:12px;" onclick="moderatePost('${rep.postId}', '${rep.id}')">下架貼文</button>
+                                <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="dismissReport('${rep.id}')">駁回</button>
+                            ` : `
+                                <span style="color: var(--text-muted); font-size:11px;">已結案 ${!postExists ? '(貼文已不存在)' : ''}</span>
+                            `}
+                        </td>
+                    </tr>
+                `;
             }).join('');
         }
 
         window.deletePostById = function (id) {
-            if (!confirm('確定要從資料庫完全刪除這篇貼文嗎？')) return;
+            if (!confirm('警告：確定要從資料庫永久刪除該貼文嗎？此操作無法還原。')) return;
             try {
                 const localData = localStorage.getItem(STORAGE_KEY);
                 if (localData) {
@@ -278,10 +503,46 @@
             } catch (e) { alert('刪除失敗'); }
         };
 
+        window.moderatePost = function (postId, reportId) {
+            if (!confirm('確認判定貼文違規並進行下架刪除嗎？')) return;
+            try {
+                // Delete the post
+                const localData = localStorage.getItem(STORAGE_KEY);
+                if (localData) {
+                    let posts = JSON.parse(localData);
+                    posts = posts.filter(p => p.id.toString() !== postId.toString());
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+                }
+
+                // Update report status
+                let reports = getReports();
+                reports = reports.map(r => r.id === reportId ? { ...r, status: '已處理' } : r);
+                saveReports(reports);
+
+                loadAndRenderAdminData();
+            } catch (e) { alert('下架失敗'); }
+        };
+
+        window.dismissReport = function (reportId) {
+            if (!confirm('確認要駁回此項檢舉嗎？這將標記案件為已處理但保留貼文。')) return;
+            try {
+                let reports = getReports();
+                reports = reports.map(r => r.id === reportId ? { ...r, status: '已處理' } : r);
+                saveReports(reports);
+                loadAndRenderAdminData();
+            } catch (e) { alert('操作失敗'); }
+        };
+
         document.getElementById('btn-purge').addEventListener('click', () => {
-            if (!confirm('警告！這將清除所有貼文數據。確定清空？')) return;
+            if (!confirm('🔥 終極警告！此操作將抹除 LocalStorage 中所有的貼文與檢舉數據。您確定要執行系統重置？')) return;
             localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(REPORTS_KEY);
             loadAndRenderAdminData();
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            sessionStorage.removeItem('admin_authenticated');
+            location.href = 'index.html';
         });
 
         function escapeHTML(str) {

@@ -15,20 +15,18 @@
   <link
     href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet">
-  <!-- Stylesheets -->
   <link rel="stylesheet" href="css/style.css">
 
-  <!-- Lucide Icons (CDN) -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
-  <!-- Scan Line Overlay -->
   <div class="scanline-overlay"></div>
 
-  <!-- Header / Navigation -->
   <header class="navbar">
-    <div class="nav-container">git config --global user.email "judy0508123@gmail.com"
+    <div class="nav-container">
       <a href="#/" class="logo">
         <span class="logo-bracket">[</span>ECHOES<span class="logo-dot">_</span>FEED<span class="logo-bracket">]</span>
       </a>
@@ -50,38 +48,129 @@
     </div>
   </header>
 
-  <!-- Main Content Container -->
-  <!-- Main Content Container -->
   <main id="app-container">
     <div class="layout-wrapper">
 
-      <!-- 左側邊欄：個人資訊與導覽 -->
       <aside class="sidebar-left">
         <div class="sidebar-card">
           <div class="user-profile-preview">
-            <div class="avatar-placeholder">ME</div>
-            <h3>你的名字</h3>
-            <p>@your_handle</p>
+            <div class="avatar-placeholder" id="user-avatar-area">ME</div>
+            <h3 id="user-display-name">你的名字</h3>
+            <p id="user-display-handle">@your_handle</p>
+
+            <div class="status-indicator" id="user-status-indicator">
+              <span class="status-dot online" id="user-status-dot"></span>
+              <span id="user-status-text">Online</span>
+            </div>
           </div>
+
           <hr class="divider">
+
           <ul class="sidebar-menu">
-            <li class="active">🏠 首頁動態</li>
-            <li>🔔 通知訊息</li>
-            <li>✉️ 私訊功能</li>
-            <li>🔖 我的收藏</li>
+            <li class="active" id="sidebar-menu-home"><i data-lucide="home"></i> <span
+                class="sidebar-menu-text">首頁動態</span></li>
+            <li id="sidebar-menu-notifications"><i data-lucide="bell"></i> <span class="sidebar-menu-text">通知訊息</span>
+            </li>
+            <li id="sidebar-menu-messages"><i data-lucide="mail"></i> <span class="sidebar-menu-text">私訊功能</span></li>
+            <li id="sidebar-menu-bookmarks"><i data-lucide="bookmark"></i> <span class="sidebar-menu-text">我的收藏</span>
+            </li>
           </ul>
+
+          <hr class="divider">
+
+          <div class="lang-switcher-container">
+            <select id="lang-switcher-select" class="lang-switcher-select" aria-label="Language Selector">
+              <option value="zh-Hant">繁體中文</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+
+          <div id="google-signin-container" class="google-login-btn-wrapper">
+            <button id="google-login-btn"
+              style="width: 100%; background-color: var(--card-bg, #1a1a24); color: var(--text-main, #ffffff); border: 1px solid var(--border-color, #ffb020); padding: 10px 16px; border-radius: var(--radius-sm, 4px); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'JetBrains Mono', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; box-shadow: 0 0 5px rgba(255,176,32,0.2);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 48 48"
+                style="display: block;">
+                <path fill="#EA4335"
+                  d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                <path fill="#4285F4"
+                  d="M46.5 24c0-1.55-.15-3.24-.47-4.77H24v9.03h12.75c-.55 2.86-2.17 5.29-4.6 6.92l7.15 5.54C43.5 36.31 46.5 30.73 46.5 24z" />
+                <path fill="#FBBC05"
+                  d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.98-6.19z" />
+                <path fill="#34A853"
+                  d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.15-5.54c-1.99 1.33-4.51 2.1-8.74 2.1-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+              </svg>
+              <span>使用 Google 帳戶登入</span>
+            </button>
+          </div>
+
+          <button id="user-logout-btn" class="user-logout-btn" style="display: none;">
+            <i data-lucide="log-out"></i>
+            <span id="logout-btn-text">登出</span>
+          </button>
         </div>
       </aside>
 
-      <!-- 中間：原本的貼文牆（AI 注入內容的地方） -->
       <section class="main-feed">
-        <!-- Views will be dynamically injected here by app.js -->
+        <div class="composer-card" id="composer-card-placeholder" style="display: none;">
+          <div class="composer-main">
+            <div class="user-avatar" id="composer-user-avatar">ME</div>
+            <div class="composer-inputs">
+              <textarea id="composer-textarea" class="composer-textarea" placeholder="分享你的想法、隨筆或學習筆記..."></textarea>
+
+              <div id="composer-image-preview-container"></div>
+
+              <div id="composer-gradient-preview" class="composer-gradient-preview"></div>
+            </div>
+          </div>
+
+          <div id="composer-gradients-row" class="composer-gradients-row">
+            <div class="composer-grad-option composer-grad-none selected" data-gradient="none">無</div>
+          </div>
+
+          <div class="composer-divider"></div>
+
+          <div class="composer-footer">
+            <div class="composer-options">
+              <button id="toggle-gradients-btn" class="composer-tool-btn" type="button">
+                <i data-lucide="palette"></i>
+                <span>樣式</span>
+              </button>
+
+              <div class="image-upload-wrapper">
+                <input type="file" id="composer-image-input" class="image-upload-input" accept="image/*">
+                <button id="composer-image-btn" class="image-upload-btn" type="button">
+                  <i data-lucide="image"></i>
+                  <span>附加圖片</span>
+                </button>
+              </div>
+
+              <select id="composer-category" class="composer-category-select" aria-label="Category Selection">
+                <option value="Thoughts">Thoughts</option>
+                <option value="Tech">Tech</option>
+                <option value="Productivity">Productivity</option>
+                <option value="Life">Life</option>
+                <option value="Design">Design</option>
+              </select>
+
+              <select id="composer-privacy" class="composer-privacy-select" aria-label="Privacy Control">
+                <option value="public">🌐 公開（所有人可見）</option>
+                <option value="private">🔒 私人（僅自己可見）</option>
+              </select>
+            </div>
+
+            <button id="submit-post-btn" class="post-submit-btn" type="button">
+              <i data-lucide="send"></i>
+              <span>發佈貼文</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="posts-feed-list"></div>
       </section>
 
-      <!-- 右側邊欄：熱門話題與推薦 -->
       <aside class="sidebar-right">
         <div class="sidebar-card">
-          <h3>🔥 熱門話題</h3>
+          <h3 id="trending-topics-title">🔥 熱門話題</h3>
           <ul class="trending-list">
             <li># 重新認識CSS變數 <span>1.2k 貼文</span></li>
             <li># 賽博朋克網頁 <span>842 貼文</span></li>
@@ -89,20 +178,26 @@
             <li># 科技美學 <span>311 貼文</span></li>
           </ul>
         </div>
-        <div class="sidebar-card">
-          <h3>👤 推薦追蹤</h3>
-          <div class="recommend-user">GHOST_RUNNER</div>
-          <div class="recommend-user">NEON_CODER</div>
+
+        <div class="sidebar-card" id="search-history-card">
+          <h3 id="search-history-title">🔍 搜尋歷史</h3>
+          <div id="search-history-list" class="search-history-container">
+          </div>
+          <button id="clear-history-btn" class="clear-all-history-btn" style="display: none;">清除歷史</button>
+        </div>
+
+        <div class="sidebar-card" id="likes-history-card">
+          <h3 id="likes-history-title">💖 點讚與收藏</h3>
+          <div id="liked-posts-list" class="liked-history-list">
+          </div>
         </div>
       </aside>
 
     </div>
   </main>
 
-  <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Footer -->
   <footer class="footer">
     <div class="footer-container">
       <p class="copyright">© 2026 ECHOES://FEED <span class="neon-green">|</span> SYS.STATUS: <span
@@ -115,7 +210,98 @@
     </div>
   </footer>
 
-  <!-- Application Logic -->
+  <div id="profile-setup-modal" class="admin-modal-overlay" style="z-index: 1100;">
+    <div class="admin-modal-card" style="max-width: 440px; width: 92%;">
+      <div class="admin-modal-title" id="profile-setup-title">✨ 歡迎！請設定你的個人資料</div>
+
+      <p
+        style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+        選擇頭像</p>
+      <div id="avatar-picker-grid" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+      </div>
+
+      <label id="avatar-upload-label"
+        style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; margin-bottom: 18px; padding: 6px 10px; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); transition: all 0.2s;">
+        <i data-lucide="upload" style="width:14px;height:14px;"></i>
+        <span id="avatar-upload-label-text">上傳自訂頭像</span>
+        <input type="file" id="avatar-upload-input" accept="image/*" style="display:none;">
+      </label>
+
+      <div class="admin-modal-input-group">
+        <label for="profile-name-input" id="profile-name-label">自訂暱稱</label>
+        <input type="text" id="profile-name-input" class="admin-modal-input" placeholder="你的名字 / Your Name"
+          maxlength="24" autocomplete="off">
+      </div>
+
+      <p id="profile-handle-preview"
+        style="font-size: 11px; color: var(--text-muted); margin-top: -8px; margin-bottom: 16px; padding-left: 2px;">
+      </p>
+
+      <div style="margin-bottom: 15px;">
+        <button id="google-login-btn" type="button"
+          style="width: 100%; background-color: #ffffff; color: #1a1a24; border: 1px solid #ffb020; padding: 10px 16px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: sans-serif; font-size: 13px; font-weight: 600;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 48 48" style="display: block;">
+            <path fill="#EA4335"
+              d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+            <path fill="#4285F4"
+              d="M46.5 24c0-1.55-.15-3.24-.47-4.77H24v9.03h12.75c-.55 2.86-2.17 5.29-4.6 6.92l7.15 5.54C43.5 36.31 46.5 30.73 46.5 24z" />
+            <path fill="#FBBC05"
+              d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.98-6.19z" />
+            <path fill="#34A853"
+              d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.15-5.54c-1.99 1.33-4.51 2.1-8.74 2.1-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+          </svg>
+          <span>使用 Google 帳戶快速填寫</span>
+        </button>
+      </div>
+
+      <div class="admin-modal-actions">
+        <button id="profile-setup-confirm" class="admin-modal-btn admin-modal-btn-submit"
+          style="width: 100%; justify-content: center; display: flex;">確認並進入</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="contact-edit-modal" class="admin-modal-overlay" style="z-index: 1100;">
+    <div class="admin-modal-card" style="max-width: 400px; width: 92%;">
+      <div class="admin-modal-title">📡 編輯聯絡資訊</div>
+      git config --global user.email "judy0508123@gmail.com"
+      <div class="admin-modal-input-group">
+        <label for="contact-phone">📞 電話 / Phone</label>
+        <input type="tel" id="contact-phone" class="admin-modal-input" placeholder="+886 912 345 678"
+          autocomplete="tel">
+      </div>
+      <div class="admin-modal-input-group">
+        <label for="contact-email">✉️ 聯絡信箱 / Email</label>
+        <input type="email" id="contact-email" class="admin-modal-input" placeholder="your@email.com"
+          autocomplete="email">
+      </div>
+      <div class="admin-modal-input-group">
+        <label for="contact-website">🌐 個人網站 / Website</label>
+        <input type="url" id="contact-website" class="admin-modal-input" placeholder="https://yoursite.com">
+      </div>
+
+      <div class="admin-modal-actions">
+        <button id="contact-edit-cancel" class="admin-modal-btn admin-modal-btn-cancel">取消</button>
+        <button id="contact-edit-save" class="admin-modal-btn admin-modal-btn-submit">儲存資訊</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-login-modal" class="admin-modal-overlay">
+    <div class="admin-modal-card">
+      <div class="admin-modal-title" id="admin-modal-title">ACCESS_DENIED // 身份驗證</div>
+      <div class="admin-modal-input-group">
+        <label for="admin-password" id="admin-modal-pwd-label">請輸入後台存取密碼：</label>
+        <input type="password" id="admin-password" class="admin-modal-input" placeholder="••••••••"
+          autocomplete="current-password">
+      </div>
+      <div class="admin-modal-actions">
+        <button id="admin-cancel-btn" class="admin-modal-btn admin-modal-btn-cancel">取消</button>
+        <button id="admin-login-btn" class="admin-modal-btn admin-modal-btn-submit">驗證</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/app.js"></script>
 </body>
 
