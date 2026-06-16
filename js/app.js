@@ -19,7 +19,7 @@
 //
 // ⚠️ 重要：GIS 無法在 file:// 協定下運作，請使用 http:// 本地伺服器測試。
 //
-const GOOGLE_CLIENT_ID = '472134617764-hv4va5tt8adg5gid1ibsd8bcuq123dj8.apps.googleusercontent.com';
+// Google Client ID removed
 
 // ==========================================================================
 // PRESET GRADIENTS — CYBERPUNK NEON PALETTE
@@ -54,72 +54,262 @@ const PRESET_AVATARS = [
 const DEFAULT_POSTS = [
   {
     id: "def-post-1",
-    author: "GHOST_RUNNER",
-    handle: "@ghost_r",
-    avatarLetter: "GR",
-    date: "2h ago",
-    category: "Productivity",
+    author: "Alice",
+    handle: "@alice_daily",
+    avatarLetter: "AL",
+    date: "2小時前",
+    category: "Life",
     privacy: "public",
-    image: null,
-    content: "建構你的極簡工作流 // KILL ALL NOISE\n\n- 關閉所有非必要推播通知\n- 單一資料來源：一個筆記庫統治一切\n- 時間區塊鎖定：一次只做一件事\n\n> 簡約是細緻的極致。 — Leonardo da Vinci\n\n你的專注力就是你的算力。別讓它被垃圾程序吞噬。",
-    gradient: "linear-gradient(135deg, #181f2a 0%, #1ea34d 50%, #4ade80 100%)",
+    image: [
+      "https://images.unsplash.com/photo-1509042239860-f550ce710b93",
+      "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38"
+    ],
+    content: "今天跟朋友去中山區新開的咖啡廳，那個肉桂捲跟熱拿鐵真的絕了！直接原地滿血復活，推推！ #肉桂捲 #中山區咖啡廳",
+    gradient: null,
     likes: 42,
     likedByUser: false,
     comments: [
-      { id: "c1", author: "NULL_PTR", text: "自從把手機通知全砍了，每天多出兩個小時的 deep work。", time: "1h ago" },
-      { id: "c2", author: "K3N_D3V", text: "Obsidian + 番茄鐘。唯一需要的兩個工具。", time: "45min ago" }
+      { id: "c1", author: "Bob", text: "求店名！看起來超好吃！", time: "1小時前" },
     ],
     isDefault: true
   },
   {
     id: "def-post-2",
-    author: "NEON_CODER",
-    handle: "@neon_dev",
-    avatarLetter: "NC",
-    date: "5h ago",
-    category: "Tech",
+    author: "Bob",
+    handle: "@bob_says",
+    avatarLetter: "BO",
+    date: "5小時前",
+    category: "Thoughts",
     privacy: "public",
-    image: null,
-    content: "CSS Variables 是被嚴重低估的超能力。\n\n它們是動態的，存在於 Runtime。深色/淺色主題切換？幾行搞定：\n\n```css\n:root { --bg: #050505; --neon: #39ff14; }\nhtml[data-theme=\"light\"] { --bg: #e8e8e8; --neon: #00aa00; }\n```\n\n這個終端的賽博朋克配色就是用這個原理打造的。沒有預處理器，沒有框架，純粹的原生力量。",
+    image: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0",
+    content: "今天出門竟然忘記帶雨傘，結果一出捷運站直接暴雨暴大，真的原地謝囉QQ\n\n到底為什麼每次沒帶傘就會下雨啊？莫非定律真的不要太準... #暴雨 #日常崩潰",
     gradient: "linear-gradient(135deg, #181f2a 0%, #38bdf8 100%)",
     likes: 128,
     likedByUser: false,
     comments: [
-      { id: "c3", author: "ZERO_DAY", text: "原生變數 > Sass 變數。Runtime > Compile-time。真理。", time: "3h ago" }
+      { id: "c3", author: "Alice", text: "幫QQ 昨天看氣象局就說會下雨啦~", time: "3小時前" }
     ],
     isDefault: true
   },
   {
     id: "def-post-3",
-    author: "SIGNAL_LOST",
-    handle: "@sig_lost",
-    avatarLetter: "SL",
-    date: "1d ago",
-    category: "Life",
+    author: "Charlie",
+    handle: "@charlie_dev",
+    avatarLetter: "CH",
+    date: "1天前",
+    category: "Tech",
     privacy: "public",
-    image: null,
-    content: "物質與資訊過載時，你的心靈也會 BUFFER OVERFLOW。\n\n我的減法協議：\n\n- 物理層：清空半年沒碰的雜物\n- 資訊層：退訂製造焦慮的社群追蹤\n- 社交層：溫柔地拒絕無意義的 handshake\n\n> 擁有得越少，你所擁有的就越有價值。\n\n執行 `rm -rf /noise/*` 然後你會發現，核心服務終於能正常運行了。",
+    image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c",
+    content: "剛剛終於搞懂這個 CSS 網格布局 (Grid Layout) 了，調出好看的排版真的好療癒喔～\n\n明天繼續加油！ #前端開發 #CSS排版 #學習筆記",
     gradient: null,
     likes: 95,
     likedByUser: false,
     comments: [
-      { id: "c4", author: "EVA_X", text: "資訊減法好難，但真的很需要 garbage collection。", time: "12h ago" },
-      { id: "c5", author: "B3N_SYS", text: "每天 30 分鐘離線模式。系統冷卻效果拔群。", time: "8h ago" }
+      { id: "c4", author: "Eva", text: "Grid 真的是排版神器！Flexbox 搭配起來無敵了。", time: "12小時前" }
     ],
     isDefault: true
   },
   {
     id: "def-post-4",
-    author: "PIXEL_WITCH",
-    handle: "@px_witch",
-    avatarLetter: "PW",
-    date: "3d ago",
-    category: "Design",
+    author: "宇軒",
+    handle: "@yuxuan_0821",
+    avatarLetter: "YX",
+    date: "3小時前",
+    category: "Life",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1594909122845-11baa439b7bf",
+    content: "脆友們有看最近那部新劇嗎？男主帥到我直接原地排卵... 怎麼可以有人長得這麼精緻啦！每天都在期待更新，好想趕快看到下一集喔！😍 #追劇日常 #韓劇推薦 #帥到排卵",
+    gradient: null,
+    likes: 154,
+    likedByUser: false,
+    comments: [
+      { id: "c5", author: "小婷", text: "真的！我也看到停不下來，男主那個眼神誰受得了啦！", time: "2小時前" }
+    ],
+    isDefault: true
+  },
+  {
+    id: "def-post-5",
+    author: "冠宇",
+    handle: "@guanyu_struggle",
+    avatarLetter: "GY",
+    date: "4小時前",
+    category: "Life",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40",
+    content: "又是被微積分痛洗的一天，上課教授講得像天書，下課必須吃大碗拉麵補償自己QQ。有沒有微積分大師能救救可憐的大一生？🍜 #日常崩潰 #微積分 #拉麵拯救世界",
+    gradient: null,
+    likes: 87,
+    likedByUser: false,
+    comments: [],
+    isDefault: true
+  },
+  {
+    id: "def-post-6",
+    author: "貓奴美美",
+    handle: "@meimi_cat",
+    avatarLetter: "MM",
+    date: "6小時前",
+    category: "Life",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba",
+    content: "我們家這隻小胖貓每天早上都在我臉上蹦迪踩踏，真的要被萌死了～ 雖然牠昨天又把我的全新耳機線給咬斷了（微笑中帶淚）🙃 #貓咪日常 #奴才日常 #吸貓成癮",
+    gradient: null,
+    likes: 210,
+    likedByUser: false,
+    comments: [
+      { id: "c6", author: "Alice", text: "耳機線要收好啦哈哈，不過看到這張臉真的氣不起來～", time: "5小時前" }
+    ],
+    isDefault: true
+  },
+  {
+    id: "def-post-7",
+    author: "剁手狂魔",
+    handle: "@buy_everything",
+    avatarLetter: "KM",
+    date: "8小時前",
+    category: "Life",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b",
+    content: "又剁手了啦！明明雙十一還沒到，但購物車裡的寶貝又不小心被我清空了。下個月開始真的只能餐餐吃土了QQ #網購剁手 #買不停 #下個月吃土",
+    gradient: "linear-gradient(135deg, #1a222f 0%, #fbbf24 100%)",
+    likes: 64,
+    likedByUser: false,
+    comments: [],
+    isDefault: true
+  },
+  {
+    id: "def-post-8",
+    author: "憂鬱社畜阿哲",
+    handle: "@monday_blue_operator",
+    avatarLetter: "AZ",
+    date: "12小時前",
+    category: "Thoughts",
     privacy: "public",
     image: null,
-    content: "微互動 (Micro-interactions) 是 UI 的靈魂程序。\n\n這個終端裡的每個動畫都是刻意設計的：\n\n- 愛心點擊：放大心跳 + 螢光紅\n- 分享按鈕：一鍵複製 + 霓虹 Toast 彈出\n- 留言展開：平滑滑動進場\n- CRT 掃描線：全螢幕覆蓋層\n\n這些細節的目的只有一個：讓冰冷的像素產生呼吸感。\n\n歡迎點擊下方按鈕親自體驗。",
+    content: "明天又是萬惡的禮拜一... 真的好不想上班上班上班啊！可以讓我一覺醒來直接中頭獎變富翁嗎？好想每天躺平當廢物喔😴 #不想上班 #社畜日常 #躺平人生",
     gradient: "linear-gradient(135deg, #181f2a 0%, #f472b6 100%)",
-    likes: 156,
+    likes: 312,
+    likedByUser: false,
+    comments: [
+      { id: "c7", author: "Bob", text: "加一，我現在就想躺平了，禮拜一真的有夠憂鬱。", time: "10小時前" }
+    ],
+    isDefault: true
+  },
+  {
+    id: "def-post-9",
+    author: "減肥明天的事",
+    handle: "@diet_tomorrow",
+    avatarLetter: "DT",
+    date: "15小時前",
+    category: "Life",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1562967914-608f82629710",
+    content: "說好今天開始減肥，晚餐只喝溫開水。結果朋友一通電話問：『宵夜吃鹹酥雞嗎？』 我：『大辣、梅粉地瓜、甜不辣、雞排點爆！』減肥永遠是明天的事啦！🍗 #減肥失敗 #鹹酥雞 #萬惡宵夜",
+    gradient: null,
+    likes: 189,
+    likedByUser: false,
+    comments: [],
+    isDefault: true
+  },
+  {
+    id: "def-post-10",
+    author: "小白鞋殺手",
+    handle: "@white_shoes_victim",
+    avatarLetter: "WS",
+    date: "18小時前",
+    category: "Life",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1438786657495-640937046d18",
+    content: "今天台北這天氣到底是想怎樣？早上熱到快融化，下午突然傾盆大雨。我的全新小白鞋第一次穿出門直接泡水報銷，原地謝囉！☔ #台北天氣 #小白鞋 #日常崩潰",
+    gradient: null,
+    likes: 95,
+    likedByUser: false,
+    comments: [],
+    isDefault: true
+  },
+  {
+    id: "def-post-11",
+    author: "幸運值滿點",
+    handle: "@lucky_star_99",
+    avatarLetter: "LS",
+    date: "1天前",
+    category: "Life",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745",
+    content: "搶到告五人演唱會的票了啊啊啊！手速爆發直接點進去！有沒有脆友也是要去的？到時候現場見，一起唱爆！🎉 #告五人 #演唱會 #好運爆棚",
+    gradient: null,
+    likes: 245,
+    likedByUser: false,
+    comments: [
+      { id: "c8", author: "Charlie", text: "超羨慕！我卡在轉圈圈畫面，直接哭暈在廁所。", time: "18小時前" }
+    ],
+    isDefault: true
+  },
+  {
+    id: "def-post-12",
+    author: "期中考爆肝戰士",
+    handle: "@midterm_zombie",
+    avatarLetter: "MZ",
+    date: "1天前",
+    category: "Thoughts",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6",
+    content: "期中考週直接變熊貓眼，每天咖啡當水喝。只求教授看在我這麼努力爆肝的份上，給我一個甜甜的分數過關，千萬不要把我當掉啊！🙏 #期中考 #大學生日常 #爆肝",
+    gradient: null,
+    likes: 130,
+    likedByUser: false,
+    comments: [],
+    isDefault: true
+  },
+  {
+    id: "def-post-13",
+    author: "重訓弱雞",
+    handle: "@gym_chicken",
+    avatarLetter: "GC",
+    date: "2天前",
+    category: "Life",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd",
+    content: "今天去健身房被教練操到雙腿發抖，下樓梯時差點直接滾下去，腳軟到不行。真的好累但看著鏡子裡的自己又覺得好爽！💪 #健身日常 #重訓 #痛並快樂著",
+    gradient: null,
+    likes: 72,
+    likedByUser: false,
+    comments: [],
+    isDefault: true
+  },
+  {
+    id: "def-post-14",
+    author: "台北吃貨小雷",
+    handle: "@taipei_foodie_ray",
+    avatarLetter: "FR",
+    date: "2天前",
+    category: "Life",
+    privacy: "public",
+    image: [
+      "https://images.unsplash.com/photo-1563245372-f21724e3856d",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836"
+    ],
+    content: "饒河夜市的胡椒餅跟藥燉排骨湯真的絕配！雖然每次去都要排隊排半天，但咬下去那口肉汁噴出來的瞬間，一切等待都值得了！推爆！ #饒河夜市 #台北美食 #吃貨人生 #拉麵拯救世界",
+    gradient: null,
+    likes: 165,
+    likedByUser: false,
+    comments: [
+      { id: "c9", author: "小婷", text: "那家胡椒餅真的超讚！每次去必買！", time: "1天前" }
+    ],
+    isDefault: true
+  },
+  {
+    id: "def-post-15",
+    author: "傳說老司機",
+    handle: "@arena_of_valor_pro",
+    avatarLetter: "AV",
+    date: "3天前",
+    category: "Thoughts",
+    privacy: "public",
+    image: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc",
+    content: "昨晚跟朋友用語音打傳說打到凌晨三點，結果一路連敗掉星。隊友都在搞，氣到我差點當場爆開，現在上班整個人快魂飛魄散了... 🎮 #傳說對決 #遊戲崩潰 #日常崩潰",
+    gradient: "linear-gradient(135deg, #181f2a 0%, #1ea34d 50%, #4ade80 100%)",
+    likes: 110,
     likedByUser: false,
     comments: [],
     isDefault: true
@@ -132,7 +322,7 @@ const DEFAULT_POSTS = [
 const I18N = {
   "zh-Hant": {
     home: "貼文牆",
-    write: "發表想法",
+    write: "個人想法牆",
     about: "關於我",
     placeholder_search: "搜尋貼文關鍵字...",
     placeholder_composer: "分享你的想法、隨筆或學習筆記...",
@@ -168,7 +358,7 @@ const I18N = {
   },
   "en": {
     home: "Feed",
-    write: "Post Idea",
+    write: "My Thoughts",
     about: "About Me",
     placeholder_search: "Search post keywords...",
     placeholder_composer: "Share your thoughts, notes or designs...",
@@ -238,7 +428,8 @@ function init() {
   initAdminEntrance();
   initProfileModal();
   initContactEditModal();
-  initGoogleSignIn(); // Initialize GIS after everything else is ready
+  initTraditionalLogin(); // Initialize traditional account/password login
+  initAvatarUpload();
 }
 
 // ==========================================================================
@@ -266,23 +457,34 @@ function applyCurrentUser() {
   if (nameEl) nameEl.textContent = currentUser.name;
   if (handleEl) handleEl.textContent = currentUser.handle;
 
+  const isLoggedIn = !!(currentUser.googleId && currentUser.handle !== "@me_creator");
+
   if (avatarEl) {
+    if (isLoggedIn) {
+      avatarEl.style.cursor = "pointer";
+      avatarEl.style.pointerEvents = "auto";
+    } else {
+      avatarEl.style.cursor = "default";
+      avatarEl.style.pointerEvents = "none";
+    }
+
+    const inputHtml = `<input type="file" id="avatar-file-input" accept="image/*" style="display: none;">`;
     if (currentUser.avatarUrl) {
-      avatarEl.innerHTML = `<img src="${currentUser.avatarUrl}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+      avatarEl.style.background = "";
+      avatarEl.innerHTML = `<img src="${currentUser.avatarUrl}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` + inputHtml;
     } else if (currentUser.avatarBg) {
       // Preset gradient avatar
       avatarEl.style.background = currentUser.avatarBg;
-      avatarEl.innerHTML = "";
-      avatarEl.textContent = currentUser.avatarLetter || "?";
+      avatarEl.innerHTML = (currentUser.avatarLetter || "?") + inputHtml;
     } else {
       avatarEl.style.background = "";
-      avatarEl.innerHTML = "";
-      avatarEl.textContent = currentUser.avatarLetter || currentUser.name.substring(0, 2).toUpperCase();
+      avatarEl.innerHTML = (currentUser.avatarLetter || currentUser.name.substring(0, 2).toUpperCase()) + inputHtml;
     }
   }
 
+  renderAdminPresence();
+
   // Toggle login / logout buttons
-  const isLoggedIn = !!(currentUser.googleId && currentUser.handle !== "@me_creator");
   if (googleContainer) googleContainer.style.display = isLoggedIn ? "none" : "block";
 
   if (logoutBtn) {
@@ -305,132 +507,138 @@ function applyCurrentUser() {
     }
   }
 
+  // Handle Composer Permissions
+  const composerTextarea = document.getElementById("composer-textarea");
+  const composerSubmitBtn = document.getElementById("submit-post-btn");
+  const composerImageBtn = document.getElementById("composer-image-btn");
+  const composerStyleBtn = document.getElementById("toggle-gradients-btn");
+
+  if (composerTextarea) {
+    composerTextarea.disabled = !isLoggedIn;
+    composerTextarea.placeholder = isLoggedIn ? t("placeholder_composer") : (currentLang === "en" ? "Please log in to post..." : "請先登入才能發表想法...");
+  }
+  if (composerSubmitBtn) {
+    composerSubmitBtn.disabled = !isLoggedIn;
+    composerSubmitBtn.style.opacity = isLoggedIn ? "1" : "0.5";
+    composerSubmitBtn.style.cursor = isLoggedIn ? "pointer" : "not-allowed";
+  }
+  if (composerImageBtn) {
+    composerImageBtn.disabled = !isLoggedIn;
+    composerImageBtn.style.opacity = isLoggedIn ? "1" : "0.5";
+    composerImageBtn.style.cursor = isLoggedIn ? "pointer" : "not-allowed";
+  }
+  if (composerStyleBtn) {
+    composerStyleBtn.disabled = !isLoggedIn;
+    composerStyleBtn.style.opacity = isLoggedIn ? "1" : "0.5";
+    composerStyleBtn.style.cursor = isLoggedIn ? "pointer" : "not-allowed";
+  }
+
   lucide.createIcons();
 }
 
 // ==========================================================================
-// GOOGLE IDENTITY SERVICES INITIALIZATION
+// TRADITIONAL ACCOUNT LOGIN INITIALIZATION & LOGIC
 // ==========================================================================
-function initGoogleSignIn() {
-  function bindGoogleBtn() {
-    if (!window.google || !window.google.accounts) return;
-
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleLoginResponse,
-      cancel_on_tap_outside: true
-    });
-
-    const loginBtn = document.getElementById("google-login-btn");
-    if (!loginBtn) return;
-
-    // Remove stale listeners
-    const fresh = loginBtn.cloneNode(true);
-    loginBtn.parentNode.replaceChild(fresh, loginBtn);
-
-    // Render hidden official GIS button as a reliable trigger
-    let hiddenDiv = document.getElementById("g_official_btn_hidden");
-    if (!hiddenDiv) {
-      hiddenDiv = document.createElement("div");
-      hiddenDiv.id = "g_official_btn_hidden";
-      hiddenDiv.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;";
-      document.body.appendChild(hiddenDiv);
-    }
-    google.accounts.id.renderButton(hiddenDiv, {
-      type: "standard", theme: "outline", size: "large", width: 200
-    });
-
-    fresh.addEventListener("click", () => {
-      google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          const officialBtn = hiddenDiv.querySelector("[role=button]");
-          if (officialBtn) officialBtn.click();
-        }
-      });
-    });
-
-    console.log("[GIS] Google 登入按鈕綁定完成 ✓");
+function initTraditionalLogin() {
+  const triggerBtn = document.getElementById("login-modal-trigger-btn");
+  if (triggerBtn) {
+    triggerBtn.addEventListener("click", showLoginModal);
   }
 
-  if (window.google && window.google.accounts) {
-    bindGoogleBtn();
-  } else {
-    window.onGoogleLibraryLoad = bindGoogleBtn;
-    const poll = setInterval(() => {
-      if (window.google && window.google.accounts) {
-        clearInterval(poll);
-        bindGoogleBtn();
+  const loginSubmitBtn = document.getElementById("login-btn-submit");
+  if (loginSubmitBtn) {
+    loginSubmitBtn.addEventListener("click", handleTraditionalLogin);
+  }
+
+  // Allow enter key to submit in the password field
+  const passwordInput = document.getElementById("login-password");
+  if (passwordInput) {
+    passwordInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleTraditionalLogin();
       }
-    }, 300);
-    setTimeout(() => clearInterval(poll), 12000);
+    });
   }
 }
 
-function handleGoogleLoginResponse(response) {
-  try {
-    const base64Url = response.credential.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    const data = JSON.parse(jsonPayload);
+function initAvatarUpload() {
+  const avatarArea = document.getElementById("user-avatar-area");
+  if (!avatarArea) return;
 
-    const googleId = data.sub; // 唯一 Google 用戶 ID
-    const isFirstLogin = !localStorage.getItem("echoes_profile_" + googleId);
+  avatarArea.addEventListener("click", (e) => {
+    if (e.target.id === "avatar-file-input") return;
+    const fileInput = document.getElementById("avatar-file-input");
+    if (fileInput) fileInput.click();
+  });
 
+  avatarArea.addEventListener("change", (e) => {
+    if (e.target.id === "avatar-file-input") {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const dataUrl = event.target.result;
+          currentUser.avatarUrl = dataUrl;
+          localStorage.setItem("echoes_user", JSON.stringify(currentUser));
+          applyCurrentUser();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  });
+}
+
+function showLoginModal() {
+  const modal = document.getElementById("profile-setup-modal");
+  if (modal) {
+    modal.classList.add("active");
+    const emailInput = document.getElementById("login-email");
+    if (emailInput) {
+      emailInput.value = "";
+      emailInput.focus();
+    }
+    const passwordInput = document.getElementById("login-password");
+    if (passwordInput) passwordInput.value = "";
+  }
+}
+
+function hideLoginModal() {
+  const modal = document.getElementById("profile-setup-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+function handleTraditionalLogin() {
+  const emailInput = document.getElementById("login-email");
+  const passwordInput = document.getElementById("login-password");
+  const nameInput = document.getElementById("profile-name-input");
+
+  if (!emailInput || !passwordInput) return;
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+
+  if (email.includes("@") && password !== "") {
+    const nickname = email.split("@")[0];
+    
+    // 1. 自動把暱稱填入 profile-name-input
+    if (nameInput) nameInput.value = nickname;
+
+    // 2. 更新使用者狀態
     currentUser = {
-      googleId: googleId,
-      name: data.name,
-      handle: "@" + data.email.split("@")[0],
-      avatarLetter: data.name.substring(0, 2).toUpperCase(),
-      avatarUrl: data.picture,
-      googlePicture: data.picture,
-      isGoogle: true
+      googleId: "sandbox_user_" + Date.now(),
+      name: nickname,
+      handle: email === "admin@example.com" ? "@admin" : "@" + nickname,
+      avatarLetter: nickname.substring(0, 2).toUpperCase() || "U",
+      avatarUrl: null
     };
 
     localStorage.setItem("echoes_user", JSON.stringify(currentUser));
     applyCurrentUser();
-    showToast(t("toast_logged_in"));
+    hideLoginModal();
+    showToast(currentLang === "en" ? "Logged in successfully!" : "登入成功！");
     renderPostsList();
-
-    if (isFirstLogin) {
-      // Pre-fill the profile setup modal with Google name
-      const nameInput = document.getElementById("profile-name-input");
-      if (nameInput) nameInput.value = data.name;
-      showProfileSetupModal();
-    }
-  } catch (e) {
-    console.error("JWT credential decode error", e);
-  }
-}
-
-function simulateGoogleLogin() {
-  const firstNames = ["Neon", "Cyber", "Ghost", "Zero", "Warp", "Apex", "Nova"];
-  const lastNames = ["Hacker", "Runner", "Nomad", "Witch", "Specter", "Operator"];
-  const randomName = firstNames[Math.floor(Math.random() * firstNames.length)] + "_" + lastNames[Math.floor(Math.random() * lastNames.length)];
-  const handle = "@" + randomName.toLowerCase() + "_" + Math.floor(Math.random() * 100);
-
-  // Generate a consistent mock ID for this sandbox session
-  const mockId = "sandbox_" + randomName.toLowerCase().replace("_", "");
-  const isFirstLogin = !localStorage.getItem("echoes_profile_" + mockId);
-
-  currentUser = {
-    googleId: mockId,
-    name: randomName,
-    handle: handle,
-    avatarLetter: randomName.substring(0, 2).toUpperCase(),
-    avatarUrl: null,
-    isGoogle: true
-  };
-  localStorage.setItem("echoes_user", JSON.stringify(currentUser));
-  applyCurrentUser();
-  showToast(t("toast_logged_in"));
-  renderPostsList();
-
-  if (isFirstLogin) {
-    const nameInput = document.getElementById("profile-name-input");
-    if (nameInput) nameInput.value = randomName;
-    showProfileSetupModal();
+  } else {
+    showToast(currentLang === "en" ? "Invalid email format or empty password!" : "請輸入包含「@」的有效 Email 與密碼！");
   }
 }
 
@@ -446,13 +654,6 @@ function logoutUser() {
   showToast(t("toast_logged_out"));
   renderPostsList();
 }
-
-// Bind GIS on window load in case scripts loading asynchronously
-window.addEventListener("load", () => {
-  if (window.google && window.google.accounts && currentUser.handle === "@me_creator") {
-    applyCurrentUser();
-  }
-});
 
 // ==========================================================================
 // i18n MULTI-LANGUAGE ENGINE
@@ -605,6 +806,19 @@ function resetIdleTimer() {
   }, 300000);
 }
 
+// Track active users cross-tab for admin panel
+setInterval(() => {
+  if (currentUser && currentUser.handle && currentUser.handle !== "@admin" && userOnline) {
+    const onlineMap = JSON.parse(localStorage.getItem('echoes_online_users') || '{}');
+    onlineMap[currentUser.handle] = Date.now();
+    localStorage.setItem('echoes_online_users', JSON.stringify(onlineMap));
+  }
+  
+  if (currentUser && currentUser.handle === "@admin") {
+    renderAdminPresence();
+  }
+}, 3000);
+
 // ==========================================================================
 // THEME MANAGEMENT
 // ==========================================================================
@@ -628,7 +842,7 @@ function initTheme() {
 // ==========================================================================
 // DATA OPERATIONS (LocalStorage)
 // ==========================================================================
-const DATA_VERSION = "cyberpunk-v3";
+const DATA_VERSION = "cyberpunk-v8";
 
 function loadPosts() {
   const savedVersion = localStorage.getItem("echoes_data_version");
@@ -853,6 +1067,9 @@ function renderFeedView(container, shouldFocusComposer) {
   // Bind Composer events
   setupComposer(shouldFocusComposer);
 
+  // Apply Permissions to Composer (since it's newly rendered)
+  applyCurrentUser();
+
   // Render sidebar lists and pills
   renderFilterPills();
   renderPostsList();
@@ -1065,7 +1282,9 @@ function renderPostsList() {
 
   const isAdmin = sessionStorage.getItem("admin_authenticated") === "true";
 
-  const filtered = posts.filter(post => {
+  const isWriteTab = window.location.hash === "#/write";
+
+  let filtered = posts.filter(post => {
     const matchesCat = currentCategory === "All" || post.category === currentCategory;
     const matchesSearch = searchQuery === "" ||
       post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1076,8 +1295,49 @@ function renderPostsList() {
     const isMine = post.handle === currentUser.handle;
     const matchesPrivacy = !isPrivate || isMine || isAdmin; // Admin can see private posts for moderation
 
-    return matchesCat && matchesSearch && matchesPrivacy;
+    const matchesTab = isWriteTab ? isMine : true;
+
+    return matchesCat && matchesSearch && matchesPrivacy && matchesTab;
   });
+
+  if (filtered.length === 0 && isWriteTab) {
+    filtered.push(
+      {
+        id: "fake-1",
+        author: currentUser.name,
+        handle: currentUser.handle,
+        avatarLetter: currentUser.avatarLetter || "ME",
+        date: "剛剛",
+        category: "Thoughts",
+        privacy: "public",
+        image: null,
+        content: "💡 系統提示：目前為範例預覽畫面，當您發布自己的想法後，這裡將只會顯示您的專屬貼文。\n\n這是一篇關於學習筆記的範例。寫作不僅是記錄，更是重塑思考的過程。這片空間屬於你，開始記錄吧！",
+        gradient: "linear-gradient(135deg, #181f2a 0%, #1ea34d 50%, #4ade80 100%)",
+        likes: 0,
+        likedByUser: false,
+        comments: [],
+        isDefault: true,
+        isFakePlaceholder: true
+      },
+      {
+        id: "fake-2",
+        author: currentUser.name,
+        handle: currentUser.handle,
+        avatarLetter: currentUser.avatarLetter || "ME",
+        date: "2小時前",
+        category: "Life",
+        privacy: "private",
+        image: null,
+        content: "💡 系統提示：這是一篇私密隨筆的範例。有時候只需要給自己一點喘息的空間。\n\n「自由不是想做什麼就做什麼，而是不想做什麼就能不做什麼。」",
+        gradient: null,
+        likes: 0,
+        likedByUser: false,
+        comments: [],
+        isDefault: true,
+        isFakePlaceholder: true
+      }
+    );
+  }
 
   if (filtered.length === 0) {
     feedList.innerHTML = `
@@ -1119,7 +1379,11 @@ function renderPostsList() {
         </div>
 
         <!-- Attached Image Upload Rendering -->
-        ${post.image ? `
+        ${Array.isArray(post.image) ? `
+          <div class="post-image-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 12px; border-radius: 8px; overflow: hidden;">
+            ${post.image.map(img => `<img src="${img}" class="post-image" style="width: 100%; height: 200px; object-fit: cover;" alt="Attached preview">`).join("")}
+          </div>
+        ` : post.image ? `
           <div class="post-image-container">
             <img src="${post.image}" class="post-image" alt="Attached preview">
           </div>
@@ -1176,6 +1440,7 @@ function renderPostsList() {
 
   lucide.createIcons();
   bindPostActions();
+  renderTrendingTopics();
 }
 
 function renderCommentsList(comments) {
@@ -1508,6 +1773,61 @@ function renderSearchHistory() {
   });
 }
 
+function renderTrendingTopics() {
+  const listEl = document.getElementById("trending-topics-list");
+  if (!listEl) return;
+
+  const counts = {};
+
+  if (Array.isArray(posts)) {
+    posts.forEach(post => {
+      // Safety check: ensure content is a valid string
+      if (post && typeof post.content === 'string') {
+        // Match hashtags starting with #, containing Chinese characters, letters, numbers, and underscores
+        const tags = post.content.match(/#[A-Za-z0-9_\u4e00-\u9fa5]+/g);
+        if (tags) {
+          // De-duplicate tags in a single post to count at most once per post
+          const uniqueTags = [...new Set(tags)];
+          uniqueTags.forEach(tag => {
+            counts[tag] = (counts[tag] || 0) + 1;
+          });
+        }
+      }
+    });
+  }
+
+  // Sort tags by frequency and get the top 4
+  const sorted = Object.keys(counts)
+    .map(tag => ({ tag, count: counts[tag] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 4);
+
+  if (sorted.length === 0) {
+    listEl.innerHTML = `<li style="color: var(--text-muted); font-size: 11px;">${currentLang === "en" ? "No trending topics" : "目前尚無話題"}</li>`;
+    return;
+  }
+
+  listEl.innerHTML = sorted.map(t => {
+    const safeTag = escapeHTML(t.tag);
+    return `
+      <li class="trending-tag-item" data-tag="${safeTag}" style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--neon-green)'" onmouseout="this.style.color=''">
+        ${safeTag} <span style="color: var(--neon-green);">${t.count} ${currentLang === "en" ? "posts" : "貼文"}</span>
+      </li>
+    `;
+  }).join("");
+
+  // Add click event listener to each trending tag item to trigger filtering/searching
+  listEl.querySelectorAll(".trending-tag-item").forEach(item => {
+    item.addEventListener("click", () => {
+      const tag = item.getAttribute("data-tag");
+      searchQuery = tag;
+      const searchInput = document.getElementById("feed-search");
+      if (searchInput) searchInput.value = tag;
+      renderPostsList();
+    });
+  });
+}
+
 function renderLikesHistory() {
   const container = document.getElementById("liked-posts-list");
   if (!container) return;
@@ -1540,6 +1860,40 @@ function renderLikesHistory() {
       }
     });
   });
+}
+
+function renderAdminPresence() {
+  const card = document.getElementById("admin-presence-card");
+  const list = document.getElementById("admin-presence-list");
+  if (!card || !list) return;
+
+  if (currentUser.handle !== "@admin") {
+    card.style.display = "none";
+    return;
+  }
+  
+  card.style.display = "block";
+  
+  const allHandles = new Set();
+  posts.forEach(p => allHandles.add(p.handle));
+  allHandles.delete("@admin");
+
+  const onlineMap = JSON.parse(localStorage.getItem('echoes_online_users') || '{}');
+  const now = Date.now();
+
+  list.innerHTML = Array.from(allHandles).map(handle => {
+    const lastSeen = onlineMap[handle] || 0;
+    const isOnline = (now - lastSeen) < 10000;
+    return `
+      <li style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+        <span style="font-size: 13px; color: var(--text-primary);">${handle}</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${isOnline ? 'var(--neon-green)' : 'var(--neon-red)'}; box-shadow: 0 0 5px ${isOnline ? 'var(--neon-green)' : 'var(--neon-red)'};"></span>
+          <span style="font-size: 11px; color: var(--text-muted);">${isOnline ? 'Online' : 'Offline'}</span>
+        </div>
+      </li>
+    `;
+  }).join("");
 }
 
 // ==========================================================================
@@ -1888,56 +2242,3 @@ function parseSimpleMarkdown(markdown) {
 
 // Start application
 window.addEventListener("DOMContentLoaded", init);
-// =======================================================
-// 【手動新增】Google 登入核心控制（放在 app.js 最底部）
-// =======================================================
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof google !== 'undefined') {
-    google.accounts.id.initialize({
-      client_id: '472134617764-hv4va5tt8adg5gid1ibsd8bcuq123dj8.apps.googleusercontent.com',
-      callback: handleGoogleLoginResponse
-    });
-
-    const loginBtn = document.getElementById('google-login-btn');
-    if (loginBtn) {
-      loginBtn.addEventListener('click', () => {
-        google.accounts.id.prompt();
-      });
-    }
-  }
-});
-
-// 處理 Google 回傳的登入資料並自動填表
-function handleGoogleLoginResponse(response) {
-  try {
-    const base64Url = response.credential.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-
-    const user = JSON.parse(jsonPayload);
-
-    // 1. 自動把 Google 名字填入暱稱輸入框
-    const nameInput = document.getElementById('profile-name-input');
-    if (nameInput) nameInput.value = user.name;
-
-    // 2. 自動更新網頁左側欄位的使用者資訊
-    if (document.getElementById('user-display-name')) {
-      document.getElementById('user-display-name').innerText = user.name;
-    }
-    if (document.getElementById('user-display-handle')) {
-      document.getElementById('user-display-handle').innerText = `@${user.given_name || 'user'}`;
-    }
-
-    // 3. 自動更換大頭貼
-    const avatarArea = document.getElementById('user-avatar-area');
-    if (avatarArea) {
-      avatarArea.innerHTML = `<img src="${user.picture}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-    }
-
-    alert(`Google 驗證成功！已自動帶入：${user.name}`);
-  } catch (e) {
-    console.error("解析 Google 資料失敗", e);
-  }
-}

@@ -18,8 +18,6 @@
   <link rel="stylesheet" href="css/style.css">
 
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -31,10 +29,10 @@
         <span class="logo-bracket">[</span>ECHOES<span class="logo-dot">_</span>FEED<span class="logo-bracket">]</span>
       </a>
 
-      <nav class="nav-links-wrapper">
+      <nav class="nav-links-wrapper" style="flex: 1; display: flex; justify-content: center; padding-right: 24px;">
         <ul class="nav-links">
           <li><a href="#/" class="nav-link active" id="nav-home">&gt; 貼文牆</a></li>
-          <li><a href="#/write" class="nav-link" id="nav-write">&gt; 發表想法</a></li>
+          <li><a href="#/write" class="nav-link" id="nav-write">&gt; 個人想法牆</a></li>
           <li><a href="#/about" class="nav-link" id="nav-about">&gt; 關於我</a></li>
         </ul>
       </nav>
@@ -54,11 +52,14 @@
       <aside class="sidebar-left">
         <div class="sidebar-card">
           <div class="user-profile-preview">
-            <div class="avatar-placeholder" id="user-avatar-area">ME</div>
+            <div class="avatar-placeholder" id="user-avatar-area" style="cursor: default; pointer-events: none;">
+              ME
+              <input type="file" id="avatar-file-input" accept="image/*" style="display: none;">
+            </div>
             <h3 id="user-display-name">你的名字</h3>
             <p id="user-display-handle">@your_handle</p>
 
-            <div class="status-indicator" id="user-status-indicator">
+            <div class="status-indicator" id="user-status-indicator" style="display: none;">
               <span class="status-dot online" id="user-status-dot"></span>
               <span id="user-status-text">Online</span>
             </div>
@@ -86,20 +87,10 @@
           </div>
 
           <div id="google-signin-container" class="google-login-btn-wrapper">
-            <button id="google-login-btn"
+            <button id="login-modal-trigger-btn"
               style="width: 100%; background-color: var(--card-bg, #1a1a24); color: var(--text-main, #ffffff); border: 1px solid var(--border-color, #ffb020); padding: 10px 16px; border-radius: var(--radius-sm, 4px); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'JetBrains Mono', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; box-shadow: 0 0 5px rgba(255,176,32,0.2);">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 48 48"
-                style="display: block;">
-                <path fill="#EA4335"
-                  d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-                <path fill="#4285F4"
-                  d="M46.5 24c0-1.55-.15-3.24-.47-4.77H24v9.03h12.75c-.55 2.86-2.17 5.29-4.6 6.92l7.15 5.54C43.5 36.31 46.5 30.73 46.5 24z" />
-                <path fill="#FBBC05"
-                  d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.98-6.19z" />
-                <path fill="#34A853"
-                  d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.15-5.54c-1.99 1.33-4.51 2.1-8.74 2.1-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-              </svg>
-              <span>使用 Google 帳戶登入</span>
+              <i data-lucide="log-in" style="width: 16px; height: 16px;"></i>
+              <span>帳號密碼登入</span>
             </button>
           </div>
 
@@ -169,13 +160,17 @@
       </section>
 
       <aside class="sidebar-right">
+        <div class="sidebar-card" id="admin-presence-card" style="display: none; border-color: var(--neon-cyan);">
+          <h3 style="color: var(--neon-cyan); margin-bottom: 12px; font-size: 14px;">🛡️ 管理員專屬：使用者狀態監控</h3>
+          <ul id="admin-presence-list" style="list-style: none; padding: 0; margin: 0;">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+
         <div class="sidebar-card">
           <h3 id="trending-topics-title">🔥 熱門話題</h3>
-          <ul class="trending-list">
-            <li># 重新認識CSS變數 <span>1.2k 貼文</span></li>
-            <li># 賽博朋克網頁 <span>842 貼文</span></li>
-            <li># 減少數位焦慮 <span>520 貼文</span></li>
-            <li># 科技美學 <span>311 貼文</span></li>
+          <ul class="trending-list" id="trending-topics-list">
+            <!-- Dynamically populated -->
           </ul>
         </div>
 
@@ -204,59 +199,36 @@
           class="neon-green">ONLINE</span></p>
       <div class="footer-links">
         <a href="#/" class="footer-link">[貼文牆]</a>
-        <a href="#/write" class="footer-link">[發表想法]</a>
+        <a href="#/write" class="footer-link">[個人想法牆]</a>
         <a href="#/about" class="footer-link">[關於我]</a>
       </div>
     </div>
   </footer>
 
   <div id="profile-setup-modal" class="admin-modal-overlay" style="z-index: 1100;">
-    <div class="admin-modal-card" style="max-width: 440px; width: 92%;">
-      <div class="admin-modal-title" id="profile-setup-title">✨ 歡迎！請設定你的個人資料</div>
+    <div class="admin-modal-card" style="max-width: 400px; width: 92%;">
+      <div class="admin-modal-title" id="profile-setup-title">🔐 系統登入 // SYSTEM LOGIN</div>
+      <p style="color: var(--text-muted, #8b949e); font-size: 12px; margin-bottom: 16px; text-align: center;">* 測試請輸入任意
+        Email 與密碼即可登入</p>
 
-      <p
-        style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
-        選擇頭像</p>
-      <div id="avatar-picker-grid" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+      <div class="admin-modal-input-group" style="margin-bottom: 16px;">
+        <label for="login-email">📧 帳號 (電子郵件) / Email</label>
+        <input type="email" id="login-email" class="admin-modal-input" placeholder="admin@example.com"
+          autocomplete="username" required>
       </div>
 
-      <label id="avatar-upload-label"
-        style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; margin-bottom: 18px; padding: 6px 10px; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); transition: all 0.2s;">
-        <i data-lucide="upload" style="width:14px;height:14px;"></i>
-        <span id="avatar-upload-label-text">上傳自訂頭像</span>
-        <input type="file" id="avatar-upload-input" accept="image/*" style="display:none;">
-      </label>
-
-      <div class="admin-modal-input-group">
-        <label for="profile-name-input" id="profile-name-label">自訂暱稱</label>
-        <input type="text" id="profile-name-input" class="admin-modal-input" placeholder="你的名字 / Your Name"
-          maxlength="24" autocomplete="off">
+      <div class="admin-modal-input-group" style="margin-bottom: 16px;">
+        <label for="login-password">🔑 密碼 / Password</label>
+        <input type="password" id="login-password" class="admin-modal-input" placeholder="••••••••"
+          autocomplete="current-password" required>
       </div>
 
-      <p id="profile-handle-preview"
-        style="font-size: 11px; color: var(--text-muted); margin-top: -8px; margin-bottom: 16px; padding-left: 2px;">
-      </p>
+      <!-- Hidden profile-name-input for compatibility and auto-filling -->
+      <input type="text" id="profile-name-input" value="" style="display: none;">
 
-      <div style="margin-bottom: 15px;">
-        <button id="google-login-btn" type="button"
-          style="width: 100%; background-color: #ffffff; color: #1a1a24; border: 1px solid #ffb020; padding: 10px 16px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: sans-serif; font-size: 13px; font-weight: 600;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 48 48" style="display: block;">
-            <path fill="#EA4335"
-              d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-            <path fill="#4285F4"
-              d="M46.5 24c0-1.55-.15-3.24-.47-4.77H24v9.03h12.75c-.55 2.86-2.17 5.29-4.6 6.92l7.15 5.54C43.5 36.31 46.5 30.73 46.5 24z" />
-            <path fill="#FBBC05"
-              d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.98-6.19z" />
-            <path fill="#34A853"
-              d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.15-5.54c-1.99 1.33-4.51 2.1-8.74 2.1-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-          </svg>
-          <span>使用 Google 帳戶快速填寫</span>
-        </button>
-      </div>
-
-      <div class="admin-modal-actions">
-        <button id="profile-setup-confirm" class="admin-modal-btn admin-modal-btn-submit"
-          style="width: 100%; justify-content: center; display: flex;">確認並進入</button>
+      <div class="admin-modal-actions" style="margin-top: 24px;">
+        <button id="login-btn-submit" class="admin-modal-btn admin-modal-btn-submit"
+          style="width: 100%; justify-content: center; display: flex;">登入 / Log In</button>
       </div>
     </div>
   </div>
