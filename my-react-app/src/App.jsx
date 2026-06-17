@@ -29,7 +29,7 @@ import {
   X
 } from 'lucide-react';
 import { db, isFirebaseSetup } from "./firebase";
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch, getDoc, setDoc } from "firebase/firestore";
 import './App.css';
 
 // ==========================================================================
@@ -586,6 +586,8 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [loginMode, setLoginMode] = useState("login"); // "login" or "register"
+  const [registerNickname, setRegisterNickname] = useState("");
   
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -843,28 +845,139 @@ export default function App() {
   };
 
   // Handle Traditional Login
-  const submitTraditionalLogin = () => {
-    const email = loginEmail.trim();
+  const submitTraditionalLogin = async () => {
+    const email = loginEmail.trim().toLowerCase();
     const password = loginPassword.trim();
 
-    if (email.includes("@") && password !== "") {
-      const nickname = email.split("@")[0];
-      const nextUser = {
+    if (!email.includes("@") || password === "") {
+      showToast("請輸入完整的 Email 與密碼！");
+      return;
+    }
+
+    if (isFirebaseSetup) {
+      try {
+        const userDocRef = doc(db, "users", email);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.password === password) {
+            setCurrentUser(userData);
+            setModalLoginVisible(false);
+            setLoginEmail("");
+            setLoginPassword("");
+            showToast(t("toast_logged_in"));
+          } else {
+            showToast("密碼錯誤，請重新輸入！");
+          }
+        } else {
+          showToast("此帳號不存在，請先切換至註冊！");
+        }
+      } catch (err) {
+        console.error("Login connection failed", err);
+        showToast("資料庫連線失敗，請檢查金鑰或網路");
+      }
+    } else {
+      // LocalStorage mode login
+      const localUsers = JSON.parse(localStorage.getItem("echoes_local_users") || "{}");
+      const userData = localUsers[email];
+      if (userData) {
+        if (userData.password === password) {
+          setCurrentUser(userData);
+          setModalLoginVisible(false);
+          setLoginEmail("");
+          setLoginPassword("");
+          showToast(t("toast_logged_in"));
+        } else {
+          showToast("密碼錯誤，請重新輸入！");
+        }
+      } else {
+        showToast("本地帳號不存在，請先切換至註冊！");
+      }
+    }
+  };
+
+  // Handle Registration
+  const handleRegister = async () => {
+    const email = loginEmail.trim().toLowerCase();
+    const password = loginPassword.trim();
+    const nickname = registerNickname.trim();
+
+    if (!email.includes("@") || password === "" || nickname === "") {
+      showToast("請輸入完整的註冊資訊（Email、密碼與暱稱）！");
+      return;
+    }
+
+    if (isFirebaseSetup) {
+      try {
+        // 檢查信箱是否已註冊
+        const userDocRef = doc(db, "users", email);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          showToast("此 Email 已經註冊過，請直接登入！");
+          return;
+        }
+
+        const handle = "@" + nickname.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_\u4e00-\u9fff]/g, "").substring(0, 20);
         // eslint-disable-next-line react-hooks/purity
-        googleId: "sandbox_user_" + Date.now(),
+        const randomAv = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];
+        const userData = {
+          email: email,
+          password: password,
+          name: nickname,
+          handle: handle,
+          avatarLetter: nickname.substring(0, 2).toUpperCase() || "U",
+          avatarBg: randomAv.bg,
+          avatarUrl: null,
+          googleId: "uid_" + email.replace(/[^a-z0-9]/g, "_")
+        };
+
+        // 寫入資料庫
+        await setDoc(userDocRef, userData);
+        
+        // 登入
+        setCurrentUser(userData);
+        setModalLoginVisible(false);
+        setLoginEmail("");
+        setLoginPassword("");
+        setRegisterNickname("");
+        setLoginMode("login");
+        showToast("註冊並登入成功！");
+      } catch (err) {
+        console.error("Registration error:", err);
+        showToast("資料庫連線失敗，請稍後再試！");
+      }
+    } else {
+      // LocalStorage mode registration
+      const localUsers = JSON.parse(localStorage.getItem("echoes_local_users") || "{}");
+      if (localUsers[email]) {
+        showToast("此 Email 已經在本地註冊過，請直接登入！");
+        return;
+      }
+
+      const handle = "@" + nickname.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_\u4e00-\u9fff]/g, "").substring(0, 20);
+      // eslint-disable-next-line react-hooks/purity
+      const randomAv = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];
+      const userData = {
+        email: email,
+        password: password,
         name: nickname,
-        handle: email === "admin@example.com" ? "@admin" : "@" + nickname,
+        handle: handle,
         avatarLetter: nickname.substring(0, 2).toUpperCase() || "U",
-        avatarUrl: null
+        avatarBg: randomAv.bg,
+        avatarUrl: null,
+        googleId: "uid_" + email.replace(/[^a-z0-9]/g, "_")
       };
 
-      setCurrentUser(nextUser);
+      localUsers[email] = userData;
+      localStorage.setItem("echoes_local_users", JSON.stringify(localUsers));
+
+      setCurrentUser(userData);
       setModalLoginVisible(false);
       setLoginEmail("");
       setLoginPassword("");
-      showToast(t("toast_logged_in"));
-    } else {
-      showToast(currentLang === "en" ? "Invalid email format or empty password!" : "請輸入包含「@」的有效 Email 與密碼！");
+      setRegisterNickname("");
+      setLoginMode("login");
+      showToast("本地模擬註冊與登入成功！");
     }
   };
 
@@ -2026,24 +2139,49 @@ export default function App() {
       {modalLoginVisible && (
         <div id="profile-setup-modal" className="admin-modal-overlay active" style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="admin-modal-card" style={{ maxWidth: '400px', width: '92%', background: 'var(--bg-card)', border: '1px solid var(--border-neon)', padding: '24px', borderRadius: '8px', position: 'relative' }}>
-            <button className="modal-close-btn" style={{ position: 'absolute', top: '12px', right: '12px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setModalLoginVisible(false)}>
+            <button className="modal-close-btn" style={{ position: 'absolute', top: '12px', right: '12px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => { setModalLoginVisible(false); setLoginMode("login"); }}>
               <X style={{ width: '18px', height: '18px' }} />
             </button>
-            <div className="admin-modal-title" style={{ fontSize: '16px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textAlign: 'center', marginBottom: '12px' }}>🔐 系統登入 // SYSTEM LOGIN</div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>* 測試請輸入任意 Email 與密碼即可登入</p>
+            <div className="admin-modal-title" style={{ fontSize: '16px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textAlign: 'center', marginBottom: '12px' }}>
+              {loginMode === "login" ? "🔐 系統登入 // SYSTEM LOGIN" : "📝 帳號註冊 // SYSTEM REGISTER"}
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>
+              {loginMode === "login" ? "* 請輸入註冊過的帳號與密碼進行登入" : "* 請設定您的登入帳號、密碼與暱稱"}
+            </p>
+
+            {loginMode === "register" && (
+              <div className="admin-modal-input-group" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label htmlFor="register-nickname" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>👤 暱稱 / Nickname</label>
+                <input type="text" id="register-nickname" className="admin-modal-input" style={{ width: '100%', padding: '10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px' }} placeholder="請輸入暱稱" value={registerNickname} onChange={(e) => setRegisterNickname(e.target.value)} required />
+              </div>
+            )}
 
             <div className="admin-modal-input-group" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label htmlFor="login-email" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>📧 帳號 (電子郵件) / Email</label>
-              <input type="email" id="login-email" className="admin-modal-input" style={{ width: '100%', padding: '10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px' }} placeholder="admin@example.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+              <input type="email" id="login-email" className="admin-modal-input" style={{ width: '100%', padding: '10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px' }} placeholder="your@email.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
             </div>
 
             <div className="admin-modal-input-group" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label htmlFor="login-password" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>🔑 密碼 / Password</label>
-              <input type="password" id="login-password" className="admin-modal-input" style={{ width: '100%', padding: '10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px' }} placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submitTraditionalLogin()} required />
+              <input type="password" id="login-password" className="admin-modal-input" style={{ width: '100%', padding: '10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px' }} placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (loginMode === "login" ? submitTraditionalLogin() : handleRegister())} required />
             </div>
 
-            <div className="admin-modal-actions" style={{ marginTop: '24px' }}>
-              <button id="login-btn-submit" className="admin-modal-btn admin-modal-btn-submit" style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '10px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }} onClick={submitTraditionalLogin}>登入 / Log In</button>
+            <div className="admin-modal-actions" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {loginMode === "login" ? (
+                <>
+                  <button id="login-btn-submit" className="admin-modal-btn admin-modal-btn-submit" style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '10px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }} onClick={submitTraditionalLogin}>登入 / Log In</button>
+                  <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    沒有帳號？ <span style={{ color: 'var(--neon-amber)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setLoginMode("register")}>立即註冊</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button id="register-btn-submit" className="admin-modal-btn admin-modal-btn-submit" style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '10px', background: 'rgba(251, 191, 36, 0.1)', border: '1px solid var(--neon-amber)', color: 'var(--neon-amber)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }} onClick={handleRegister}>註冊並登入 / Register</button>
+                  <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    已有帳號？ <span style={{ color: 'var(--neon-green)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setLoginMode("login")}>立即登入</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
