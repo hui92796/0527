@@ -28,6 +28,8 @@ import {
   Upload,
   X
 } from 'lucide-react';
+import { db } from "./firebase";
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch } from "firebase/firestore";
 import './App.css';
 
 // ==========================================================================
@@ -398,7 +400,30 @@ const I18N = {
   }
 };
 
-const DATA_VERSION = "cyberpunk-v8";
+const navigateToHash = (hash) => {
+  window.location.hash = hash;
+};
+
+// Dynamic Relative Date formatter
+const formatRelativeDate = (dateObj, currentLang) => {
+  const diffMs = Date.now() - dateObj.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (currentLang === "en") {
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  } else {
+    if (diffMins < 1) return "剛剛";
+    if (diffMins < 60) return `${diffMins}分鐘前`;
+    if (diffHours < 24) return `${diffHours}小時前`;
+    return `${diffDays}天前`;
+  }
+};
+
 
 // Helper to safely parse simple markdown into html structure
 const parseSimpleMarkdown = (markdown) => {
@@ -515,48 +540,25 @@ export default function App() {
     return sessionStorage.getItem("admin_authenticated") === "true";
   });
 
+  // Firebase Setup Status
+  const isFirebaseSetup = useMemo(() => {
+    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY";
+    return apiKey !== "YOUR_API_KEY";
+  }, []);
+
   // Main Posts Data
   const [posts, setPosts] = useState(() => {
-    const savedVersion = localStorage.getItem("echoes_data_version");
-    if (savedVersion !== DATA_VERSION) {
-      localStorage.removeItem("echoes_posts");
-      localStorage.setItem("echoes_data_version", DATA_VERSION);
-    }
-    const localPosts = localStorage.getItem("echoes_posts");
-    if (localPosts) {
-      try {
-        const parsed = JSON.parse(localPosts);
-        if (Array.isArray(parsed)) {
-          // Merge with default posts if missing
-          const mapped = parsed.map(post => ({
-            id: post.id || ("post-" + Date.now()),
-            author: post.author || "ANON",
-            handle: post.handle || "@unknown",
-            avatarLetter: post.avatarLetter || "??",
-            date: post.date || "just now",
-            category: post.category || "Thoughts",
-            privacy: post.privacy || "public",
-            image: post.image || null,
-            content: post.content || "",
-            gradient: post.gradient || null,
-            likes: typeof post.likes === "number" ? post.likes : 0,
-            likedByUser: !!post.likedByUser,
-            comments: Array.isArray(post.comments) ? post.comments : [],
-            isDefault: !!post.isDefault
-          }));
-
-          DEFAULT_POSTS.forEach(defPost => {
-            if (!mapped.some(p => p.id === defPost.id)) {
-              mapped.push(defPost);
-            }
-          });
-          return mapped;
-        }
-      } catch (e) {
-        console.error("Corrupted posts cache", e);
+    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY";
+    if (apiKey === "YOUR_API_KEY") {
+      const localPosts = localStorage.getItem("echoes_posts");
+      if (localPosts) {
+        try {
+          return JSON.parse(localPosts);
+        } catch { /* ignore */ }
       }
+      return [...DEFAULT_POSTS];
     }
-    return [...DEFAULT_POSTS];
+    return [];
   });
 
   // Admin Reports Data
@@ -643,7 +645,7 @@ export default function App() {
       
       // Auto authenticating redirect logic for admin page
       if (hash === "#/admin" && sessionStorage.getItem("admin_authenticated") !== "true") {
-        window.location.hash = "#/";
+        navigateToHash("#/");
         setModalAdminVisible(true);
       }
     };
@@ -659,8 +661,10 @@ export default function App() {
 
   // Sync state values with LocalStorage
   useEffect(() => {
-    localStorage.setItem("echoes_posts", JSON.stringify(posts));
-  }, [posts]);
+    if (!isFirebaseSetup) {
+      localStorage.setItem("echoes_posts", JSON.stringify(posts));
+    }
+  }, [posts, isFirebaseSetup]);
 
   useEffect(() => {
     localStorage.setItem("echoes_user", JSON.stringify(currentUser));
@@ -673,6 +677,73 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("echoes_reports", JSON.stringify(reports));
   }, [reports]);
+
+  // Seeding initial template posts to Firestore Database if empty
+  const seedDefaultPosts = async () => {
+    try {
+      console.log("Seeding default posts to Firestore...");
+      const batch = writeBatch(db);
+      DEFAULT_POSTS.forEach((post) => {
+        const docRef = doc(collection(db, "posts"));
+        batch.set(docRef, {
+          author: post.author,
+          handle: post.handle,
+          avatarLetter: post.avatarLetter,
+          category: post.category,
+          privacy: post.privacy,
+          image: post.image || null,
+          content: post.content,
+          gradient: post.gradient || null,
+          likedBy: [],
+          likes: post.likes,
+          comments: post.comments.map(c => ({
+            id: c.id,
+            author: c.author,
+            text: c.text,
+            time: c.time
+          })),
+          isDefault: true,
+          createdAt: new Date(Date.now() - 3600000 * 2) // Offset for sorting order
+        });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.error("Seeding failed", err);
+    }
+  };
+
+  // Fetch / Subscribe to Posts Collection
+  useEffect(() => {
+    if (!isFirebaseSetup) {
+      return;
+    }
+
+    // Firestore mode subscription
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const postsList = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        postsList.push({
+          id: doc.id,
+          ...data,
+          date: data.createdAt ? formatRelativeDate(data.createdAt.toDate(), currentLang) : "just now",
+        });
+      });
+
+      if (postsList.length === 0) {
+        seedDefaultPosts();
+      } else {
+        setPosts(postsList);
+      }
+    }, (error) => {
+      console.error("Firestore loading error:", error);
+      // Fallback
+      setPosts([...DEFAULT_POSTS]);
+    });
+
+    return () => unsubscribe();
+  }, [currentLang, isFirebaseSetup]);
 
   useEffect(() => {
     localStorage.setItem("echoes_lang", currentLang);
@@ -810,7 +881,7 @@ export default function App() {
     setAdminAuthenticated(false);
     sessionStorage.removeItem("admin_authenticated");
     if (window.location.hash === "#/admin") {
-      window.location.hash = "#/";
+      navigateToHash("#/");
     }
     showToast(t("toast_logged_out"));
   };
@@ -822,7 +893,7 @@ export default function App() {
       setAdminAuthenticated(true);
       setModalAdminVisible(false);
       setAdminPassword("");
-      window.location.hash = "#/admin";
+      navigateToHash("#/admin");
     } else {
       showToast(t("admin_modal_wrong"));
       setAdminPassword("");
@@ -923,89 +994,144 @@ export default function App() {
   };
 
   // Publish Post action
-  const handlePublishPost = () => {
+  const handlePublishPost = async () => {
     const textVal = composerText.trim();
     if (!textVal) {
       showToast(t("toast_no_text"));
       return;
     }
 
-    const newPost = {
-      id: "post-" + Date.now(),
+    const postData = {
       author: currentUser.name,
       handle: currentUser.handle,
       avatarLetter: currentUser.avatarLetter || currentUser.name.substring(0, 2).toUpperCase(),
-      date: currentLang === "en" ? "just now" : "剛剛",
       category: composerCategory.charAt(0).toUpperCase() + composerCategory.slice(1),
       privacy: composerPrivacy,
       image: composerImage || null,
       content: textVal,
       gradient: composerGradient,
+      likedBy: [],
       likes: 0,
-      likedByUser: false,
       comments: [],
       isDefault: false
     };
 
-    setPosts(prev => [newPost, ...prev]);
+    if (isFirebaseSetup) {
+      try {
+        await addDoc(collection(db, "posts"), {
+          ...postData,
+          createdAt: new Date()
+        });
+      } catch (err) {
+        console.error("Failed to add post to Firestore:", err);
+        showToast("無法同步發佈貼文到雲端，將寫入本地");
+        prependLocalPost(postData);
+      }
+    } else {
+      prependLocalPost(postData);
+    }
 
     // Reset composer
     setComposerText("");
     setComposerGradient(null);
     setComposerImage(null);
     setShowGradientsRow(false);
-
     showToast(t("toast_post_created"));
-
     if (currentRoute === "#/write") {
-      window.location.hash = "#/";
+      navigateToHash("#/");
     }
   };
 
+  const prependLocalPost = (postData) => {
+    const newPost = {
+      id: "post-" + Date.now(),
+      date: currentLang === "en" ? "just now" : "剛剛",
+      ...postData
+    };
+    setPosts(prev => [newPost, ...prev]);
+  };
+
   // Likes and toggles
-  const handleLikePost = (postId) => {
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        const liked = !p.likedByUser;
-        return {
-          ...p,
-          likedByUser: liked,
-          likes: liked ? p.likes + 1 : p.likes - 1
-        };
+  const handleLikePost = async (postId) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    if (isFirebaseSetup && post.likedBy) {
+      const hasLiked = post.likedBy.includes(currentUser.handle);
+      try {
+        const postDocRef = doc(db, "posts", postId);
+        await updateDoc(postDocRef, {
+          likedBy: hasLiked ? arrayRemove(currentUser.handle) : arrayUnion(currentUser.handle)
+        });
+      } catch (err) {
+        console.error("Failed to update like in Firestore:", err);
       }
-      return p;
-    }));
+    } else {
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          const liked = !p.likedByUser;
+          return {
+            ...p,
+            likedByUser: liked,
+            likes: liked ? p.likes + 1 : p.likes - 1
+          };
+        }
+        return p;
+      }));
+    }
   };
 
   // Comment adding
-  const submitComment = (postId) => {
+  const submitComment = async (postId) => {
     const text = (commentInputs[postId] || "").trim();
     if (!text) return;
 
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          comments: [...p.comments, {
-            id: "c-" + Date.now(),
-            author: currentUser.name,
-            text: text,
-            time: currentLang === "en" ? "just now" : "剛剛"
-          }]
-        };
-      }
-      return p;
-    }));
+    const newComment = {
+      id: "c-" + Date.now(),
+      author: currentUser.name,
+      text: text,
+      time: currentLang === "en" ? "just now" : "剛剛"
+    };
 
+    if (isFirebaseSetup) {
+      try {
+        const postDocRef = doc(db, "posts", postId);
+        await updateDoc(postDocRef, {
+          comments: arrayUnion(newComment)
+        });
+      } catch (err) {
+        console.error("Failed to submit comment to Firestore:", err);
+        showToast("無法同步留言到雲端");
+      }
+    } else {
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            comments: [...p.comments, newComment]
+          };
+        }
+        return p;
+      }));
+      showToast(t("toast_reply_success"));
+    }
     setCommentInputs(prev => ({ ...prev, [postId]: "" }));
-    showToast(t("toast_reply_success"));
   };
 
   // Delete post
-  const handleDeletePost = (postId) => {
+  const handleDeletePost = async (postId) => {
     const confirmMsg = currentLang === "en" ? "Delete this post?" : "確定要刪除這篇貼文嗎？";
     if (window.confirm(confirmMsg)) {
-      setPosts(prev => prev.filter(p => p.id !== postId));
+      if (isFirebaseSetup) {
+        try {
+          await deleteDoc(doc(db, "posts", postId));
+        } catch (err) {
+          console.error("Failed to delete post from Firestore:", err);
+          showToast("無法從雲端刪除貼文");
+        }
+      } else {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+      }
     }
   };
 
@@ -1077,7 +1203,7 @@ export default function App() {
   const handleAdminLogout = () => {
     sessionStorage.removeItem("admin_authenticated");
     setAdminAuthenticated(false);
-    window.location.hash = "#/";
+    navigateToHash("#/");
   };
 
   // Share post text generator
@@ -1272,7 +1398,7 @@ export default function App() {
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
                       <div style={{ maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>{post.content || ''}</div>
                     </td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px' }}>❤️ {post.likes || 0}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '13px' }}>❤️ {post.likedBy ? post.likedBy.length : post.likes || 0}</td>
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
                       <span style={{
                         padding: '2px 6px', borderRadius: '3px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase',
@@ -1701,9 +1827,9 @@ export default function App() {
 
                           {/* Action Panel Buttons */}
                           <div className="post-actions-row" style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-                            <button className={`post-action-btn btn-like ${post.likedByUser ? 'liked' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => handleLikePost(post.id)}>
+                            <button className={`post-action-btn btn-like ${post.likedBy ? (post.likedBy.includes(currentUser.handle) ? 'liked' : '') : (post.likedByUser ? 'liked' : '')}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => handleLikePost(post.id)}>
                               <Heart style={{ width: '16px', height: '16px' }} />
-                              <span className="like-count">{post.likes}</span>
+                              <span className="like-count">{post.likedBy ? post.likedBy.length : post.likes}</span>
                             </button>
 
                             <button className="post-action-btn btn-comment" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => {
@@ -1836,13 +1962,13 @@ export default function App() {
               <div className="sidebar-card" id="likes-history-card">
                 <h3 id="likes-history-title">💖 {t("likes_history")}</h3>
                 <div id="liked-posts-list" className="liked-history-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {posts.filter(p => p.likedByUser).map(post => (
+                  {posts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).map(post => (
                     <button key={post.id} className="liked-history-item" style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', background: 'transparent', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '6px', textAlign: 'left', cursor: 'pointer' }} onClick={() => handleBookmarkItemClick(post.id)}>
                       <Heart style={{ color: 'var(--neon-red)', fill: 'var(--neon-red)', width: '14px', height: '14px' }} />
                       <span className="liked-history-item-text" style={{ fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>{post.author}: {post.content.substring(0, 15)}...</span>
                     </button>
                   ))}
-                  {posts.filter(p => p.likedByUser).length === 0 && (
+                  {posts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).length === 0 && (
                     <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0', width: '100%' }}>{currentLang === "en" ? "No liked posts" : "無點讚或收藏貼文"}</div>
                   )}
                 </div>
