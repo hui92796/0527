@@ -29,7 +29,7 @@ import {
   X
 } from 'lucide-react';
 import { db, isFirebaseSetup } from "./firebase";
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch, getDoc, setDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch, getDoc, setDoc, where } from "firebase/firestore";
 import './App.css';
 
 // ==========================================================================
@@ -529,6 +529,7 @@ export default function App() {
   const [isManualOffline, setIsManualOffline] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState({});
   const idleTimerRef = useRef(null);
+  const chatEndRef = useRef(null);
 
   // Authentication & Moderator
   const [currentUser, setCurrentUser] = useState(() => {
@@ -610,6 +611,14 @@ export default function App() {
   const [commentInputs, setCommentInputs] = useState({});
   const [highlightedPostId, setHighlightedPostId] = useState(null);
   const [toasts, setToasts] = useState([]);
+
+  const [activeBookmarkTab, setActiveBookmarkTab] = useState("likes");
+  const [notificationsList, setNotificationsList] = useState([]);
+  const [usersList, setUsersList] = useState([]);
+  const [friendsRelations, setFriendsRelations] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [activeChatFriend, setActiveChatFriend] = useState(null);
+  const [messageText, setMessageText] = useState("");
 
   const showToast = (message) => {
     const id = Date.now() + Math.random().toString();
@@ -719,9 +728,11 @@ export default function App() {
 
   // Fetch / Subscribe to Posts Collection
   useEffect(() => {
-    if (!isFirebaseSetup) {
+    if (!isFirebaseSetup || !isLoggedIn) {
       return;
     }
+
+    let isInitialLoad = true;
 
     // Firestore mode subscription
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
@@ -739,6 +750,26 @@ export default function App() {
       if (postsList.length === 0) {
         seedDefaultPosts();
       } else {
+        if (!isInitialLoad) {
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+              const newPostData = change.doc.data();
+              // Check if post is created by someone else
+              if (newPostData.handle && newPostData.handle !== currentUser.handle) {
+                showToast(currentLang === "en" ? `System Notification: ${newPostData.author} published a new post!` : `系統通知：${newPostData.author} 發布了新貼文！`);
+                // Write to notifications collection
+                addDoc(collection(db, "notifications"), {
+                  userHandle: currentUser.handle,
+                  content: currentLang === "en" ? `System Notification: ${newPostData.author} published a new post!` : `系統通知：${newPostData.author} 發布了新貼文！`,
+                  timestamp: new Date(),
+                  read: false,
+                  type: "new_post"
+                }).catch(err => console.error("Error writing notification:", err));
+              }
+            }
+          });
+        }
+        isInitialLoad = false;
         setPosts(postsList);
       }
     }, (error) => {
@@ -753,7 +784,99 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [currentLang]);
+  }, [currentLang, currentUser.handle, isLoggedIn]);
+
+  // Subscribe to user notifications
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn || !currentUser.handle) return;
+
+    const q = query(
+      collection(db, "notifications"),
+      where("userHandle", "==", currentUser.handle),
+      orderBy("timestamp", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setNotificationsList(list);
+    }, (error) => {
+      console.error("Error fetching notifications:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser.handle, isLoggedIn]);
+
+  // Subscribe to all users list (for friends adding)
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn || !currentUser.handle) return;
+
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => {
+        const u = doc.data();
+        if (u.handle !== currentUser.handle) {
+          list.push(u);
+        }
+      });
+      setUsersList(list);
+    }, (error) => {
+      console.error("Error fetching users:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser.handle, isLoggedIn]);
+
+  // Subscribe to friend relationships
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn || !currentUser.handle) return;
+
+    const q = query(
+      collection(db, "friends"),
+      where("users", "arrayContains", currentUser.handle)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setFriendsRelations(list);
+    }, (error) => {
+      console.error("Error fetching friends:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser.handle, isLoggedIn]);
+
+  // Subscribe to chat messages
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn || !currentUser.handle || !activeChatFriend) {
+      setChatMessages([]);
+      return;
+    }
+
+    const currentChatId = [currentUser.handle, activeChatFriend.handle].sort().join("_");
+    const q = query(
+      collection(db, "messages"),
+      where("chatId", "==", currentChatId),
+      orderBy("timestamp", "asc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setChatMessages(list);
+    }, (error) => {
+      console.error("Error fetching messages:", error);
+    });
+
+    return () => unsubscribe();
+  }, [activeChatFriend, currentUser.handle, isLoggedIn]);
 
   useEffect(() => {
     localStorage.setItem("echoes_lang", currentLang);
@@ -1180,12 +1303,14 @@ export default function App() {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    if (isFirebaseSetup && post.likedBy) {
-      const hasLiked = post.likedBy.includes(currentUser.handle);
+    if (isFirebaseSetup) {
+      const likedBy = post.likedBy || [];
+      const hasLiked = likedBy.includes(currentUser.handle);
       try {
         const postDocRef = doc(db, "posts", postId);
         await updateDoc(postDocRef, {
-          likedBy: hasLiked ? arrayRemove(currentUser.handle) : arrayUnion(currentUser.handle)
+          likedBy: hasLiked ? arrayRemove(currentUser.handle) : arrayUnion(currentUser.handle),
+          likes: hasLiked ? Math.max(0, (post.likes || 0) - 1) : (post.likes || 0) + 1
         });
       } catch (err) {
         console.error("Failed to update like in Firestore:", err);
@@ -1202,6 +1327,122 @@ export default function App() {
         }
         return p;
       }));
+    }
+  };
+
+  // Bookmark toggles
+  const handleBookmarkPost = async (postId) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    if (isFirebaseSetup) {
+      const bookmarkedBy = post.bookmarkedBy || [];
+      const hasBookmarked = bookmarkedBy.includes(currentUser.handle);
+      try {
+        const postDocRef = doc(db, "posts", postId);
+        await updateDoc(postDocRef, {
+          bookmarkedBy: hasBookmarked ? arrayRemove(currentUser.handle) : arrayUnion(currentUser.handle)
+        });
+      } catch (err) {
+        console.error("Failed to update bookmark in Firestore:", err);
+      }
+    } else {
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          const bookmarkedBy = p.bookmarkedBy || [];
+          const hasBookmarked = bookmarkedBy.includes(currentUser.handle);
+          return {
+            ...p,
+            bookmarkedBy: hasBookmarked
+              ? bookmarkedBy.filter(h => h !== currentUser.handle)
+              : [...bookmarkedBy, currentUser.handle]
+          };
+        }
+        return p;
+      }));
+    }
+  };
+
+  // Mark all notifications read
+  const handleMarkAllNotificationsRead = async () => {
+    const unreadNotifications = notificationsList.filter(n => !n.read);
+    if (unreadNotifications.length === 0) return;
+
+    try {
+      const batch = writeBatch(db);
+      unreadNotifications.forEach(n => {
+        const docRef = doc(db, "notifications", n.id);
+        batch.update(docRef, { read: true });
+      });
+      await batch.commit();
+      showToast("已將所有通知標記為已讀");
+    } catch (err) {
+      console.error("Failed to mark notifications read:", err);
+    }
+  };
+
+  // Send friend request
+  const handleAddFriend = async (targetUser) => {
+    try {
+      await addDoc(collection(db, "friends"), {
+        users: [currentUser.handle, targetUser.handle],
+        status: "pending",
+        requester: currentUser.handle,
+        receiver: targetUser.handle,
+        timestamp: new Date()
+      });
+      showToast(`已向 ${targetUser.name} 送出好友申請！`);
+    } catch (err) {
+      console.error("Failed to add friend:", err);
+      showToast("無法送出好友申請");
+    }
+  };
+
+  // Accept friend request
+  const handleAcceptFriend = async (relationId) => {
+    try {
+      const docRef = doc(db, "friends", relationId);
+      await updateDoc(docRef, {
+        status: "accepted",
+        timestamp: new Date()
+      });
+      showToast("已成功加為好友！");
+    } catch (err) {
+      console.error("Failed to accept friend request:", err);
+      showToast("接受好友申請失敗");
+    }
+  };
+
+  // Remove/Unfriend/Cancel Friend request
+  const handleRemoveRelation = async (relationId) => {
+    if (window.confirm("確定要取消好友關係或申請嗎？")) {
+      try {
+        await deleteDoc(doc(db, "friends", relationId));
+        showToast("好友關係或申請已移除");
+      } catch (err) {
+        console.error("Failed to remove friend relation:", err);
+      }
+    }
+  };
+
+  // Send private message
+  const handleSendMessage = async () => {
+    const text = messageText.trim();
+    if (!text || !activeChatFriend) return;
+
+    const currentChatId = [currentUser.handle, activeChatFriend.handle].sort().join("_");
+    try {
+      await addDoc(collection(db, "messages"), {
+        chatId: currentChatId,
+        sender: currentUser.handle,
+        receiver: activeChatFriend.handle,
+        text: text,
+        timestamp: new Date()
+      });
+      setMessageText("");
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      showToast("無法傳送私訊");
     }
   };
 
@@ -1457,6 +1698,125 @@ export default function App() {
   // VIEW RENDER PARTS
   // ==========================================================================
 
+  const renderPostCard = (post) => {
+    const hasGradient = !!post.gradient;
+    const isPrivate = post.privacy === "private";
+    const bookmarkedBy = post.bookmarkedBy || [];
+    const isBookmarked = bookmarkedBy.includes(currentUser.handle);
+
+    return (
+      <div key={post.id} className={`post-card ${highlightedPostId === post.id ? "liked-post-highlight" : ""}`} id={`card-${post.id}`}>
+        <div className="post-header">
+          <div className="post-author-wrapper">
+            <div className="user-avatar" style={{
+              background: post.isDefault ? 'var(--bg-elevated)' : 'linear-gradient(135deg, var(--neon-green-dim) 0%, var(--neon-cyan) 100%)',
+              color: post.isDefault ? 'var(--neon-green)' : '#ffffff'
+            }}>
+              {post.avatarLetter}
+            </div>
+            <div className="post-author-details">
+              <span className="post-author-name">{post.author}</span>
+              <span className="post-author-handle">{post.handle}</span>
+            </div>
+          </div>
+          <div className="post-meta-right">
+            {isPrivate && (
+              <span className="post-privacy-badge" style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--neon-magenta)' }}>
+                <Lock style={{ width: '11px', height: '11px' }} />
+                <span>{t("private").split('（')[0]}</span>
+              </span>
+            )}
+            <span className="post-category-tag">{post.category}</span>
+            <span className="post-time">{post.date}</span>
+          </div>
+        </div>
+
+        {/* Attached Image Rendering */}
+        {post.image && (
+          Array.isArray(post.image) ? (
+            <div className="post-image-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginTop: '12px', borderRadius: '8px', overflow: 'hidden' }}>
+              {post.image.map((img, idx) => (
+                <img key={idx} src={img} className="post-image" style={{ width: '100%', height: '200px', objectFit: 'cover' }} alt="Attached preview" />
+              ))}
+            </div>
+          ) : (
+            <div className="post-image-container">
+              <img src={post.image} className="post-image" alt="Attached preview" />
+            </div>
+          )
+        )}
+
+        {/* Content Area */}
+        {hasGradient ? (
+          <div className="post-gradient-container" style={{ background: post.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', borderRadius: '8px', color: '#fff', fontWeight: 'bold' }}>
+            <div dangerouslySetInnerHTML={{ __html: parseSimpleMarkdown(post.content) }}></div>
+          </div>
+        ) : (
+          <div className="post-text-content" dangerouslySetInnerHTML={{ __html: parseSimpleMarkdown(post.content) }}></div>
+        )}
+
+        {/* Action Panel Buttons */}
+        <div className="post-actions-row" style={{ display: 'flex', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
+          <button className={`post-action-btn btn-like ${post.likedBy ? (post.likedBy.includes(currentUser.handle) ? 'liked' : '') : (post.likedByUser ? 'liked' : '')}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => handleLikePost(post.id)}>
+            <Heart style={{ width: '16px', height: '16px' }} />
+            <span className="like-count">{post.likedBy ? post.likedBy.length : post.likes}</span>
+          </button>
+
+          <button className={`post-action-btn btn-bookmark ${isBookmarked ? 'bookmarked' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: isBookmarked ? 'var(--neon-amber)' : '' }} onClick={() => handleBookmarkPost(post.id)}>
+            <Bookmark style={{ width: '16px', height: '16px', fill: isBookmarked ? 'var(--neon-amber)' : 'none' }} />
+            <span>{isBookmarked ? (currentLang === "en" ? "Bookmarked" : "已收藏") : (currentLang === "en" ? "Bookmark" : "收藏")}</span>
+          </button>
+
+          <button className="post-action-btn btn-comment" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => {
+            setActiveCommentsPostId(prev => ({ ...prev, [post.id]: !prev[post.id] }));
+          }}>
+            <MessageSquare style={{ width: '16px', height: '16px' }} />
+            <span>{post.comments ? post.comments.length : 0}</span>
+          </button>
+
+          <button className="post-action-btn btn-share" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => handleSharePost(post)}>
+            <Send style={{ width: '16px', height: '16px' }} />
+            <span>分享</span>
+          </button>
+
+          {((post.handle === currentUser.handle || adminAuthenticated) && !post.isDefault) && (
+            <button className="post-action-btn post-action-delete" style={{ color: 'var(--text-muted)', cursor: 'pointer', marginLeft: 'auto' }} onClick={() => handleDeletePost(post.id)}>
+              <Trash2 style={{ width: '16px', height: '16px' }} />
+            </button>
+          )}
+        </div>
+
+        {/* Comments Drawer List */}
+        <div className={`comments-section ${activeCommentsPostId[post.id] ? "active" : ""}`} id={`comments-sec-${post.id}`} style={{ display: activeCommentsPostId[post.id] ? 'block' : 'none', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+          <div className="comments-list" id={`comments-list-${post.id}`}>
+            {!post.comments || post.comments.length === 0 ? (
+              <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', padding: '8px 0' }}>尚無留言，成為第一個留言的人吧！</div>
+            ) : (
+              post.comments.map(c => (
+                <div key={c.id} className="comment-item" style={{ display: 'flex', gap: '10px', margin: '8px 0' }}>
+                  <div className="comment-avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
+                    {c.author.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="comment-content-wrapper" style={{ flex: 1 }}>
+                    <div className="comment-header" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      <span className="comment-author" style={{ fontWeight: 600 }}>{c.author}</span>
+                      <span className="comment-time">{c.time}</span>
+                    </div>
+                    <div className="comment-text" style={{ fontSize: '12px', color: 'var(--text-primary)', marginTop: '2px' }}>{c.text}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="comment-composer" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <input type="text" className="comment-input" style={{ flex: 1, padding: '6px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12px' }} placeholder={t("reply_placeholder")} value={commentInputs[post.id] || ""} onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))} onKeyDown={(e) => e.key === 'Enter' && submitComment(post.id)} />
+            <button className="comment-submit-btn" style={{ padding: '6px 12px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }} onClick={() => submitComment(post.id)}>{t("reply")}</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Admin Dashboard Component view
   const renderAdminConsole = () => {
     const systemCount = posts.filter(p => p.isDefault || p.id.toString().startsWith('def-')).length;
@@ -1552,66 +1912,80 @@ export default function App() {
                       }}>{isSystem ? '系統常駐' : '用戶建立'}</span>
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
-                      <button style={{ color: 'var(--neon-red)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }} onClick={() => handleAdminDeletePost(post.id)}>強制刪除</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {posts.length === 0 && <div className="empty-state" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>資料庫中尚無任何貼文。</div>}
-        </div>
+                      <button style={{ color: 'var(--  if (!isLoggedIn) {
+    return (
+      <>
+        {/* CRT Scanline effect wrapper */}
+        <div className="scanline-overlay"></div>
 
-        {/* Content Moderation & Reports Section */}
-        <div className="section-header" style={{ margin: '40px 0 15px 0', fontFamily: 'var(--font-heading)', fontSize: '16px', color: 'var(--text-bright)', borderLeft: '3px solid var(--neon-cyan)', paddingLeft: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>內容檢舉與審查中心 (Report Queue)</div>
-        <div className="data-table-container" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', boxShadow: 'var(--card-shadow)', width: '100%', marginBottom: '40px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#1e2530', textAlign: 'left' }}>
-                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '15%' }}>被檢舉貼文 ID</th>
-                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '15%' }}>發佈者</th>
-                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '20%' }}>檢舉原因</th>
-                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '15%' }}>提報人</th>
-                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '15%' }}>狀態</th>
-                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '20%' }}>審查管理</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reports.map(rep => {
-                const postExists = posts.some(p => p.id === rep.postId);
-                const statusColor = rep.status === '已處理' ? 'var(--text-muted)' : 'var(--neon-red)';
+        <div className="login-wall-container" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          backgroundColor: 'var(--bg-void)',
+          padding: '20px'
+        }}>
+          <div className="admin-modal-card" style={{ maxWidth: '400px', width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-neon)', padding: '24px', borderRadius: '8px', position: 'relative', boxShadow: 'var(--card-shadow)' }}>
+            <div className="logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
+              <span className="logo-bracket">[</span>ECHOES<span className="logo-dot">_</span>FEED<span className="logo-bracket">]</span>
+            </div>
+            <div className="admin-modal-title" style={{ fontSize: '15px', fontFamily: 'var(--font-heading)', color: 'var(--neon-green)', textAlign: 'center', marginBottom: '15px', textShadow: 'var(--glow-green)' }}>
+              {loginMode === "login" ? "🔐 系統登入 // SYSTEM LOGIN" : "📝 帳號註冊 // SYSTEM REGISTER"}
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '20px', textAlign: 'center', fontFamily: 'var(--font-body)' }}>
+              {loginMode === "login" ? "* 請輸入註冊過的帳號與密碼進行登入" : "* 請設定您的登入帳號、密碼與暱稱"}
+            </p>
 
-                return (
-                  <tr key={rep.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><code>{rep.postId}</code></td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><strong>{rep.author}</strong></td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><span style={{ color: '#fda4af' }}>{rep.reason}</span></td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><span style={{ color: 'var(--text-secondary)' }}>{rep.reporter}</span></td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><span style={{ color: statusColor, fontWeight: 600 }}>{rep.status}</span></td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px' }}>
-                      {rep.status === '待處理' && postExists ? (
-                        <>
-                          <button style={{ color: 'var(--neon-red)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline', marginRight: '12px' }} onClick={() => handleAdminModerate(rep.postId, rep.id)}>下架貼文</button>
-                          <button className="btn btn-outline" style={{ border: '1px solid var(--neon-cyan)', background: 'transparent', color: 'var(--neon-cyan)', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }} onClick={() => handleAdminDismissReport(rep.id)}>駁回</button>
-                        </>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>已結案 {!postExists ? '(貼文已不存在)' : ''}</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {reports.length === 0 && (
-                <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px', fontSize: '13px' }}>尚無待審查的檢舉案件。</td>
-                </tr>
+            {loginMode === "register" && (
+              <div className="admin-modal-input-group" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label htmlFor="register-nickname" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>👤 暱稱 / Nickname</label>
+                <input type="text" id="register-nickname" className="admin-modal-input" style={{ width: '100%', padding: '10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px' }} placeholder="請輸入暱稱" value={registerNickname} onChange={(e) => setRegisterNickname(e.target.value)} required />
+              </div>
+            )}
+
+            <div className="admin-modal-input-group" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label htmlFor="login-email" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>📧 帳號 (電子郵件) / Email</label>
+              <input type="email" id="login-email" className="admin-modal-input" style={{ width: '100%', padding: '10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px' }} placeholder="your@email.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+            </div>
+
+            <div className="admin-modal-input-group" style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label htmlFor="login-password" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>🔑 密碼 / Password</label>
+              <input type="password" id="login-password" className="admin-modal-input" style={{ width: '100%', padding: '10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px' }} placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (loginMode === "login" ? submitTraditionalLogin() : handleRegister())} required />
+            </div>
+
+            <div className="admin-modal-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {loginMode === "login" ? (
+                <>
+                  <button id="login-btn-submit" className="admin-modal-btn admin-modal-btn-submit" style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '10px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }} onClick={submitTraditionalLogin}>登入 / Log In</button>
+                  <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    沒有帳號？ <span style={{ color: 'var(--neon-amber)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setLoginMode("register")}>立即註冊</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button id="register-btn-submit" className="admin-modal-btn admin-modal-btn-submit" style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '10px', background: 'rgba(251, 191, 36, 0.1)', border: '1px solid var(--neon-amber)', color: 'var(--neon-amber)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }} onClick={handleRegister}>註冊並登入 / Register</button>
+                  <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    已有帳號？ <span style={{ color: 'var(--neon-green)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setLoginMode("login")}>立即登入</span>
+                  </div>
+                </>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* Toast Notifications */}
+        <div id="toast-container" className="toast-container" style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1200, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {toasts.map(toast => (
+            <div key={toast.id} className="toast" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', border: '1px solid var(--neon-green)', padding: '10px 16px', borderRadius: '6px', color: 'var(--text-bright)', boxShadow: 'var(--card-shadow)' }}>
+              <CheckCircle2 style={{ width: '16px', height: '16px', color: 'var(--neon-green)' }} />
+              <span>{toast.message}</span>
+            </div>
+          ))}
+        </div>
+      </>
     );
-  };
+  }
 
   return (
     <>
@@ -1707,16 +2081,28 @@ export default function App() {
                 <hr className="divider" style={{ border: 'none', borderBottom: '1px solid var(--border-color)', margin: '15px 0' }} />
 
                 <ul className="sidebar-menu" style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: 0 }}>
-                  <li className={currentRoute === "#/" || currentRoute === "" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => window.location.hash = "#/"}>
+                  <li className={currentRoute === "#/" || currentRoute === "" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => { setCurrentCategory("All"); window.location.hash = "#/"; }}>
                     <Home style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{t("home")}</span>
                   </li>
-                  <li style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Bell style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{currentLang === "en" ? "Notifications" : "通知訊息"}</span>
+                  <li className={currentRoute === "#/notifications" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }} onClick={() => window.location.hash = "#/notifications"}>
+                    <Bell style={{ width: '16px', height: '16px' }} />
+                    <span className="sidebar-menu-text">{currentLang === "en" ? "Notifications" : "通知訊息"}</span>
+                    {notificationsList.filter(n => !n.read).length > 0 && (
+                      <span style={{
+                        position: 'absolute',
+                        right: '10px',
+                        width: '8px',
+                        height: '8px',
+                        backgroundColor: 'var(--neon-red)',
+                        borderRadius: '50%',
+                        boxShadow: '0 0 6px var(--neon-red)'
+                      }}></span>
+                    )}
                   </li>
-                  <li style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <li className={currentRoute === "#/messages" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => window.location.hash = "#/messages"}>
                     <Mail style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{currentLang === "en" ? "Direct Messages" : "私訊功能"}</span>
                   </li>
-                  <li style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <li className={currentRoute === "#/bookmarks" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => window.location.hash = "#/bookmarks"}>
                     <Bookmark style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{t("likes_history")}</span>
                   </li>
                 </ul>
@@ -1747,7 +2133,7 @@ export default function App() {
             </aside>
 
             {/* Middle Main Feed */}
-            <section className="main-feed">
+            <section className="main-feed" style={{ flex: currentRoute === "#/messages" ? '3.2' : '2' }}>
               {currentRoute === "#/about" ? (
                 /* About View */
                 <div className="feed-container" style={{ maxWidth: '580px' }}>
@@ -1831,6 +2217,307 @@ export default function App() {
                         <Mail style={{ width: '18px', height: '18px' }} />
                       </a>
                     </div>
+                  </div>
+                </div>
+              ) : currentRoute === "#/bookmarks" ? (
+                /* Bookmarks View */
+                <div className="feed-container">
+                  <div className="search-filter-section" style={{ marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        className={`feed-category-pill ${activeBookmarkTab === "likes" ? "active" : ""}`}
+                        style={{ flex: 1, padding: '10px', fontSize: '13px', cursor: 'pointer' }}
+                        onClick={() => setActiveBookmarkTab("likes")}
+                      >
+                        ❤️ {currentLang === "en" ? "My Likes" : "我的點讚"}
+                      </button>
+                      <button
+                        className={`feed-category-pill ${activeBookmarkTab === "bookmarks" ? "active" : ""}`}
+                        style={{ flex: 1, padding: '10px', fontSize: '13px', cursor: 'pointer' }}
+                        onClick={() => setActiveBookmarkTab("bookmarks")}
+                      >
+                        🔖 {currentLang === "en" ? "My Bookmarks" : "我的收藏"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div id="posts-feed-list">
+                    {posts
+                      .filter(post => {
+                        if (activeBookmarkTab === "likes") {
+                          return post.likedBy ? post.likedBy.includes(currentUser.handle) : post.likedByUser;
+                        } else {
+                          return post.bookmarkedBy ? post.bookmarkedBy.includes(currentUser.handle) : false;
+                        }
+                      })
+                      .map(post => renderPostCard(post))
+                    }
+                    {posts.filter(post => {
+                      if (activeBookmarkTab === "likes") {
+                        return post.likedBy ? post.likedBy.includes(currentUser.handle) : post.likedByUser;
+                      } else {
+                        return post.bookmarkedBy ? post.bookmarkedBy.includes(currentUser.handle) : false;
+                      }
+                    }).length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
+                        <Frown style={{ width: '38px', height: '38px', marginBottom: '12px' }} />
+                        <p>{currentLang === "en" ? "No posts found in this section." : "此專區目前沒有任何貼文。"}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : currentRoute === "#/notifications" ? (
+                /* Notifications View */
+                <div className="feed-container">
+                  <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px' }}>
+                    <h2 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '20px', color: 'var(--accent)', textShadow: 'var(--glow-green)' }}>
+                      🔔 {currentLang === "en" ? "Notifications" : "通知訊息"}
+                    </h2>
+                    {notificationsList.some(n => !n.read) && (
+                      <button
+                        className="feed-category-pill"
+                        style={{ background: 'rgba(61, 220, 151, 0.1)', borderColor: 'var(--neon-green)', color: 'var(--neon-green)', cursor: 'pointer' }}
+                        onClick={handleMarkAllNotificationsRead}
+                      >
+                        {currentLang === "en" ? "Mark all as read" : "全部標記為已讀"}
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {notificationsList.map(n => (
+                      <div key={n.id} style={{
+                        background: 'var(--bg-card)',
+                        border: n.read ? '1px solid var(--border-color)' : '1px solid var(--neon-cyan)',
+                        boxShadow: n.read ? 'none' : 'var(--glow-cyan)',
+                        borderRadius: '6px',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <p style={{ margin: 0, fontSize: '13px', color: n.read ? 'var(--text-secondary)' : 'var(--text-bright)', fontWeight: n.read ? 'normal' : 'bold' }}>
+                            {n.content}
+                          </p>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            {n.timestamp ? formatRelativeDate(n.timestamp.toDate ? n.timestamp.toDate() : new Date(n.timestamp), currentLang) : ""}
+                          </span>
+                        </div>
+                        {!n.read && (
+                          <span style={{
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: 'var(--neon-cyan)',
+                            borderRadius: '50%',
+                            boxShadow: '0 0 6px var(--neon-cyan)'
+                          }}></span>
+                        )}
+                      </div>
+                    ))}
+                    {notificationsList.length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
+                        <Bell style={{ width: '38px', height: '38px', marginBottom: '12px', opacity: 0.5 }} />
+                        <p>{currentLang === "en" ? "No notifications" : "尚無任何通知訊息"}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : currentRoute === "#/messages" ? (
+                /* Messages View */
+                <div className="messages-layout" style={{ display: 'flex', gap: '20px', minHeight: '500px', height: 'calc(100vh - 180px)', width: '100%' }}>
+                  {/* Left Column: Friends list & Add Friend */}
+                  <div className="messages-sidebar" style={{ width: '40%', display: 'flex', flexDirection: 'column', gap: '15px', borderRight: '1px solid var(--border-color)', paddingRight: '15px', height: '100%', overflowY: 'auto' }}>
+                    <div className="sidebar-section">
+                      <h3 style={{ fontSize: '12px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '10px' }}>
+                        👥 {currentLang === "en" ? "Friends" : "好友清單"}
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {usersList
+                          .filter(u => {
+                            const rel = friendsRelations.find(r => r.users.includes(u.handle) && r.status === "accepted");
+                            return !!rel;
+                          })
+                          .map(u => {
+                            const isSelected = activeChatFriend && activeChatFriend.handle === u.handle;
+                            return (
+                              <button
+                                key={u.handle}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  padding: '10px',
+                                  borderRadius: '6px',
+                                  background: isSelected ? 'rgba(61, 220, 151, 0.1)' : 'var(--bg-card)',
+                                  border: isSelected ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  width: '100%'
+                                }}
+                                onClick={() => setActiveChatFriend(u)}
+                              >
+                                <div className="user-avatar" style={{ width: '30px', height: '30px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  {u.avatarLetter || u.name.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-bright)' }}>{u.name}</div>
+                                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{u.handle}</div>
+                                </div>
+                              </button>
+                            );
+                          })
+                        }
+                        {usersList.filter(u => friendsRelations.some(r => r.users.includes(u.handle) && r.status === "accepted")).length === 0 && (
+                          <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', padding: '10px 0' }}>
+                            {currentLang === "en" ? "No friends yet." : "目前尚無好友，去新增好友吧！"}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="sidebar-section" style={{ marginTop: '15px' }}>
+                      <h3 style={{ fontSize: '12px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '10px' }}>
+                        ➕ {currentLang === "en" ? "Find Friends" : "新增與管理好友"}
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {usersList.map(u => {
+                          const rel = friendsRelations.find(r => r.users.includes(u.handle));
+                          return (
+                            <div key={u.handle} style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '8px 10px',
+                              borderRadius: '6px',
+                              background: 'var(--bg-input)',
+                              border: '1px solid var(--border-color)'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div className="user-avatar" style={{ width: '28px', height: '28px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  {u.avatarLetter || u.name.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-bright)' }}>{u.name}</div>
+                                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{u.handle}</div>
+                                </div>
+                              </div>
+
+                              <div>
+                                {!rel ? (
+                                  <button
+                                    style={{ padding: '4px 8px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                    onClick={() => handleAddFriend(u)}
+                                  >
+                                    加好友
+                                  </button>
+                                ) : rel.status === "accepted" ? (
+                                  <button
+                                    style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-secondary)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                    onClick={() => handleRemoveRelation(rel.id)}
+                                  >
+                                    好友 ✕
+                                  </button>
+                                ) : rel.requester === currentUser.handle ? (
+                                  <button
+                                    style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--neon-amber)', color: 'var(--neon-amber)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                    onClick={() => handleRemoveRelation(rel.id)}
+                                  >
+                                    申請中 ✕
+                                  </button>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: '4px' }}>
+                                    <button
+                                      style={{ padding: '4px 8px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                      onClick={() => handleAcceptFriend(rel.id)}
+                                    >
+                                      同意
+                                    </button>
+                                    <button
+                                      style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--neon-red)', color: 'var(--neon-red)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                      onClick={() => handleRemoveRelation(rel.id)}
+                                    >
+                                      拒絕
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Chatroom Area */}
+                  <div className="chatroom-area" style={{ width: '60%', display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    {activeChatFriend ? (
+                      <>
+                        {/* Chatroom Header */}
+                        <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div className="user-avatar" style={{ width: '32px', height: '32px', background: activeChatFriend.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {activeChatFriend.avatarLetter || activeChatFriend.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-bright)' }}>{activeChatFriend.name}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{activeChatFriend.handle}</div>
+                          </div>
+                        </div>
+
+                        {/* Message Pane */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {chatMessages.map(m => {
+                            const isMine = m.sender === currentUser.handle;
+                            return (
+                              <div key={m.id} style={{
+                                display: 'flex',
+                                justifyContent: isMine ? 'flex-end' : 'flex-start',
+                                width: '100%'
+                              }}>
+                                <div style={{
+                                  maxWidth: '70%',
+                                  background: isMine ? 'rgba(61, 220, 151, 0.1)' : 'var(--bg-input)',
+                                  border: isMine ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+                                  color: 'var(--text-bright)',
+                                  borderRadius: '8px',
+                                  padding: '10px 14px',
+                                  position: 'relative'
+                                }}>
+                                  <div style={{ fontSize: '13px', wordBreak: 'break-word' }}>{m.text}</div>
+                                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textAlign: 'right', marginTop: '4px' }}>
+                                    {m.timestamp ? formatRelativeDate(m.timestamp.toDate ? m.timestamp.toDate() : new Date(m.timestamp), currentLang) : ""}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div ref={chatEndRef} />
+                        </div>
+
+                        {/* Chatroom Input Panel */}
+                        <div style={{ padding: '15px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px' }}>
+                          <input
+                            type="text"
+                            style={{ flex: 1, padding: '10px 14px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px' }}
+                            placeholder={currentLang === "en" ? "Type a message..." : "請輸入私訊內容..."}
+                            value={messageText}
+                            onChange={(e) => setMessageText(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                          />
+                          <button
+                            style={{ padding: '10px 20px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                            onClick={handleSendMessage}
+                          >
+                            傳送
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                        <Mail style={{ width: '48px', height: '48px', marginBottom: '15px', opacity: 0.4 }} />
+                        <p style={{ fontSize: '14px' }}>{currentLang === "en" ? "Select a friend to start chatting." : "請在左側選擇一個好友開始即時私訊。"}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -1925,117 +2612,7 @@ export default function App() {
 
                   {/* Posts List */}
                   <div id="posts-feed-list">
-                    {filteredPosts.map(post => {
-                      const hasGradient = !!post.gradient;
-                      const isPrivate = post.privacy === "private";
-
-                      return (
-                        <div key={post.id} className={`post-card ${highlightedPostId === post.id ? "liked-post-highlight" : ""}`} id={`card-${post.id}`}>
-                          <div className="post-header">
-                            <div className="post-author-wrapper">
-                              <div className="user-avatar" style={{
-                                background: post.isDefault ? 'var(--bg-elevated)' : 'linear-gradient(135deg, var(--neon-green-dim) 0%, var(--neon-cyan) 100%)',
-                                color: post.isDefault ? 'var(--neon-green)' : '#ffffff'
-                              }}>
-                                {post.avatarLetter}
-                              </div>
-                              <div className="post-author-details">
-                                <span className="post-author-name">{post.author}</span>
-                                <span className="post-author-handle">{post.handle}</span>
-                              </div>
-                            </div>
-                            <div className="post-meta-right">
-                              {isPrivate && (
-                                <span className="post-privacy-badge" style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--neon-magenta)' }}>
-                                  <Lock style={{ width: '11px', height: '11px' }} />
-                                  <span>{t("private").split('（')[0]}</span>
-                                </span>
-                              )}
-                              <span className="post-category-tag">{post.category}</span>
-                              <span className="post-time">{post.date}</span>
-                            </div>
-                          </div>
-
-                          {/* Attached Image Rendering */}
-                          {post.image && (
-                            Array.isArray(post.image) ? (
-                              <div className="post-image-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginTop: '12px', borderRadius: '8px', overflow: 'hidden' }}>
-                                {post.image.map((img, idx) => (
-                                  <img key={idx} src={img} className="post-image" style={{ width: '100%', height: '200px', objectFit: 'cover' }} alt="Attached preview" />
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="post-image-container">
-                                <img src={post.image} className="post-image" alt="Attached preview" />
-                              </div>
-                            )
-                          )}
-
-                          {/* Content Area */}
-                          {hasGradient ? (
-                            <div className="post-gradient-container" style={{ background: post.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', borderRadius: '8px', color: '#fff', fontWeight: 'bold' }}>
-                              <div dangerouslySetInnerHTML={{ __html: parseSimpleMarkdown(post.content) }}></div>
-                            </div>
-                          ) : (
-                            <div className="post-text-content" dangerouslySetInnerHTML={{ __html: parseSimpleMarkdown(post.content) }}></div>
-                          )}
-
-                          {/* Action Panel Buttons */}
-                          <div className="post-actions-row" style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-                            <button className={`post-action-btn btn-like ${post.likedBy ? (post.likedBy.includes(currentUser.handle) ? 'liked' : '') : (post.likedByUser ? 'liked' : '')}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => handleLikePost(post.id)}>
-                              <Heart style={{ width: '16px', height: '16px' }} />
-                              <span className="like-count">{post.likedBy ? post.likedBy.length : post.likes}</span>
-                            </button>
-
-                            <button className="post-action-btn btn-comment" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => {
-                              setActiveCommentsPostId(prev => ({ ...prev, [post.id]: !prev[post.id] }));
-                            }}>
-                              <MessageSquare style={{ width: '16px', height: '16px' }} />
-                              <span>{post.comments.length}</span>
-                            </button>
-
-                            <button className="post-action-btn btn-share" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => handleSharePost(post)}>
-                              <Send style={{ width: '16px', height: '16px' }} />
-                              <span>分享</span>
-                            </button>
-
-                            {((post.handle === currentUser.handle || adminAuthenticated) && !post.isDefault) && (
-                              <button className="post-action-btn post-action-delete" style={{ color: 'var(--text-muted)', cursor: 'pointer', marginLeft: 'auto' }} onClick={() => handleDeletePost(post.id)}>
-                                <Trash2 style={{ width: '16px', height: '16px' }} />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Comments Drawer List */}
-                          <div className={`comments-section ${activeCommentsPostId[post.id] ? "active" : ""}`} id={`comments-sec-${post.id}`} style={{ display: activeCommentsPostId[post.id] ? 'block' : 'none', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
-                            <div className="comments-list" id={`comments-list-${post.id}`}>
-                              {post.comments.length === 0 ? (
-                                <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', padding: '8px 0' }}>尚無留言，成為第一個留言的人吧！</div>
-                              ) : (
-                                post.comments.map(c => (
-                                  <div key={c.id} className="comment-item" style={{ display: 'flex', gap: '10px', margin: '8px 0' }}>
-                                    <div className="comment-avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
-                                      {c.author.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="comment-content-wrapper" style={{ flex: 1 }}>
-                                      <div className="comment-header" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                                        <span className="comment-author" style={{ fontWeight: 600 }}>{c.author}</span>
-                                        <span className="comment-time">{c.time}</span>
-                                      </div>
-                                      <div className="comment-text" style={{ fontSize: '12px', color: 'var(--text-primary)', marginTop: '2px' }}>{c.text}</div>
-                                    </div>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                            <div className="comment-composer" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                              <input type="text" className="comment-input" style={{ flex: 1, padding: '6px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12px' }} placeholder={t("reply_placeholder")} value={commentInputs[post.id] || ""} onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))} onKeyDown={(e) => e.key === 'Enter' && submitComment(post.id)} />
-                              <button className="comment-submit-btn" style={{ padding: '6px 12px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }} onClick={() => submitComment(post.id)}>{t("reply")}</button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {filteredPosts.map(post => renderPostCard(post))}
 
                     {filteredPosts.length === 0 && (
                       <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
@@ -2049,86 +2626,88 @@ export default function App() {
             </section>
 
             {/* Right Sidebar */}
-            <aside className="sidebar-right">
-              
-              {/* Administrator Presence panel wrapper */}
-              {adminAuthenticated && (
-                <div className="sidebar-card" id="admin-presence-card" style={{ borderColor: 'var(--neon-cyan)', display: 'block' }}>
-                  <h3 style={{ color: 'var(--neon-cyan)', marginBottom: '12px', fontSize: '14px' }}>🛡️ 管理員專屬：使用者狀態監控</h3>
-                  <ul id="admin-presence-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    {Object.keys(onlineUsers).filter(h => h !== "@admin").map(handle => {
-                      const lastSeen = onlineUsers[handle] || 0;
-                      const isOnline = (currentTime - lastSeen) < 10000;
-                      return (
-                        <li key={handle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
-                          <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{handle}</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? 'var(--neon-green)' : 'var(--neon-red)', boxShadow: `0 0 5px ${isOnline ? 'var(--neon-green)' : 'var(--neon-red)'}` }}></span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{isOnline ? 'Online' : 'Offline'}</span>
-                          </div>
-                        </li>
-                      );
-                    })}
-                    {Object.keys(onlineUsers).filter(h => h !== "@admin").length === 0 && (
-                      <li style={{ color: 'var(--text-muted)', fontSize: '11px', padding: '8px 0' }}>無在線使用者</li>
+            {currentRoute !== "#/messages" && (
+              <aside className="sidebar-right">
+                
+                {/* Administrator Presence panel wrapper */}
+                {adminAuthenticated && (
+                  <div className="sidebar-card" id="admin-presence-card" style={{ borderColor: 'var(--neon-cyan)', display: 'block' }}>
+                    <h3 style={{ color: 'var(--neon-cyan)', marginBottom: '12px', fontSize: '14px' }}>🛡️ 管理員專屬：使用者狀態監控</h3>
+                    <ul id="admin-presence-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {Object.keys(onlineUsers).filter(h => h !== "@admin").map(handle => {
+                        const lastSeen = onlineUsers[handle] || 0;
+                        const isOnline = (currentTime - lastSeen) < 10000;
+                        return (
+                          <li key={handle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{handle}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? 'var(--neon-green)' : 'var(--neon-red)', boxShadow: `0 0 5px ${isOnline ? 'var(--neon-green)' : 'var(--neon-red)'}` }}></span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{isOnline ? 'Online' : 'Offline'}</span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                      {Object.keys(onlineUsers).filter(h => h !== "@admin").length === 0 && (
+                        <li style={{ color: 'var(--text-muted)', fontSize: '11px', padding: '8px 0' }}>無在線使用者</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Trending topics widget */}
+                <div className="sidebar-card">
+                  <h3 id="trending-topics-title">🔥 {currentLang === "en" ? "Trending Topics" : "熱門話題"}</h3>
+                  <ul className="trending-list" id="trending-topics-list" style={{ padding: 0 }}>
+                    {trendingTags.map(tInfo => (
+                      <li key={tInfo.tag} className="trending-tag-item" style={{ cursor: 'pointer', transition: 'color 0.2s', padding: '4px 0' }} onClick={() => { setSearchQuery(tInfo.tag); setCurrentRoute("#/"); }}>
+                        {tInfo.tag} <span style={{ color: 'var(--neon-green)' }}>{tInfo.count} {currentLang === "en" ? "posts" : "貼文"}</span>
+                      </li>
+                    ))}
+                    {trendingTags.length === 0 && (
+                      <li style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{currentLang === "en" ? "No trending topics" : "目前尚無話題"}</li>
                     )}
                   </ul>
                 </div>
-              )}
 
-              {/* Trending topics widget */}
-              <div className="sidebar-card">
-                <h3 id="trending-topics-title">🔥 {currentLang === "en" ? "Trending Topics" : "熱門話題"}</h3>
-                <ul className="trending-list" id="trending-topics-list" style={{ padding: 0 }}>
-                  {trendingTags.map(tInfo => (
-                    <li key={tInfo.tag} className="trending-tag-item" style={{ cursor: 'pointer', transition: 'color 0.2s', padding: '4px 0' }} onClick={() => { setSearchQuery(tInfo.tag); setCurrentRoute("#/"); }}>
-                      {tInfo.tag} <span style={{ color: 'var(--neon-green)' }}>{tInfo.count} {currentLang === "en" ? "posts" : "貼文"}</span>
-                    </li>
-                  ))}
-                  {trendingTags.length === 0 && (
-                    <li style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{currentLang === "en" ? "No trending topics" : "目前尚無話題"}</li>
-                  )}
-                </ul>
-              </div>
-
-              {/* Search History widget */}
-              <div className="sidebar-card" id="search-history-card">
-                <h3 id="search-history-title">🔍 {t("search_history")}</h3>
-                <div id="search-history-list" className="search-history-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {searchHistory.map(kw => (
-                    <div key={kw} className="search-history-chip" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer' }} onClick={() => { setSearchQuery(kw); setCurrentRoute("#/"); }}>
-                      <span>{kw}</span>
-                      <button className="clear-chip-btn" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontWeight: 'bold' }} onClick={(e) => {
-                        e.stopPropagation();
-                        setSearchHistory(prev => prev.filter(q => q !== kw));
-                      }}>&times;</button>
-                    </div>
-                  ))}
-                  {searchHistory.length === 0 && (
-                    <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0', width: '100%' }}>{currentLang === "en" ? "No search history" : "無搜尋紀錄"}</div>
+                {/* Search History widget */}
+                <div className="sidebar-card" id="search-history-card">
+                  <h3 id="search-history-title">🔍 {t("search_history")}</h3>
+                  <div id="search-history-list" className="search-history-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {searchHistory.map(kw => (
+                      <div key={kw} className="search-history-chip" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer' }} onClick={() => { setSearchQuery(kw); setCurrentRoute("#/"); }}>
+                        <span>{kw}</span>
+                        <button className="clear-chip-btn" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontWeight: 'bold' }} onClick={(e) => {
+                          e.stopPropagation();
+                          setSearchHistory(prev => prev.filter(q => q !== kw));
+                        }}>&times;</button>
+                      </div>
+                    ))}
+                    {searchHistory.length === 0 && (
+                      <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0', width: '100%' }}>{currentLang === "en" ? "No search history" : "無搜尋紀錄"}</div>
+                    )}
+                  </div>
+                  {searchHistory.length > 0 && (
+                    <button id="clear-history-btn" className="clear-all-history-btn" style={{ border: '1px solid var(--border-color)', width: '100%', padding: '6px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', marginTop: '12px', background: 'transparent' }} onClick={handleClearHistory}>{t("clear_history")}</button>
                   )}
                 </div>
-                {searchHistory.length > 0 && (
-                  <button id="clear-history-btn" className="clear-all-history-btn" style={{ border: '1px solid var(--border-color)', width: '100%', padding: '6px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', marginTop: '12px', background: 'transparent' }} onClick={handleClearHistory}>{t("clear_history")}</button>
-                )}
-              </div>
 
-              {/* Liked & Bookmarked posts widget */}
-              <div className="sidebar-card" id="likes-history-card">
-                <h3 id="likes-history-title">💖 {t("likes_history")}</h3>
-                <div id="liked-posts-list" className="liked-history-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {posts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).map(post => (
-                    <button key={post.id} className="liked-history-item" style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', background: 'transparent', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '6px', textAlign: 'left', cursor: 'pointer' }} onClick={() => handleBookmarkItemClick(post.id)}>
-                      <Heart style={{ color: 'var(--neon-red)', fill: 'var(--neon-red)', width: '14px', height: '14px' }} />
-                      <span className="liked-history-item-text" style={{ fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>{post.author}: {post.content.substring(0, 15)}...</span>
-                    </button>
-                  ))}
-                  {posts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).length === 0 && (
-                    <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0', width: '100%' }}>{currentLang === "en" ? "No liked posts" : "無點讚或收藏貼文"}</div>
-                  )}
+                {/* Liked & Bookmarked posts widget */}
+                <div className="sidebar-card" id="likes-history-card">
+                  <h3 id="likes-history-title">💖 {t("likes_history")}</h3>
+                  <div id="liked-posts-list" className="liked-history-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {posts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).map(post => (
+                      <button key={post.id} className="liked-history-item" style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', background: 'transparent', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '6px', textAlign: 'left', cursor: 'pointer' }} onClick={() => handleBookmarkItemClick(post.id)}>
+                        <Heart style={{ color: 'var(--neon-red)', fill: 'var(--neon-red)', width: '14px', height: '14px' }} />
+                        <span className="liked-history-item-text" style={{ fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>{post.author}: {post.content.substring(0, 15)}...</span>
+                      </button>
+                    ))}
+                    {posts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).length === 0 && (
+                      <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0', width: '100%' }}>{currentLang === "en" ? "No liked posts" : "無點讚或收藏貼文"}</div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </aside>
+              </aside>
+            )}
 
           </div>
         )}
