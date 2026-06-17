@@ -1742,15 +1742,33 @@ export default function App() {
     const bookmarkedBy = post.bookmarkedBy || [];
     const isBookmarked = bookmarkedBy.includes(currentUser.handle);
 
+    // Look up status of this post author in onlineUsers
+    const authorStatus = onlineUsers.find(u => u.handle === post.handle);
+    const isAuthorOnline = authorStatus ? (currentTime - (authorStatus.lastSeen || 0)) < 60000 : false;
+
     return (
       <div key={post.id} className={`post-card ${highlightedPostId === post.id ? "liked-post-highlight" : ""}`} id={`card-${post.id}`}>
         <div className="post-header">
           <div className="post-author-wrapper">
             <div className="user-avatar" style={{
               background: post.isDefault ? 'var(--bg-elevated)' : 'linear-gradient(135deg, var(--neon-green-dim) 0%, var(--neon-cyan) 100%)',
-              color: post.isDefault ? 'var(--neon-green)' : '#ffffff'
+              color: post.isDefault ? 'var(--neon-green)' : '#ffffff',
+              position: 'relative'
             }}>
               {post.avatarLetter}
+              {!post.isDefault && (
+                <span style={{
+                  position: 'absolute',
+                  bottom: '-2px',
+                  right: '-2px',
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: isAuthorOnline ? 'var(--neon-green)' : 'var(--neon-red)',
+                  border: '2px solid var(--bg-card)',
+                  boxShadow: `0 0 4px ${isAuthorOnline ? 'var(--neon-green)' : 'var(--neon-red)'}`
+                }} title={isAuthorOnline ? '在線 (Online)' : '離線 (Offline)'}></span>
+              )}
             </div>
             <div className="post-author-details">
               <span className="post-author-name">{post.author}</span>
@@ -2456,8 +2474,19 @@ export default function App() {
                                 }}
                                 onClick={() => setActiveChatFriend(u)}
                               >
-                                <div className="user-avatar" style={{ width: '30px', height: '30px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div className="user-avatar" style={{ width: '30px', height: '30px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                                   {u.avatarLetter || u.name.substring(0, 2).toUpperCase()}
+                                  <span style={{
+                                    position: 'absolute',
+                                    bottom: '-1px',
+                                    right: '-1px',
+                                    width: '7px',
+                                    height: '7px',
+                                    borderRadius: '50%',
+                                    background: onlineUsers.find(os => os.handle === u.handle) && (currentTime - (onlineUsers.find(os => os.handle === u.handle).lastSeen || 0)) < 60000 ? 'var(--neon-green)' : 'var(--neon-red)',
+                                    border: '1.5px solid var(--bg-card)',
+                                    boxShadow: `0 0 3px ${onlineUsers.find(os => os.handle === u.handle) && (currentTime - (onlineUsers.find(os => os.handle === u.handle).lastSeen || 0)) < 60000 ? 'var(--neon-green)' : 'var(--neon-red)'}`
+                                  }}></span>
                                 </div>
                                 <div>
                                   <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-bright)' }}>{u.name}</div>
@@ -2493,8 +2522,19 @@ export default function App() {
                               border: '1px solid var(--border-color)'
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div className="user-avatar" style={{ width: '28px', height: '28px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div className="user-avatar" style={{ width: '28px', height: '28px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                                   {u.avatarLetter || u.name.substring(0, 2).toUpperCase()}
+                                  <span style={{
+                                    position: 'absolute',
+                                    bottom: '-1px',
+                                    right: '-1px',
+                                    width: '7px',
+                                    height: '7px',
+                                    borderRadius: '50%',
+                                    background: onlineUsers.find(os => os.handle === u.handle) && (currentTime - (onlineUsers.find(os => os.handle === u.handle).lastSeen || 0)) < 60000 ? 'var(--neon-green)' : 'var(--neon-red)',
+                                    border: '1.5px solid var(--bg-card)',
+                                    boxShadow: `0 0 3px ${onlineUsers.find(os => os.handle === u.handle) && (currentTime - (onlineUsers.find(os => os.handle === u.handle).lastSeen || 0)) < 60000 ? 'var(--neon-green)' : 'var(--neon-red)'}`
+                                  }}></span>
                                 </div>
                                 <div>
                                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-bright)' }}>{u.name}</div>
