@@ -1621,8 +1621,19 @@ export default function App() {
       {/* Header navbar */}
       <header className="navbar">
         <div className="nav-container">
-          <a href="#/" className="logo" onClick={() => setCurrentCategory("All")}>
+          <a href="#/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setCurrentCategory("All")}>
             <span className="logo-bracket">[</span>ECHOES<span className="logo-dot">_</span>FEED<span className="logo-bracket">]</span>
+            <span style={{
+              fontSize: '10px',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              background: isFirebaseSetup ? 'rgba(61, 220, 151, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              color: isFirebaseSetup ? 'var(--neon-green)' : 'var(--neon-red)',
+              border: isFirebaseSetup ? '1px solid rgba(61, 220, 151, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+              fontFamily: 'monospace'
+            }}>
+              DB:{isFirebaseSetup ? "CLOUD" : "LOCAL"}
+            </span>
           </a>
 
           <nav className="nav-links-wrapper" style={{ flex: 1, display: 'flex', justifyContent: 'center', paddingRight: '24px' }}>
