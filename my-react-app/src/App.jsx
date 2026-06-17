@@ -2216,10 +2216,10 @@ export default function App() {
         {currentRoute === "#/admin" && adminAuthenticated ? (
           renderAdminConsole()
         ) : (
-          <div className="layout-wrapper">
+          <div className="layout-wrapper" style={{ alignItems: 'flex-start' }}>
 
             {/* Left Sidebar */}
-            <aside className="sidebar-left">
+            <aside className="sidebar-left" style={{ position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
               <div className="sidebar-card">
                 <div className="user-profile-preview">
                   <div className="avatar-placeholder" id="user-avatar-area" style={{ cursor: isLoggedIn ? 'pointer' : 'default', pointerEvents: isLoggedIn ? 'auto' : 'none', position: 'relative' }}>
@@ -2822,7 +2822,7 @@ export default function App() {
 
             {/* Right Sidebar */}
             {currentRoute !== "#/messages" && (
-              <aside className="sidebar-right">
+              <aside className="sidebar-right" style={{ position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
 
                 {/* Administrator Presence panel wrapper */}
                 {adminAuthenticated && (
