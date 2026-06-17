@@ -2862,93 +2862,117 @@ export default function App() {
                   </ul>
                 </div>
 
-                {/* Search History widget */}
-                <div className="sidebar-card" id="search-history-card">
-                  <h3 id="search-history-title">🔍 {t("search_history")}</h3>
-                  <div id="search-history-list" className="search-history-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {searchHistory.map(kw => (
-                      <div key={kw} className="search-history-chip" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer' }} onClick={() => { setSearchQuery(kw); handleSearch(kw); setCurrentRoute("#/"); }}>
-                        <span>{kw}</span>
-                        <button className="clear-chip-btn" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontWeight: 'bold' }} onClick={(e) => {
-                          e.stopPropagation();
-                          setSearchHistory(prev => {
-                            const next = prev.filter(q => q !== kw);
-                            if (searchQuery === kw) {
-                              setSearchResults(null);
-                              setSearchQuery("");
-                            }
-                            return next;
-                          });
-                        }}>&times;</button>
+                {/* Search History & Results widget */}
+                <div className="sidebar-card" id="search-history-card" style={{ maxHeight: '380px', overflowY: 'auto' }}>
+                  {!searchResults ? (
+                    <>
+                      <h3 id="search-history-title">🔍 {t("search_history")}</h3>
+                      <div id="search-history-list" className="search-history-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {searchHistory.map(kw => (
+                          <div key={kw} className="search-history-chip" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer' }} onClick={() => { setSearchQuery(kw); handleSearch(kw); setCurrentRoute("#/"); }}>
+                            <span>{kw}</span>
+                            <button className="clear-chip-btn" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontWeight: 'bold' }} onClick={(e) => {
+                              e.stopPropagation();
+                              setSearchHistory(prev => {
+                                const next = prev.filter(q => q !== kw);
+                                if (searchQuery === kw) {
+                                  setSearchResults(null);
+                                  setSearchQuery("");
+                                }
+                                return next;
+                              });
+                            }}>&times;</button>
+                          </div>
+                        ))}
+                        {searchHistory.length === 0 && (
+                          <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0', width: '100%' }}>{currentLang === "en" ? "No search history" : "無搜尋紀錄"}</div>
+                        )}
                       </div>
-                    ))}
-                    {searchHistory.length === 0 && (
-                      <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0', width: '100%' }}>{currentLang === "en" ? "No search history" : "無搜尋紀錄"}</div>
-                    )}
-                  </div>
-                  {searchHistory.length > 0 && (
-                    <button id="clear-history-btn" className="clear-all-history-btn" style={{ border: '1px solid var(--border-color)', width: '100%', padding: '6px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', marginTop: '12px', background: 'transparent' }} onClick={handleClearHistory}>{t("clear_history")}</button>
+                      {searchHistory.length > 0 && (
+                        <button id="clear-history-btn" className="clear-all-history-btn" style={{ border: '1px solid var(--border-color)', width: '100%', padding: '6px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', marginTop: '12px', background: 'transparent' }} onClick={handleClearHistory}>{t("clear_history")}</button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <h3 id="search-results-title" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--neon-green)', fontSize: '13px', margin: '0 0 12px 0', fontFamily: 'var(--font-heading)' }}>
+                        🔍 {currentLang === "en" ? "Search Results" : "搜尋結果"}
+                      </h3>
+
+                      {/* Users matches */}
+                      {searchResults.users.length > 0 && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--neon-cyan)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold', fontFamily: 'var(--font-heading)' }}>👤 {currentLang === "en" ? "Users" : "相符用戶"}</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {searchResults.users.map(u => (
+                              <div key={u.handle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                  <div className="user-avatar" style={{ width: '24px', height: '24px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    {u.avatarLetter || u.name.substring(0, 2).toUpperCase()}
+                                  </div>
+                                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px' }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-bright)' }}>{u.name}</span> <span style={{ color: 'var(--text-muted)', fontSize: '9px' }}>{u.handle}</span>
+                                  </div>
+                                </div>
+                                {isLoggedIn && (
+                                  <button style={{ border: 'none', background: 'transparent', color: 'var(--neon-green)', fontSize: '14px', cursor: 'pointer', padding: '2px 4px' }} title="Chat" onClick={() => {
+                                    setActiveChatFriend(u);
+                                    window.location.hash = "#/messages";
+                                  }}>💬</button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Posts matches */}
+                      {searchResults.posts.length > 0 && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--neon-amber)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold', fontFamily: 'var(--font-heading)' }}>📝 {currentLang === "en" ? "Posts" : "相符動態"}</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {searchResults.posts.map(p => (
+                              <button key={p.id} className="liked-history-item" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', textAlign: 'left' }} onClick={() => handleBookmarkItemClick(p.id)}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                                  <span>{p.author}</span>
+                                  <span>{p.category}</span>
+                                </div>
+                                <span style={{ fontSize: '11px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>{p.content}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {searchResults.users.length === 0 && searchResults.posts.length === 0 && (
+                        <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '12px 0' }}>無相符搜尋結果</div>
+                      )}
+
+                      {/* Back / Clear button */}
+                      <button 
+                        style={{ 
+                          border: '1px solid var(--border-color)', 
+                          width: '100%', 
+                          padding: '6px', 
+                          borderRadius: '4px', 
+                          fontSize: '11px', 
+                          cursor: 'pointer', 
+                          marginTop: '12px', 
+                          background: 'transparent',
+                          color: 'var(--text-muted)',
+                          fontFamily: 'var(--font-heading)',
+                          textAlign: 'center'
+                        }} 
+                        onClick={() => { 
+                          setSearchResults(null); 
+                          setSearchQuery(""); 
+                        }}
+                      >
+                        {currentLang === "en" ? "Clear Search / Return to History" : "清除搜尋 / 返回歷史"}
+                      </button>
+                    </>
                   )}
                 </div>
 
-                {/* Search Results widget */}
-                {searchResults && (
-                  <div className="sidebar-card" id="search-results-card" style={{ borderColor: 'var(--neon-green)', display: 'block', maxHeight: '380px', overflowY: 'auto' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <h3 style={{ color: 'var(--neon-green)', fontSize: '13px', margin: 0, fontFamily: 'var(--font-heading)' }}>🎯 {currentLang === "en" ? "Search Results" : "搜尋結果"}</h3>
-                      <button style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '11px' }} onClick={() => { setSearchResults(null); setSearchQuery(""); }}>清除</button>
-                    </div>
-
-                    {/* Users matches */}
-                    {searchResults.users.length > 0 && (
-                      <div style={{ marginBottom: '12px' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--neon-cyan)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold', fontFamily: 'var(--font-heading)' }}>👤 {currentLang === "en" ? "Users" : "相符使用者"}</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          {searchResults.users.map(u => (
-                            <div key={u.handle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 8px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                <div className="user-avatar" style={{ width: '24px', height: '24px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  {u.avatarLetter || u.name.substring(0, 2).toUpperCase()}
-                                </div>
-                                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px' }}>
-                                  <span style={{ fontWeight: 600, color: 'var(--text-bright)' }}>{u.name}</span> <span style={{ color: 'var(--text-muted)', fontSize: '9px' }}>{u.handle}</span>
-                                </div>
-                              </div>
-                              {isLoggedIn && (
-                                <button style={{ border: 'none', background: 'transparent', color: 'var(--neon-green)', fontSize: '10px', cursor: 'pointer', padding: '2px 4px', fontWeight: 'bold' }} onClick={() => {
-                                  setActiveChatFriend(u);
-                                  window.location.hash = "#/messages";
-                                }}>Chat</button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Posts matches */}
-                    {searchResults.posts.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: '10px', color: 'var(--neon-amber)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold', fontFamily: 'var(--font-heading)' }}>📝 {currentLang === "en" ? "Posts" : "相關動態"}</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          {searchResults.posts.map(p => (
-                            <button key={p.id} className="liked-history-item" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', textAlign: 'left' }} onClick={() => handleBookmarkItemClick(p.id)}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>
-                                <span>{p.author}</span>
-                                <span>{p.category}</span>
-                              </div>
-                              <span style={{ fontSize: '11px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>{p.content}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {searchResults.users.length === 0 && searchResults.posts.length === 0 && (
-                      <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '12px 0' }}>無相符搜尋結果</div>
-                    )}
-                  </div>
-                )}
 
                 {/* Liked & Bookmarked posts widget */}
                 <div className="sidebar-card" id="likes-history-card">
