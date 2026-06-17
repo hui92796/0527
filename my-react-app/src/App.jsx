@@ -28,7 +28,7 @@ import {
   Upload,
   X
 } from 'lucide-react';
-import { db } from "./firebase";
+import { db, isFirebaseSetup } from "./firebase";
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch } from "firebase/firestore";
 import './App.css';
 
@@ -404,16 +404,7 @@ const navigateToHash = (hash) => {
   window.location.hash = hash;
 };
 
-const checkIsFirebaseSetup = () => {
-  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-  return !!(
-    apiKey &&
-    apiKey !== "YOUR_API_KEY" &&
-    apiKey !== "YOUR_API_KEY_HERE" &&
-    apiKey.trim() !== "" &&
-    !apiKey.includes("PLACEHOLDER")
-  );
-};
+
 
 // Dynamic Relative Date formatter
 const formatRelativeDate = (dateObj, currentLang) => {
@@ -551,14 +542,9 @@ export default function App() {
     return sessionStorage.getItem("admin_authenticated") === "true";
   });
 
-  // Firebase Setup Status
-  const isFirebaseSetup = useMemo(() => {
-    return checkIsFirebaseSetup();
-  }, []);
-
   // Main Posts Data
   const [posts, setPosts] = useState(() => {
-    if (!checkIsFirebaseSetup()) {
+    if (!isFirebaseSetup) {
       const localPosts = localStorage.getItem("echoes_posts");
       if (localPosts) {
         try {
@@ -673,7 +659,7 @@ export default function App() {
     if (!isFirebaseSetup) {
       localStorage.setItem("echoes_posts", JSON.stringify(posts));
     }
-  }, [posts, isFirebaseSetup]);
+  }, [posts]);
 
   useEffect(() => {
     localStorage.setItem("echoes_user", JSON.stringify(currentUser));
@@ -752,7 +738,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [currentLang, isFirebaseSetup]);
+  }, [currentLang]);
 
   useEffect(() => {
     localStorage.setItem("echoes_lang", currentLang);
