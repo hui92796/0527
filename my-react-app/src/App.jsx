@@ -404,6 +404,17 @@ const navigateToHash = (hash) => {
   window.location.hash = hash;
 };
 
+const checkIsFirebaseSetup = () => {
+  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+  return !!(
+    apiKey &&
+    apiKey !== "YOUR_API_KEY" &&
+    apiKey !== "YOUR_API_KEY_HERE" &&
+    apiKey.trim() !== "" &&
+    !apiKey.includes("PLACEHOLDER")
+  );
+};
+
 // Dynamic Relative Date formatter
 const formatRelativeDate = (dateObj, currentLang) => {
   const diffMs = Date.now() - dateObj.getTime();
@@ -542,14 +553,12 @@ export default function App() {
 
   // Firebase Setup Status
   const isFirebaseSetup = useMemo(() => {
-    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY";
-    return apiKey !== "YOUR_API_KEY";
+    return checkIsFirebaseSetup();
   }, []);
 
   // Main Posts Data
   const [posts, setPosts] = useState(() => {
-    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY";
-    if (apiKey === "YOUR_API_KEY") {
+    if (!checkIsFirebaseSetup()) {
       const localPosts = localStorage.getItem("echoes_posts");
       if (localPosts) {
         try {
@@ -813,6 +822,7 @@ export default function App() {
   // ==========================================================================
 
   const showToast = (message) => {
+    // eslint-disable-next-line react-hooks/purity
     const id = Date.now() + Math.random().toString();
     setToasts(prev => [...prev, { id, message }]);
     setTimeout(() => {
@@ -854,6 +864,7 @@ export default function App() {
     if (email.includes("@") && password !== "") {
       const nickname = email.split("@")[0];
       const nextUser = {
+        // eslint-disable-next-line react-hooks/purity
         googleId: "sandbox_user_" + Date.now(),
         name: nickname,
         handle: email === "admin@example.com" ? "@admin" : "@" + nickname,
@@ -1044,6 +1055,7 @@ export default function App() {
 
   const prependLocalPost = (postData) => {
     const newPost = {
+      // eslint-disable-next-line react-hooks/purity
       id: "post-" + Date.now(),
       date: currentLang === "en" ? "just now" : "剛剛",
       ...postData
@@ -1087,6 +1099,7 @@ export default function App() {
     if (!text) return;
 
     const newComment = {
+      // eslint-disable-next-line react-hooks/purity
       id: "c-" + Date.now(),
       author: currentUser.name,
       text: text,
@@ -1171,15 +1184,35 @@ export default function App() {
   };
 
   // Moderation action triggers
-  const handleAdminDeletePost = (postId) => {
+  const handleAdminDeletePost = async (postId) => {
     if (window.confirm('警告：確定要從資料庫永久刪除該貼文嗎？此操作無法還原。')) {
-      setPosts(prev => prev.filter(p => p.id !== postId));
+      if (isFirebaseSetup) {
+        try {
+          await deleteDoc(doc(db, "posts", postId));
+          showToast("已從雲端資料庫強制刪除該貼文");
+        } catch (err) {
+          console.error("Failed to delete post from Firestore:", err);
+          showToast("無法從雲端刪除貼文");
+        }
+      } else {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+      }
     }
   };
 
-  const handleAdminModerate = (postId, reportId) => {
+  const handleAdminModerate = async (postId, reportId) => {
     if (window.confirm('確認判定貼文違規並進行下架刪除嗎？')) {
-      setPosts(prev => prev.filter(p => p.id !== postId));
+      if (isFirebaseSetup) {
+        try {
+          await deleteDoc(doc(db, "posts", postId));
+          showToast("已下架該違規貼文");
+        } catch (err) {
+          console.error("Failed to delete post from Firestore:", err);
+          showToast("無法從雲端刪除貼文");
+        }
+      } else {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+      }
       setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: '已處理' } : r));
     }
   };
@@ -1323,7 +1356,7 @@ export default function App() {
         <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--border-color)', paddingBottom: '20px', marginBottom: '30px' }}>
           <div className="admin-title">
             <h1 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '24px', color: 'var(--accent)', textShadow: 'var(--glow-green)', letterSpacing: '1px' }}>SYS.ADMIN_CONSOLE // 貼文內容審查</h1>
-            <p style={{ margin: '5px 0 0 0', color: 'var(--text-secondary)', fontSize: '13px' }}>權限：系統管理員 (ADMINISTRATOR) | 資料庫同步模式：LocalStorage</p>
+            <p style={{ margin: '5px 0 0 0', color: 'var(--text-secondary)', fontSize: '13px' }}>權限：系統管理員 (ADMINISTRATOR) | 資料庫同步模式：{isFirebaseSetup ? "Firebase 雲端資料庫" : "LocalStorage (本機暫存)"}</p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button className="btn btn-logout" id="btn-logout" style={{ border: '1px solid var(--text-muted)', background: 'transparent', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'inherit' }} onClick={handleAdminLogout}>登出安全模式</button>
