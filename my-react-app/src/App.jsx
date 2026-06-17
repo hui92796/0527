@@ -527,7 +527,7 @@ export default function App() {
   // User online status & active trackers
   const [userOnline, setUserOnline] = useState(true);
   const [isManualOffline, setIsManualOffline] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState({});
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const idleTimerRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -917,29 +917,67 @@ export default function App() {
     };
   }, [isManualOffline]);
 
-  // Cross-tab active presence tracker
+  // 1. Heartbeat timer presence writer to Firestore
   useEffect(() => {
-    const checkPresence = () => {
-      const now = Date.now();
-      setCurrentTime(now);
-      // 1. Register active user timestamp
-      if (currentUser && currentUser.handle && currentUser.handle !== "@admin" && userOnline && !isManualOffline) {
-        const onlineMap = JSON.parse(localStorage.getItem('echoes_online_users') || '{}');
-        onlineMap[currentUser.handle] = now;
-        localStorage.setItem('echoes_online_users', JSON.stringify(onlineMap));
-      }
+    if (!isFirebaseSetup || !isLoggedIn || !currentUser.googleId) return;
 
-      // 2. Fetch all online accounts if administrator active
-      if (currentUser && currentUser.handle === "@admin") {
-        const onlineMap = JSON.parse(localStorage.getItem('echoes_online_users') || '{}');
-        setOnlineUsers(onlineMap);
+    const writeHeartbeat = async () => {
+      try {
+        const statusDocRef = doc(db, "userStatus", currentUser.googleId);
+        await setDoc(statusDocRef, {
+          uid: currentUser.googleId,
+          displayName: currentUser.name || currentUser.email.split('@')[0],
+          handle: currentUser.handle,
+          lastSeen: Date.now()
+        }, { merge: true });
+      } catch (err) {
+        console.error("Heartbeat presence write failed:", err);
       }
     };
 
-    checkPresence();
-    const interval = setInterval(checkPresence, 3000);
-    return () => clearInterval(interval);
-  }, [currentUser, userOnline, isManualOffline]);
+    // Run immediately on login/mount
+    writeHeartbeat();
+
+    // Run every 30 seconds
+    const interval = setInterval(writeHeartbeat, 30000);
+
+    return () => {
+      clearInterval(interval);
+      // Optional: instantly mark offline on tab close or logout
+      if (currentUser && currentUser.googleId) {
+        const statusDocRef = doc(db, "userStatus", currentUser.googleId);
+        setDoc(statusDocRef, {
+          lastSeen: 0
+        }, { merge: true }).catch(err => console.error("Heartbeat cleanup error:", err));
+      }
+    };
+  }, [currentUser, isLoggedIn, userOnline, isManualOffline]);
+
+  // 2. Ticker to update currentTime state every 5 seconds for UI dynamic status check
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 3. Listen to userStatus collection in Firestore
+  useEffect(() => {
+    if (!isFirebaseSetup) return;
+
+    const unsubscribe = onSnapshot(collection(db, "userStatus"), (snapshot) => {
+      const statusList = [];
+      snapshot.forEach((doc) => {
+        statusList.push(doc.data());
+      });
+      console.log("當前在線人數:", statusList);
+      setOnlineUsers(statusList);
+    }, (error) => {
+      console.error("Error listening to userStatus:", error);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // ==========================================================================
   // ACTION HANDLERS
@@ -2695,12 +2733,12 @@ export default function App() {
                   <div className="sidebar-card" id="admin-presence-card" style={{ borderColor: 'var(--neon-cyan)', display: 'block' }}>
                     <h3 style={{ color: 'var(--neon-cyan)', marginBottom: '12px', fontSize: '14px' }}>🛡️ 管理員專屬：使用者狀態監控</h3>
                     <ul id="admin-presence-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                      {Object.keys(onlineUsers).filter(h => h !== "@admin").map(handle => {
-                        const lastSeen = onlineUsers[handle] || 0;
-                        const isOnline = (currentTime - lastSeen) < 300000;
+                      {onlineUsers.filter(u => u.handle !== "@admin").map(user => {
+                        const lastSeen = user.lastSeen || 0;
+                        const isOnline = (currentTime - lastSeen) < 60000;
                         return (
-                          <li key={handle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
-                            <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{handle}</span>
+                          <li key={user.uid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{user.displayName} ({user.handle})</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? 'var(--neon-green)' : 'var(--neon-red)', boxShadow: `0 0 5px ${isOnline ? 'var(--neon-green)' : 'var(--neon-red)'}` }}></span>
                               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{isOnline ? 'Online' : 'Offline'}</span>
@@ -2708,7 +2746,7 @@ export default function App() {
                           </li>
                         );
                       })}
-                      {Object.keys(onlineUsers).filter(h => h !== "@admin").length === 0 && (
+                      {onlineUsers.filter(u => u.handle !== "@admin").length === 0 && (
                         <li style={{ color: 'var(--text-muted)', fontSize: '11px', padding: '8px 0' }}>無在線使用者</li>
                       )}
                     </ul>
