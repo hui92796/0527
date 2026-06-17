@@ -1912,7 +1912,68 @@ export default function App() {
                       }}>{isSystem ? '系統常駐' : '用戶建立'}</span>
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
-                      <button style={{ color: 'var(--  if (!isLoggedIn) {
+                      <button style={{ color: 'var(--neon-red)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }} onClick={() => handleAdminDeletePost(post.id)}>徹底刪除</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {posts.length === 0 && <div className="empty-state" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>數據庫中尚無任何動態...</div>}
+        </div>
+
+        {/* Content Moderation & Reports Section */}
+        <div className="section-header" style={{ margin: '40px 0 15px 0', fontFamily: 'var(--font-heading)', fontSize: '16px', color: 'var(--text-bright)', borderLeft: '3px solid var(--neon-cyan)', paddingLeft: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>貼文檢舉與內容管制中心 (Report Queue)</div>
+        <div className="data-table-container" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', boxShadow: 'var(--card-shadow)', width: '100%', marginBottom: '40px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#1e2530', textAlign: 'left' }}>
+                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '15%' }}>被檢舉貼文 ID</th>
+                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '15%' }}>發表人</th>
+                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '20%' }}>檢舉理由</th>
+                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '15%' }}>檢舉人</th>
+                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '15%' }}>狀態</th>
+                <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-bright)', width: '20%' }}>處理方式</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reports.map(rep => {
+                const postExists = posts.some(p => p.id === rep.postId);
+                const statusColor = rep.status === '已處理' ? 'var(--text-muted)' : 'var(--neon-red)';
+
+                return (
+                  <tr key={rep.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><code>{rep.postId}</code></td>
+                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><strong>{rep.author}</strong></td>
+                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><span style={{ color: '#fda4af' }}>{rep.reason}</span></td>
+                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><span style={{ color: 'var(--text-secondary)' }}>{rep.reporter}</span></td>
+                    <td style={{ padding: '12px 16px', fontSize: '13px' }}><span style={{ color: statusColor, fontWeight: 600 }}>{rep.status}</span></td>
+                    <td style={{ padding: '12px 16px', fontSize: '13px' }}>
+                      {rep.status === '待處理' && postExists ? (
+                        <>
+                          <button style={{ color: 'var(--neon-red)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline', marginRight: '12px' }} onClick={() => handleAdminModerate(rep.postId, rep.id)}>下架貼文</button>
+                          <button className="btn btn-outline" style={{ border: '1px solid var(--neon-cyan)', background: 'transparent', color: 'var(--neon-cyan)', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }} onClick={() => handleAdminDismissReport(rep.id)}>撤銷檢舉</button>
+                        </>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>已結案 {!postExists ? '(貼文已不存在)' : ''}</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {reports.length === 0 && (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px', fontSize: '13px' }}>目前無待處理檢舉案</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  if (!isLoggedIn) {
     return (
       <>
         {/* CRT Scanline effect wrapper */}
