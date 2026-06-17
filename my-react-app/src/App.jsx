@@ -610,6 +610,14 @@ export default function App() {
   const [commentInputs, setCommentInputs] = useState({});
   const [highlightedPostId, setHighlightedPostId] = useState(null);
   const [toasts, setToasts] = useState([]);
+
+  const showToast = (message) => {
+    const id = Date.now() + Math.random().toString();
+    setToasts(prev => [...prev, { id, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 2600);
+  };
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [contactInfo, setContactInfo] = useState(() => {
     const saved = localStorage.getItem("echoes_contact_info");
@@ -735,6 +743,11 @@ export default function App() {
       }
     }, (error) => {
       console.error("Firestore loading error:", error);
+      if (error.message.includes("permission") || error.code === "permission-denied") {
+        showToast("⚠️ 雲端資料庫拒絕讀取，請確認 Firebase 中 Firestore 的 Rules 規則是否已開啟！");
+      } else {
+        showToast("⚠️ 雲端資料庫載入失敗，已切換至本機暫存模式");
+      }
       // Fallback
       setPosts([...DEFAULT_POSTS]);
     });
@@ -809,15 +822,6 @@ export default function App() {
   // ACTION HANDLERS
   // ==========================================================================
 
-  const showToast = (message) => {
-    // eslint-disable-next-line react-hooks/purity
-    const id = Date.now() + Math.random().toString();
-    setToasts(prev => [...prev, { id, message }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 2600);
-  };
-
   // Keyboard shortcut Ctrl+Shift+X for Admin portal
   useEffect(() => {
     const handleAdminKey = (e) => {
@@ -874,7 +878,11 @@ export default function App() {
         }
       } catch (err) {
         console.error("Login connection failed", err);
-        showToast("資料庫連線失敗，請檢查金鑰或網路");
+        if (err.message.includes("permission") || err.code === "permission-denied") {
+          showToast("⚠️ 登入失敗：雲端資料庫拒絕存取，請檢查 Firestore 規則是否開啟！");
+        } else {
+          showToast("資料庫連線失敗，請檢查金鑰或網路");
+        }
       }
     } else {
       // LocalStorage mode login
@@ -918,7 +926,6 @@ export default function App() {
         }
 
         const handle = "@" + nickname.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_\u4e00-\u9fff]/g, "").substring(0, 20);
-        // eslint-disable-next-line react-hooks/purity
         const randomAv = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];
         const userData = {
           email: email,
@@ -944,7 +951,11 @@ export default function App() {
         showToast("註冊並登入成功！");
       } catch (err) {
         console.error("Registration error:", err);
-        showToast("資料庫連線失敗，請稍後再試！");
+        if (err.message.includes("permission") || err.code === "permission-denied") {
+          showToast("⚠️ 註冊失敗：雲端資料庫拒絕存取，請檢查 Firestore 規則是否開啟！");
+        } else {
+          showToast("資料庫連線失敗，請稍後再試！");
+        }
       }
     } else {
       // LocalStorage mode registration
@@ -955,7 +966,6 @@ export default function App() {
       }
 
       const handle = "@" + nickname.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_\u4e00-\u9fff]/g, "").substring(0, 20);
-      // eslint-disable-next-line react-hooks/purity
       const randomAv = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];
       const userData = {
         email: email,
@@ -1134,7 +1144,11 @@ export default function App() {
         });
       } catch (err) {
         console.error("Failed to add post to Firestore:", err);
-        showToast("無法同步發佈貼文到雲端，將寫入本地");
+        if (err.message.includes("permission") || err.code === "permission-denied") {
+          showToast("⚠️ 發佈失敗：雲端資料庫拒絕寫入，請檢查 Firestore 規則！");
+        } else {
+          showToast("無法同步發佈貼文到雲端，將寫入本地");
+        }
         prependLocalPost(postData);
       }
     } else {
@@ -1154,7 +1168,6 @@ export default function App() {
 
   const prependLocalPost = (postData) => {
     const newPost = {
-      // eslint-disable-next-line react-hooks/purity
       id: "post-" + Date.now(),
       date: currentLang === "en" ? "just now" : "剛剛",
       ...postData
@@ -1198,7 +1211,6 @@ export default function App() {
     if (!text) return;
 
     const newComment = {
-      // eslint-disable-next-line react-hooks/purity
       id: "c-" + Date.now(),
       author: currentUser.name,
       text: text,
