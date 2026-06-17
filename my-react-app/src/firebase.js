@@ -8,13 +8,12 @@ import { getFirestore } from "firebase/firestore";
 // 您可以直接在這裡替換成您的真實金鑰，或者在專案根目錄建立 `.env` 檔案設定環境變數。
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD8a8vP12FZhir_PMjTv3IEkZ6NDeWE7y4",
-  authDomain: "my-react-share.firebaseapp.com",
-  projectId: "my-react-share",
-  storageBucket: "my-react-share.firebasestorage.app",
-  messagingSenderId: "913731309621",
-  appId: "1:913731309621:web:2978769a05320efe85617c",
-  measurementId: "G-JQZPF1102N"
+  apiKey: "請在這裡替換成你的真實apiKey",
+  authDomain: "請在這裡替換成你的真實authDomain",
+  projectId: "請在這裡替換成你的真實projectId",
+  storageBucket: "請在這裡替換成你的真實storageBucket",
+  messagingSenderId: "請在這裡替換成你的真實messagingSenderId",
+  appId: "請在這裡替換成你的真實appId"
 };
 
 // 檢查是否已經設定了真實的 Firebase 金鑰（相容直接修改與環境變數）
