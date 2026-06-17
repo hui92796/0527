@@ -2,9 +2,10 @@
   "name": "echoes-blog",
   "version": "1.0.0",
   "description": "A sleek minimalist personal blog website",
-  "main": "index.html",
   "scripts": {
-    "dev": "npx -y http-server -p 3000"
+    "dev": "npm --prefix my-react-app run dev",
+    "build": "npm --prefix my-react-app run build",
+    "lint": "npm --prefix my-react-app run lint"
   },
   "keywords": [],
   "author": "",
