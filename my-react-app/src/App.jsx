@@ -512,7 +512,7 @@ export default function App() {
   // ==========================================================================
   // STATE MANAGEMENT
   // ==========================================================================
-  
+
   // App routing and translation
   const [currentRoute, setCurrentRoute] = useState(() => {
     return window.location.hash || "#/";
@@ -589,7 +589,7 @@ export default function App() {
   const [adminPassword, setAdminPassword] = useState("");
   const [loginMode, setLoginMode] = useState("login"); // "login" or "register"
   const [registerNickname, setRegisterNickname] = useState("");
-  
+
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactWebsite, setContactWebsite] = useState("");
@@ -635,7 +635,7 @@ export default function App() {
     }
     return { phone: "", email: "", website: "" };
   });
-  
+
   // Easter Egg count tracker
   const copyrightClickRef = useRef({ count: 0, timer: null });
 
@@ -656,7 +656,7 @@ export default function App() {
     const handleHash = () => {
       const hash = window.location.hash || "#/";
       setCurrentRoute(hash);
-      
+
       // Auto authenticating redirect logic for admin page
       if (hash === "#/admin" && sessionStorage.getItem("admin_authenticated") !== "true") {
         navigateToHash("#/");
@@ -1063,7 +1063,7 @@ export default function App() {
 
         // 寫入資料庫
         await setDoc(userDocRef, userData);
-        
+
         // 登入
         setCurrentUser(userData);
         setModalLoginVisible(false);
@@ -1629,7 +1629,7 @@ export default function App() {
 
   // Filter posts based on user constraints
   const isWriteTab = currentRoute === "#/write";
-  
+
   const filteredPosts = useMemo(() => {
     let list = posts.filter(post => {
       const matchesCat = currentCategory === "All" || post.category === currentCategory;
@@ -2105,7 +2105,7 @@ export default function App() {
           renderAdminConsole()
         ) : (
           <div className="layout-wrapper">
-            
+
             {/* Left Sidebar */}
             <aside className="sidebar-left">
               <div className="sidebar-card">
@@ -2320,11 +2320,11 @@ export default function App() {
                         return post.bookmarkedBy ? post.bookmarkedBy.includes(currentUser.handle) : false;
                       }
                     }).length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
-                        <Frown style={{ width: '38px', height: '38px', marginBottom: '12px' }} />
-                        <p>{currentLang === "en" ? "No posts found in this section." : "此專區目前沒有任何貼文。"}</p>
-                      </div>
-                    )}
+                        <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
+                          <Frown style={{ width: '38px', height: '38px', marginBottom: '12px' }} />
+                          <p>{currentLang === "en" ? "No posts found in this section." : "此專區目前沒有任何貼文。"}</p>
+                        </div>
+                      )}
                   </div>
                 </div>
               ) : currentRoute === "#/notifications" ? (
@@ -2584,7 +2584,7 @@ export default function App() {
               ) : (
                 /* Feed View */
                 <div className="feed-container">
-                  
+
                   {/* Composer Card */}
                   <div className="composer-card">
                     <div className="composer-main">
@@ -2689,7 +2689,7 @@ export default function App() {
             {/* Right Sidebar */}
             {currentRoute !== "#/messages" && (
               <aside className="sidebar-right">
-                
+
                 {/* Administrator Presence panel wrapper */}
                 {adminAuthenticated && (
                   <div className="sidebar-card" id="admin-presence-card" style={{ borderColor: 'var(--neon-cyan)', display: 'block' }}>
@@ -2697,7 +2697,7 @@ export default function App() {
                     <ul id="admin-presence-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                       {Object.keys(onlineUsers).filter(h => h !== "@admin").map(handle => {
                         const lastSeen = onlineUsers[handle] || 0;
-                        const isOnline = (currentTime - lastSeen) < 10000;
+                        const isOnline = (currentTime - lastSeen) < 300000;
                         return (
                           <li key={handle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
                             <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{handle}</span>
@@ -2898,7 +2898,7 @@ export default function App() {
         <div id="profile-setup-modal" className="admin-modal-overlay active" style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="admin-modal-card" style={{ maxWidth: '400px', width: '92%', background: 'var(--bg-card)', border: '1px solid var(--border-neon)', padding: '24px', borderRadius: '8px' }}>
             <div className="admin-modal-title" style={{ fontSize: '16px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textAlign: 'center', marginBottom: '12px' }}>✨ 編輯個人資料</div>
-            
+
             <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>選擇預設頭像</p>
             <div id="avatar-picker-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', justifyContent: 'center' }}>
               {PRESET_AVATARS.map(av => (
