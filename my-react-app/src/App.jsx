@@ -524,10 +524,9 @@ export default function App() {
     return localStorage.getItem("echoes_theme") || "dark";
   });
 
-  // User online status & active trackers
   const [userOnline, setUserOnline] = useState(true);
   const [isManualOffline, setIsManualOffline] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [allUserStatuses, setAllUserStatuses] = useState([]);
   const idleTimerRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -921,13 +920,14 @@ export default function App() {
   useEffect(() => {
     if (!isFirebaseSetup || !isLoggedIn || !currentUser.googleId) return;
 
-    const writeHeartbeat = async () => {
+    const writeHeartbeat = async (isOnline = true) => {
       try {
         const statusDocRef = doc(db, "userStatus", currentUser.googleId);
         await setDoc(statusDocRef, {
           uid: currentUser.googleId,
           displayName: currentUser.name || currentUser.email.split('@')[0],
-          handle: currentUser.handle,
+          photoURL: currentUser.avatarUrl || "",
+          status: isOnline ? "online" : "offline",
           lastSeen: Date.now()
         }, { merge: true });
       } catch (err) {
@@ -936,18 +936,19 @@ export default function App() {
     };
 
     // Run immediately on login/mount
-    writeHeartbeat();
+    writeHeartbeat(true);
 
-    // Run every 30 seconds
-    const interval = setInterval(writeHeartbeat, 30000);
+    // Run every 20 seconds
+    const interval = setInterval(() => writeHeartbeat(true), 20000);
 
     return () => {
       clearInterval(interval);
-      // Optional: instantly mark offline on tab close or logout
+      // cleanup: mark offline
       if (currentUser && currentUser.googleId) {
         const statusDocRef = doc(db, "userStatus", currentUser.googleId);
         setDoc(statusDocRef, {
-          lastSeen: 0
+          status: "offline",
+          lastSeen: Date.now()
         }, { merge: true }).catch(err => console.error("Heartbeat cleanup error:", err));
       }
     };
@@ -970,14 +971,20 @@ export default function App() {
       snapshot.forEach((doc) => {
         statusList.push(doc.data());
       });
-      console.log("當前在線人數:", statusList);
-      setOnlineUsers(statusList);
+      setAllUserStatuses(statusList);
     }, (error) => {
       console.error("Error listening to userStatus:", error);
     });
 
     return () => unsubscribe();
   }, []);
+
+  // 4. Dynamically compute currently active online users (updated within 60 seconds)
+  const onlineUsers = useMemo(() => {
+    const list = allUserStatuses.filter(u => u.status === "online" && (currentTime - (u.lastSeen || 0)) < 60000);
+    console.log("當前在線人數:", list);
+    return list;
+  }, [allUserStatuses, currentTime]);
 
   // ==========================================================================
   // ACTION HANDLERS
@@ -1743,8 +1750,7 @@ export default function App() {
     const isBookmarked = bookmarkedBy.includes(currentUser.handle);
 
     // Look up status of this post author in onlineUsers
-    const authorStatus = onlineUsers.find(u => u.handle === post.handle);
-    const isAuthorOnline = authorStatus ? (currentTime - (authorStatus.lastSeen || 0)) < 60000 : false;
+    const isAuthorOnline = onlineUsers.some(u => u.handle === post.handle);
 
     return (
       <div key={post.id} className={`post-card ${highlightedPostId === post.id ? "liked-post-highlight" : ""}`} id={`card-${post.id}`}>
@@ -2483,9 +2489,9 @@ export default function App() {
                                     width: '7px',
                                     height: '7px',
                                     borderRadius: '50%',
-                                    background: onlineUsers.find(os => os.handle === u.handle) && (currentTime - (onlineUsers.find(os => os.handle === u.handle).lastSeen || 0)) < 60000 ? 'var(--neon-green)' : 'var(--neon-red)',
+                                    background: onlineUsers.some(os => os.handle === u.handle) ? 'var(--neon-green)' : 'var(--neon-red)',
                                     border: '1.5px solid var(--bg-card)',
-                                    boxShadow: `0 0 3px ${onlineUsers.find(os => os.handle === u.handle) && (currentTime - (onlineUsers.find(os => os.handle === u.handle).lastSeen || 0)) < 60000 ? 'var(--neon-green)' : 'var(--neon-red)'}`
+                                    boxShadow: `0 0 3px ${onlineUsers.some(os => os.handle === u.handle) ? 'var(--neon-green)' : 'var(--neon-red)'}`
                                   }}></span>
                                 </div>
                                 <div>
@@ -2531,9 +2537,9 @@ export default function App() {
                                     width: '7px',
                                     height: '7px',
                                     borderRadius: '50%',
-                                    background: onlineUsers.find(os => os.handle === u.handle) && (currentTime - (onlineUsers.find(os => os.handle === u.handle).lastSeen || 0)) < 60000 ? 'var(--neon-green)' : 'var(--neon-red)',
+                                    background: onlineUsers.some(os => os.handle === u.handle) ? 'var(--neon-green)' : 'var(--neon-red)',
                                     border: '1.5px solid var(--bg-card)',
-                                    boxShadow: `0 0 3px ${onlineUsers.find(os => os.handle === u.handle) && (currentTime - (onlineUsers.find(os => os.handle === u.handle).lastSeen || 0)) < 60000 ? 'var(--neon-green)' : 'var(--neon-red)'}`
+                                    boxShadow: `0 0 3px ${onlineUsers.some(os => os.handle === u.handle) ? 'var(--neon-green)' : 'var(--neon-red)'}`
                                   }}></span>
                                 </div>
                                 <div>
@@ -2774,14 +2780,12 @@ export default function App() {
                     <h3 style={{ color: 'var(--neon-cyan)', marginBottom: '12px', fontSize: '14px' }}>🛡️ 管理員專屬：使用者狀態監控</h3>
                     <ul id="admin-presence-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                       {onlineUsers.filter(u => u.handle !== "@admin").map(user => {
-                        const lastSeen = user.lastSeen || 0;
-                        const isOnline = (currentTime - lastSeen) < 60000;
                         return (
                           <li key={user.uid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
-                            <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{user.displayName} ({user.handle})</span>
+                            <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{user.displayName || user.email || user.uid} ({user.handle || 'Guest'})</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? 'var(--neon-green)' : 'var(--neon-red)', boxShadow: `0 0 5px ${isOnline ? 'var(--neon-green)' : 'var(--neon-red)'}` }}></span>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{isOnline ? 'Online' : 'Offline'}</span>
+                              <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--neon-green)', boxShadow: '0 0 5px var(--neon-green)' }}></span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Online</span>
                             </div>
                           </li>
                         );
