@@ -3283,7 +3283,12 @@ export default function App() {
 
                 {/* Administrator Presence panel wrapper */}
                 {adminAuthenticated && (
-                  <div className="sidebar-card" id="admin-presence-card" style={{ borderColor: 'var(--neon-cyan)', display: 'block' }}>
+                  <div 
+                    className="sidebar-card" 
+                    id="admin-presence-card" 
+                    style={{ borderColor: 'var(--neon-cyan)', display: 'block', cursor: 'pointer' }}
+                    onClick={() => navigateToHash("#/admin")}
+                  >
                     <h3 style={{ color: 'var(--neon-cyan)', marginBottom: '12px', fontSize: '14px' }}>🛡️ 管理員專屬：使用者狀態監控</h3>
                     <ul id="admin-presence-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                       {onlineUsers.filter(u => u.handle !== "@admin").map(user => {
