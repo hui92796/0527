@@ -530,6 +530,7 @@ export default function App() {
   const [allUserStatuses, setAllUserStatuses] = useState([]);
   const idleTimerRef = useRef(null);
   const chatEndRef = useRef(null);
+  const isInitialNotificationsUidLoad = useRef(true);
 
   // Authentication & Moderator
   const [currentUser, setCurrentUser] = useState(() => {
@@ -790,25 +791,6 @@ export default function App() {
       if (postsList.length === 0) {
         seedDefaultPosts();
       } else {
-        if (!isInitialLoad) {
-          snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-              const newPostData = change.doc.data();
-              // Check if post is created by someone else
-              if (newPostData.handle && newPostData.handle !== currentUser.handle) {
-                showToast(currentLang === "en" ? `System Notification: ${newPostData.author} published a new post!` : `系統通知：${newPostData.author} 發布了新貼文！`);
-                // Write to notifications collection
-                addDoc(collection(db, "notifications"), {
-                  userHandle: currentUser.handle,
-                  content: currentLang === "en" ? `System Notification: ${newPostData.author} published a new post!` : `系統通知：${newPostData.author} 發布了新貼文！`,
-                  timestamp: new Date(),
-                  read: false,
-                  type: "new_post"
-                }).catch(err => console.error("Error writing notification:", err));
-              }
-            }
-          });
-        }
         isInitialLoad = false;
         setPosts(postsList);
       }
@@ -830,6 +812,7 @@ export default function App() {
   useEffect(() => {
     if (!isFirebaseSetup || !isLoggedIn) {
       setNotificationsList([]);
+      isInitialNotificationsUidLoad.current = true;
       return;
     }
 
@@ -854,12 +837,16 @@ export default function App() {
     if (currentUser.handle) {
       const qHandle = query(
         collection(db, "notifications"),
-        where("userHandle", "==", currentUser.handle)
+        where("userHandle", "==", currentUser.handle),
+        where("type", "in", ["new_post", "mention"])
       );
       unsubHandle = onSnapshot(qHandle, (snapshot) => {
         const list = [];
         snapshot.forEach((doc) => {
-          list.push({ id: doc.id, ...doc.data() });
+          const data = doc.data();
+          if (data.type === "new_post" || data.type === "mention") {
+            list.push({ id: doc.id, ...data });
+          }
         });
         handleList = list;
         updateCombinedList();
@@ -871,13 +858,31 @@ export default function App() {
     if (currentUserUid) {
       const qUid = query(
         collection(db, "notifications"),
-        where("toUid", "==", currentUserUid)
+        where("toUid", "==", currentUserUid),
+        where("type", "in", ["new_post", "mention"])
       );
       unsubUid = onSnapshot(qUid, (snapshot) => {
         const list = [];
         snapshot.forEach((doc) => {
-          list.push({ id: doc.id, ...doc.data() });
+          const data = doc.data();
+          if (data.type === "new_post" || data.type === "mention") {
+            list.push({ id: doc.id, ...data });
+          }
         });
+
+        if (!isInitialNotificationsUidLoad.current) {
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+              const newNotif = change.doc.data();
+              if (newNotif.type === "new_post") {
+                showToast(currentLang === "en" ? `New post from your friend ${newNotif.fromName || 'Friend'}!` : `好友 ${newNotif.fromName || '好友'} 發布了新貼文！`);
+              } else if (newNotif.type === "mention") {
+                showToast(currentLang === "en" ? `${newNotif.fromName || 'Someone'} mentioned you in a post!` : `${newNotif.fromName || '有人'} 在貼文中標記了您！`);
+              }
+            }
+          });
+        }
+        isInitialNotificationsUidLoad.current = false;
         uidList = list;
         updateCombinedList();
       }, (error) => {
@@ -889,7 +894,7 @@ export default function App() {
       unsubHandle();
       unsubUid();
     };
-  }, [currentUser.handle, currentUser.googleId, currentUser.uid, isLoggedIn]);
+  }, [currentUser.handle, currentUser.googleId, currentUser.uid, isLoggedIn, currentLang]);
 
   // Subscribe to categories in Firestore and seed if empty
   useEffect(() => {
@@ -1766,21 +1771,20 @@ export default function App() {
 
           // 2. 向 notifications 為「每一位好友」寫入一筆新通知
           if (friendUids.length > 0) {
-            const batch = writeBatch(db);
             const senderName = currentUser.displayName || currentUser.name || '您的好友';
-            friendUids.forEach(friendUid => {
-              const notificationDocRef = doc(collection(db, "notifications"));
-              batch.set(notificationDocRef, {
+            const notificationPromises = friendUids.map(friendUid => {
+              return addDoc(collection(db, "notifications"), {
                 toUid: friendUid,
                 fromUid: currentUserUid,
                 fromName: senderName,
                 type: "new_post",
                 message: `${senderName} 發佈了新貼文，快去看看吧！`,
                 timestamp: Date.now(),
-                isRead: false
+                isRead: false,
+                read: false
               });
             });
-            await batch.commit();
+            await Promise.all(notificationPromises);
           }
 
           // 3. 偵測貼文內容中的 @ 標記並寫入通知
@@ -1831,7 +1835,8 @@ export default function App() {
                 targetPostId: postId,
                 message: `${senderName} 在貼文中標記了您："${truncatedContent}..."`,
                 timestamp: Date.now(),
-                isRead: false
+                isRead: false,
+                read: false
               });
             });
             await Promise.all(mentionPromises);
