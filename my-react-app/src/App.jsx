@@ -647,6 +647,8 @@ export default function App() {
   const [groupChats, setGroupChats] = useState([]);
   const [activeEmojiMenuMsgId, setActiveEmojiMenuMsgId] = useState(null);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [activeCommentEmojiMsgId, setActiveCommentEmojiMsgId] = useState(null);
+  const [activeCommentGifPostId, setActiveCommentGifPostId] = useState(null);
 
   const showToast = (message) => {
     const id = Date.now() + Math.random().toString();
@@ -2320,15 +2322,17 @@ export default function App() {
   };
 
   // Comment adding
-  const submitComment = async (postId) => {
-    const text = (commentInputs[postId] || "").trim();
+  const submitComment = async (postId, customText = null, customType = "text") => {
+    const text = customText !== null ? customText : (commentInputs[postId] || "").trim();
     if (!text) return;
 
     const newComment = {
       id: "c-" + Date.now(),
       author: currentUser.name,
+      authorHandle: currentUser.handle || "",
       text: text,
-      time: currentLang === "en" ? "just now" : "剛剛"
+      time: currentLang === "en" ? "just now" : "剛剛",
+      commentType: customType
     };
 
     if (isFirebaseSetup) {
@@ -2353,7 +2357,55 @@ export default function App() {
       }));
       showToast(t("toast_reply_success"));
     }
-    setCommentInputs(prev => ({ ...prev, [postId]: "" }));
+    if (customText === null) {
+      setCommentInputs(prev => ({ ...prev, [postId]: "" }));
+    }
+  };
+
+  // React to comment with emoji
+  const handleCommentEmojiReact = async (postId, commentId, emoji, currentReactions = {}) => {
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return;
+
+    try {
+      const postRef = doc(db, "posts", postId);
+      const postObj = posts.find(p => p.id === postId);
+      if (!postObj || !postObj.comments) return;
+
+      const newComments = postObj.comments.map(c => {
+        if (c.id === commentId) {
+          const reactions = c.reactions ? { ...c.reactions } : {};
+          if (!reactions[emoji]) {
+            reactions[emoji] = [];
+          }
+          if (reactions[emoji].includes(currentUserUid)) {
+            reactions[emoji] = reactions[emoji].filter(uid => uid !== currentUserUid);
+          } else {
+            reactions[emoji] = [...reactions[emoji], currentUserUid];
+          }
+          if (reactions[emoji].length === 0) {
+            delete reactions[emoji];
+          }
+          return { ...c, reactions };
+        }
+        return c;
+      });
+
+      if (isFirebaseSetup) {
+        await updateDoc(postRef, {
+          comments: newComments
+        });
+      } else {
+        setPosts(prev => prev.map(p => {
+          if (p.id === postId) {
+            return { ...p, comments: newComments };
+          }
+          return p;
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to react to comment:", err);
+    }
   };
 
   // Delete post
@@ -2748,17 +2800,204 @@ export default function App() {
                     {c.author.charAt(0).toUpperCase()}
                   </div>
                   <div className="comment-content-wrapper" style={{ flex: 1 }}>
-                    <div className="comment-header" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                      <span className="comment-author" style={{ fontWeight: 600 }}>{c.author}</span>
-                      <span className="comment-time">{c.time}</span>
+                    <div className="comment-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      <div>
+                        <span className="comment-author" style={{ fontWeight: 600 }}>{c.author}</span>
+                        <span className="comment-time" style={{ marginLeft: '10px' }}>{c.time}</span>
+                      </div>
+                      
+                      {/* Comment Reaction Trigger */}
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setActiveCommentEmojiMsgId(activeCommentEmojiMsgId === c.id ? null : c.id)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            padding: '2px 4px',
+                            borderRadius: '4px'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          😊
+                        </button>
+
+                        {activeCommentEmojiMsgId === c.id && (
+                          <div style={{
+                            position: 'absolute',
+                            right: '28px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 1000,
+                            display: 'flex',
+                            gap: '4px',
+                            padding: '4px 6px',
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '15px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                          }}>
+                            {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => {
+                                  handleCommentEmojiReact(post.id, c.id, emoji, c.reactions);
+                                  setActiveCommentEmojiMsgId(null);
+                                }}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  fontSize: '14px',
+                                  cursor: 'pointer',
+                                  padding: '1px',
+                                  borderRadius: '3px',
+                                  transition: 'transform 0.1s'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="comment-text" style={{ fontSize: '12px', color: 'var(--text-primary)', marginTop: '2px' }}>{c.text}</div>
+                    {c.commentType === "gif" ? (
+                      <img src={c.text} className="max-w-[120px] rounded" style={{ maxWidth: '120px', borderRadius: '4px', display: 'block', marginTop: '4px' }} alt="Comment GIF" />
+                    ) : (
+                      <div className="comment-text" style={{ fontSize: '12px', color: 'var(--text-primary)', marginTop: '2px' }}>{c.text}</div>
+                    )}
+
+                    {/* Reactions list for comment */}
+                    {c.reactions && Object.keys(c.reactions).length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                        {Object.entries(c.reactions).map(([emoji, uids]) => {
+                          if (!uids || uids.length === 0) return null;
+                          const userReacted = uids.includes(currentUser.googleId || currentUser.uid);
+                          return (
+                            <button
+                              key={emoji}
+                              onClick={() => handleCommentEmojiReact(post.id, c.id, emoji, c.reactions)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                padding: '1px 5px',
+                                borderRadius: '8px',
+                                background: userReacted ? 'rgba(61, 220, 151, 0.2)' : 'var(--bg-card)',
+                                border: userReacted ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+                                color: 'var(--text-bright)',
+                                fontSize: '10px',
+                                cursor: 'pointer',
+                                lineHeight: 1
+                              }}
+                            >
+                              <span>{emoji}</span>
+                              <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{uids.length}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
             )}
           </div>
-          <div className="comment-composer" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+
+          {/* GIF Picker Tray for Comment Composer */}
+          {activeCommentGifPostId === post.id && (
+            <div style={{
+              padding: '8px 10px',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              background: 'var(--bg-card)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              marginTop: '10px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-bright)' }}>
+                  🐱 {currentLang === "en" ? "Select Cat GIF" : "選擇貓咪 GIF"}
+                </span>
+                <button
+                  type="button"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--neon-cyan)',
+                    fontSize: '10px',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                  onClick={() => {
+                    const gifUrl = window.prompt(currentLang === "en" ? "Enter GIF Image URL:" : "請輸入 GIF 圖片網址（測試用）：");
+                    if (gifUrl && gifUrl.trim()) {
+                      submitComment(post.id, gifUrl.trim(), "gif");
+                      setActiveCommentGifPostId(null);
+                    }
+                  }}
+                >
+                  {currentLang === "en" ? "Prompt..." : "自訂網址..."}
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {[
+                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oriO0OEd9QIDdllqo/giphy.gif',
+                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG9yYWhnbXB3c292ZTFwdmtiaXZxMHh4ejQ3Z3p3dThxdGoxNTR2YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13CoXDiaCcC2EA/giphy.gif',
+                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5i7umUqAOYYHC/giphy.gif',
+                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9gISqB3tncMmY/giphy.gif',
+                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2R4bTJkZGQ4a2QyOHB5Z3A0dDhpdmwwdHcxczNtbTBpcThtdGJpZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ule4vhcY1xEIw/giphy.gif',
+                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmt6czVnZG12bHppNmQxMXc5dnZsc3h5ZWNtdjRkMDgyNHA0aG5heSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFQ0ywscgobJK/giphy.gif'
+                ].map((gifUrl, idx) => (
+                  <img
+                    key={idx}
+                    src={gifUrl}
+                    onClick={() => {
+                      submitComment(post.id, gifUrl, "gif");
+                      setActiveCommentGifPostId(null);
+                    }}
+                    style={{
+                      height: '50px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      border: '2px solid transparent',
+                      transition: 'border-color 0.1s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--neon-green)'}
+                    onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
+                    alt="cat preview"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="comment-composer" style={{ display: 'flex', gap: '10px', marginTop: '10px', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="p-1 border rounded text-xs hover:bg-gray-100"
+              style={{
+                cursor: 'pointer',
+                background: 'rgba(61, 220, 151, 0.1)',
+                border: '1px solid var(--neon-green)',
+                color: 'var(--neon-green)',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                padding: '6px 10px',
+                fontSize: '12px'
+              }}
+              onClick={() => setActiveCommentGifPostId(activeCommentGifPostId === post.id ? null : post.id)}
+            >
+              GIF
+            </button>
             <input type="text" className="comment-input" style={{ flex: 1, padding: '6px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12px' }} placeholder={t("reply_placeholder")} value={commentInputs[post.id] || ""} onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))} onKeyDown={(e) => e.key === 'Enter' && submitComment(post.id)} />
             <button className="comment-submit-btn" style={{ padding: '6px 12px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }} onClick={() => submitComment(post.id)}>{t("reply")}</button>
           </div>
