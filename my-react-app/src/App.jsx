@@ -5197,7 +5197,8 @@ export default function App() {
                 /* Profile View */
                 (() => {
                   const targetUser = users.find(u => u.id === profileViewUid) || currentUser;
-                  const userPosts = posts.filter(post => post.uid === profileViewUid);
+                  const effectiveUid = profileViewUid || currentUser?.uid;
+                  const userPosts = posts.filter(post => post.uid === effectiveUid);
                   return (
                     <div className="feed-container" style={{ maxWidth: '650px', margin: '0 auto' }}>
                       {/* Top Profile Card */}
@@ -5240,7 +5241,7 @@ export default function App() {
                             </p>
                             
                             {/* Bio display */}
-                            {profileViewUid !== currentUser.uid && (
+                            {(profileViewUid !== currentUser.uid && profileViewUid) && (
                               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0, padding: '10px', background: 'var(--bg-input)', borderRadius: '6px', borderLeft: '3px solid var(--neon-cyan)' }}>
                                 {targetUser.bio || "暫無自我介紹"}
                               </p>
@@ -5249,7 +5250,7 @@ export default function App() {
                         </div>
 
                         {/* Edit Form for self profile */}
-                        {profileViewUid === currentUser.uid && (
+                        {(profileViewUid === currentUser.uid || !profileViewUid) && (
                           <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px dashed var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                               <div style={{ flex: 1, minWidth: '150px' }}>
