@@ -599,11 +599,14 @@ export default function App() {
     if (currentUser.googleId && !currentUser.uid) {
       currentUser.uid = currentUser.googleId;
     }
+    if (!currentUser.uid) {
+      currentUser.uid = currentUser.handle || "";
+    }
     if (!currentUser.displayName && currentUser.name) {
       currentUser.displayName = currentUser.name;
     }
     if (!currentUser.id) {
-      currentUser.id = currentUser.uid || currentUser.googleId;
+      currentUser.id = currentUser.uid || currentUser.googleId || currentUser.handle;
     }
     if (!currentUser.photoURL) {
       currentUser.photoURL = currentUser.avatarUrl || "";
