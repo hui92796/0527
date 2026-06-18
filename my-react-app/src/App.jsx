@@ -644,6 +644,9 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([]);
   const [activeChatFriend, setActiveChatFriend] = useState(null);
   const [messageText, setMessageText] = useState("");
+  const [groupChats, setGroupChats] = useState([]);
+  const [activeEmojiMenuMsgId, setActiveEmojiMenuMsgId] = useState(null);
+  const [showGifPicker, setShowGifPicker] = useState(false);
 
   const showToast = (message) => {
     const id = Date.now() + Math.random().toString();
@@ -1058,12 +1061,69 @@ export default function App() {
     return () => unsubscribe();
   }, [currentUser.googleId, currentUser.uid, isLoggedIn]);
 
+  // Subscribe to group chats
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn) {
+      setGroupChats([]);
+      return;
+    }
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return;
+
+    const q = query(
+      collection(db, "chats"),
+      where("members", "array-contains", currentUserUid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setGroupChats(list);
+    }, (error) => {
+      console.error("Error fetching group chats:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser.googleId, currentUser.uid, isLoggedIn]);
+
   // Subscribe to chat messages
   useEffect(() => {
     const currentUserUid = currentUser.googleId || currentUser.uid;
-    const activeChatFriendUid = activeChatFriend?.googleId || activeChatFriend?.uid;
+    if (!isFirebaseSetup || !isLoggedIn || !currentUserUid || !activeChatFriend) {
+      setChatMessages([]);
+      return;
+    }
 
-    if (!isFirebaseSetup || !isLoggedIn || !currentUserUid || !activeChatFriendUid) {
+    const isGroup = activeChatFriend.type === "group";
+    const activeChatFriendUid = activeChatFriend.googleId || activeChatFriend.uid;
+
+    if (isGroup) {
+      const q = query(
+        collection(db, "messages"),
+        where("receiverId", "==", activeChatFriend.id)
+      );
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const list = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        list.sort((a, b) => {
+          const timeA = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : (typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime());
+          const timeB = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : (typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime());
+          return (timeA || 0) - (timeB || 0);
+        });
+        setChatMessages(list);
+      }, (error) => {
+        console.error("Error fetching group messages:", error);
+      });
+
+      return () => unsubscribe();
+    }
+
+    if (!activeChatFriendUid) {
       setChatMessages([]);
       return;
     }
@@ -2107,29 +2167,152 @@ export default function App() {
     }
   };
 
+  // Create Group Chat
+  const handleCreateGroup = async () => {
+    const groupName = prompt(currentLang === "en" ? "Enter group name:" : "請輸入群組名稱：");
+    if (!groupName || !groupName.trim()) return;
+
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) {
+      showToast("請先登入");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "chats"), {
+        type: "group",
+        name: groupName.trim(),
+        members: [currentUserUid],
+        createdAt: Date.now()
+      });
+      showToast(currentLang === "en" ? "Group created successfully!" : "群組建立成功！");
+    } catch (err) {
+      console.error("Failed to create group:", err);
+      showToast(currentLang === "en" ? "Failed to create group" : "無法建立群組");
+    }
+  };
+
+  // Invite Friend to Group Chat
+  const handleInviteToGroup = async () => {
+    if (!activeChatFriend || activeChatFriend.type !== "group") return;
+
+    // Get all mutual friends
+    const myFriends = usersList.filter(u => {
+      const uUid = u.googleId || u.uid;
+      return sentRequests.some(r => r.toUid === uUid && r.status === "accepted") ||
+             receivedRequests.some(r => r.fromUid === uUid && r.status === "accepted");
+    });
+
+    const currentMembers = activeChatFriend.members || [];
+    const addableFriends = myFriends.filter(f => {
+      const fUid = f.googleId || f.uid;
+      return !currentMembers.includes(fUid);
+    });
+
+    if (addableFriends.length === 0) {
+      alert(currentLang === "en" ? "No other friends to invite." : "沒有其他好友可以邀請。");
+      return;
+    }
+
+    // List friends for prompt selection
+    const friendsStr = addableFriends.map((f, i) => `${i + 1}. ${f.name} (${f.handle})`).join("\n");
+    const choice = prompt(
+      (currentLang === "en" ? "Select friend index to invite:\n" : "請輸入要邀請的好友編號：\n") + friendsStr
+    );
+
+    if (!choice) return;
+    const index = parseInt(choice, 10) - 1;
+    if (isNaN(index) || index < 0 || index >= addableFriends.length) {
+      alert(currentLang === "en" ? "Invalid selection." : "無效的選擇。");
+      return;
+    }
+
+    const selectedFriend = addableFriends[index];
+    const friendUid = selectedFriend.googleId || selectedFriend.uid;
+
+    try {
+      const groupDocRef = doc(db, "chats", activeChatFriend.id);
+      await updateDoc(groupDocRef, {
+        members: arrayUnion(friendUid)
+      });
+      
+      // Update local state to immediately show change
+      setActiveChatFriend(prev => ({
+        ...prev,
+        members: [...(prev.members || []), friendUid]
+      }));
+      showToast(currentLang === "en" ? "Friend invited successfully!" : "好友邀請成功！");
+    } catch (err) {
+      console.error("Failed to invite friend:", err);
+      showToast(currentLang === "en" ? "Failed to invite friend" : "邀請失敗");
+    }
+  };
+
+  // Add / Toggle Emoji Reaction
+  const handleEmojiReact = async (messageId, emoji, currentReactions = {}) => {
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return;
+
+    try {
+      const msgRef = doc(db, "messages", messageId);
+      const newReactions = { ...currentReactions };
+      
+      if (!newReactions[emoji]) {
+        newReactions[emoji] = [];
+      }
+
+      if (newReactions[emoji].includes(currentUserUid)) {
+        // Remove reaction (toggle off)
+        newReactions[emoji] = newReactions[emoji].filter(uid => uid !== currentUserUid);
+      } else {
+        // Add reaction (toggle on)
+        newReactions[emoji] = [...newReactions[emoji], currentUserUid];
+      }
+
+      if (newReactions[emoji].length === 0) {
+        delete newReactions[emoji];
+      }
+
+      await updateDoc(msgRef, {
+        reactions: newReactions
+      });
+    } catch (err) {
+      console.error("Failed to update reaction:", err);
+    }
+  };
+
   // Send private message
-  const handleSendMessage = async () => {
-    const text = messageText.trim();
+  const handleSendMessage = async (customText = null, customType = "text") => {
+    const text = customText !== null ? customText : messageText.trim();
     if (!text || !activeChatFriend) return;
 
-    const activeChatFriendUid = activeChatFriend.googleId || activeChatFriend.uid;
     const currentUserUid = currentUser.googleId || currentUser.uid;
-    const isFriend = sentRequests.some(r => r.toUid === activeChatFriendUid && r.status === "accepted") ||
-                     receivedRequests.some(r => r.fromUid === activeChatFriendUid && r.status === "accepted");
+    const isGroup = activeChatFriend.type === "group";
+    const activeChatFriendUid = activeChatFriend.googleId || activeChatFriend.uid;
 
-    if (!isFriend) {
-      showToast("只有好友才能發送訊息");
-      return;
+    if (!isGroup) {
+      const isFriend = sentRequests.some(r => r.toUid === activeChatFriendUid && r.status === "accepted") ||
+                       receivedRequests.some(r => r.fromUid === activeChatFriendUid && r.status === "accepted");
+
+      if (!isFriend) {
+        showToast("只有好友才能發送訊息");
+        return;
+      }
     }
 
     try {
       await addDoc(collection(db, "messages"), {
         senderId: currentUserUid,
-        receiverId: activeChatFriendUid,
+        senderName: currentUser.displayName || currentUser.name || "有人",
+        senderHandle: currentUser.handle || "",
+        receiverId: isGroup ? activeChatFriend.id : activeChatFriendUid,
         text: text,
-        timestamp: new Date()
+        timestamp: new Date(),
+        messageType: customType
       });
-      setMessageText("");
+      if (customText === null) {
+        setMessageText("");
+      }
     } catch (err) {
       console.error("Failed to send message:", err);
       showToast("無法傳送私訊");
@@ -3263,6 +3446,84 @@ export default function App() {
                       </div>
                     )}
 
+                    {/* Group Chats Section */}
+                    <div className="sidebar-section" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <h3 style={{ margin: 0, fontSize: '12px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          💬 {currentLang === "en" ? "Group Chats" : "群組聊天"}
+                        </h3>
+                        <button
+                          style={{
+                            padding: '4px 8px',
+                            background: 'rgba(61, 220, 151, 0.1)',
+                            border: '1px solid var(--neon-green)',
+                            color: 'var(--neon-green)',
+                            borderRadius: '4px',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold'
+                          }}
+                          onClick={handleCreateGroup}
+                        >
+                          + {currentLang === "en" ? "Create Group" : "建立群組"}
+                        </button>
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {groupChats.map(g => {
+                          const isSelected = activeChatFriend && activeChatFriend.type === "group" && activeChatFriend.id === g.id;
+                          return (
+                            <button
+                              key={g.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '10px',
+                                borderRadius: '6px',
+                                background: isSelected ? 'rgba(61, 220, 151, 0.1)' : 'var(--bg-card)',
+                                border: isSelected ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                width: '100%'
+                              }}
+                              onClick={() => {
+                                setActiveChatFriend(g);
+                                setShowGifPicker(false);
+                                setActiveEmojiMenuMsgId(null);
+                              }}
+                            >
+                              <div className="group-avatar" style={{ 
+                                width: '30px', 
+                                height: '30px', 
+                                background: 'linear-gradient(135deg, var(--neon-cyan), var(--neon-green))',
+                                borderRadius: '50%', 
+                                color: '#000', 
+                                fontSize: '12px', 
+                                fontWeight: 'bold',
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center' 
+                              }}>
+                                👥
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-bright)' }}>{g.name}</div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                  {g.members ? g.members.length : 1} {currentLang === "en" ? "members" : "位成員"}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                        {groupChats.length === 0 && (
+                          <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', padding: '10px 0' }}>
+                            {currentLang === "en" ? "No group chats." : "目前無參與任何群組。"}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="sidebar-section">
                       <h3 style={{ fontSize: '12px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '10px' }}>
                         👥 {currentLang === "en" ? "Friends" : "好友清單"}
@@ -3292,7 +3553,11 @@ export default function App() {
                                   cursor: 'pointer',
                                   width: '100%'
                                 }}
-                                onClick={() => setActiveChatFriend(u)}
+                                onClick={() => {
+                                  setActiveChatFriend(u);
+                                  setShowGifPicker(false);
+                                  setActiveEmojiMenuMsgId(null);
+                                }}
                               >
                                 <div className="user-avatar" style={{ 
                                   width: '30px', 
