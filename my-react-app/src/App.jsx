@@ -27,7 +27,9 @@ import {
   Phone,
   Upload,
   X,
-  User
+  User,
+  EyeOff,
+  UserX
 } from 'lucide-react';
 import { db, isFirebaseSetup } from "./firebase";
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch, getDoc, setDoc, where, getDocs } from "firebase/firestore";
@@ -753,6 +755,23 @@ export default function App() {
   const [isSearchingGifs, setIsSearchingGifs] = useState(false);
   const [isCommentSearchingGifs, setIsCommentSearchingGifs] = useState(false);
 
+  // Admin blacklist & block states
+  const [blacklistKeywords, setBlacklistKeywords] = useState(() => {
+    const saved = localStorage.getItem("echoes_blacklist_keywords");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return ["詐騙", "政治敏感", "廣告", "fucking", "scam"];
+  });
+  const [newKeywordInput, setNewKeywordInput] = useState("");
+  const [blockedUids, setBlockedUids] = useState(() => {
+    const saved = localStorage.getItem("echoes_blocked_uids");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+
   const saveGiphyApiKey = (key) => {
     localStorage.setItem("echoes_giphy_api_key", key);
     setGiphyApiKey(key);
@@ -1010,6 +1029,14 @@ export default function App() {
       localStorage.setItem("echoes_posts", JSON.stringify(posts));
     }
   }, [posts]);
+
+  useEffect(() => {
+    localStorage.setItem("echoes_blacklist_keywords", JSON.stringify(blacklistKeywords));
+  }, [blacklistKeywords]);
+
+  useEffect(() => {
+    localStorage.setItem("echoes_blocked_uids", JSON.stringify(blockedUids));
+  }, [blockedUids]);
 
   // Auto scroll to top when changing profile pages or switching to profile view
   useEffect(() => {
@@ -1276,13 +1303,24 @@ export default function App() {
 
     const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
       const list = [];
+      const dbBlockedUids = [];
       snapshot.forEach((doc) => {
         const u = doc.data();
         if (u.handle !== currentUser.handle) {
           list.push(u);
         }
+        if (u.blocked) {
+          if (u.uid) dbBlockedUids.push(u.uid);
+          if (u.handle) dbBlockedUids.push(u.handle);
+        }
       });
       setUsersList(list);
+      if (dbBlockedUids.length > 0) {
+        setBlockedUids(prev => {
+          const union = new Set([...prev, ...dbBlockedUids]);
+          return Array.from(union);
+        });
+      }
     }, (error) => {
       console.error("Error fetching users:", error);
     });
@@ -2294,6 +2332,7 @@ export default function App() {
       return;
     }
 
+    const containsBlacklist = blacklistKeywords.some(kw => textVal.toLowerCase().includes(kw.toLowerCase()));
     const postData = {
       uid: currentUser.googleId || currentUser.uid,
       author: currentUser.name,
@@ -2307,7 +2346,8 @@ export default function App() {
       likedBy: [],
       likes: 0,
       comments: [],
-      isDefault: false
+      isDefault: false,
+      hidden: containsBlacklist
     };
 
     if (isFirebaseSetup) {
@@ -2446,7 +2486,11 @@ export default function App() {
     setComposerGradient(null);
     setComposerImage(null);
     setShowGradientsRow(false);
-    showToast(t("toast_post_created"));
+    if (containsBlacklist) {
+      showToast("⚠️ 貼文包含敏感字詞，已自動隱藏下架！");
+    } else {
+      showToast(t("toast_post_created"));
+    }
     if (currentRoute === "#/write") {
       navigateToHash("#/");
     }
@@ -3103,6 +3147,72 @@ export default function App() {
     navigateToHash("#/");
   };
 
+  const handleAddKeyword = () => {
+    const word = newKeywordInput.trim();
+    if (!word) return;
+    if (blacklistKeywords.includes(word)) {
+      showToast("此關鍵字已在列表中！");
+      return;
+    }
+    setBlacklistKeywords(prev => [...prev, word]);
+    setNewKeywordInput("");
+    showToast(`已新增黑名單字詞: "${word}"`);
+  };
+
+  const handleRemoveKeyword = (word) => {
+    setBlacklistKeywords(prev => prev.filter(kw => kw !== word));
+    showToast(`已移除黑名單字詞: "${word}"`);
+  };
+
+  const handleHideAndBlock = async (post) => {
+    if (window.confirm(`確定要下架此貼文，並封鎖該用戶「${post.author}」(${post.handle}) 嗎？`)) {
+      // 1. Hide the post
+      if (isFirebaseSetup) {
+        try {
+          await updateDoc(doc(db, "posts", post.id), { hidden: true });
+          const userDoc = usersList.find(u => u.uid === post.uid || u.handle === post.handle);
+          if (userDoc && userDoc.email) {
+            await updateDoc(doc(db, "users", userDoc.email), { blocked: true });
+          }
+          showToast("已成功下架貼文，並在雲端封鎖該帳號");
+        } catch (err) {
+          console.error("Failed to update post/user in Firestore:", err);
+          showToast("無法同步至雲端，已在本地下架與封鎖");
+        }
+      } else {
+        setPosts(prev => prev.map(p => p.id === post.id ? { ...p, hidden: true } : p));
+      }
+
+      setBlockedUids(prev => {
+        const next = new Set(prev);
+        if (post.uid) next.add(post.uid);
+        if (post.handle) next.add(post.handle);
+        return Array.from(next);
+      });
+      showToast("貼文已下架，該帳號已被封鎖！");
+    }
+  };
+
+  const handleUnblockUser = async (uid) => {
+    if (window.confirm(`確定要解除封鎖此用戶嗎？`)) {
+      if (isFirebaseSetup) {
+        try {
+          const userDoc = usersList.find(u => u.uid === uid || u.handle === uid);
+          if (userDoc && userDoc.email) {
+            await updateDoc(doc(db, "users", userDoc.email), { blocked: false });
+          }
+          showToast("已在雲端解除封鎖該帳號");
+        } catch (err) {
+          console.error("Failed to unblock user in Firestore:", err);
+          showToast("無法同步至雲端，已在本地解除封鎖");
+        }
+      }
+
+      setBlockedUids(prev => prev.filter(item => item !== uid));
+      showToast("已成功解除封鎖！");
+    }
+  };
+
   // Share post text generator
   const handleSharePost = (post) => {
     const copyText = `${post.author} (${post.handle}): \n"${post.content}"\n\n來自 Echoes Feed 的分享`;
@@ -3155,6 +3265,13 @@ export default function App() {
 
       const matchesTab = isWriteTab ? isMine : true;
 
+      const isPostHidden = post.hidden === true || (post.content && blacklistKeywords.some(kw => post.content.toLowerCase().includes(kw.toLowerCase())));
+      const isAuthorBlocked = blockedUids.includes(post.uid) || blockedUids.includes(post.handle);
+
+      if (isPostHidden || isAuthorBlocked) {
+        return false;
+      }
+
       return matchesCat && matchesSearch && matchesPrivacy && matchesTab;
     });
 
@@ -3198,7 +3315,7 @@ export default function App() {
       ];
     }
     return list;
-  }, [displayPosts, currentCategory, searchQuery, currentUser.handle, currentUser.name, currentUser.avatarLetter, adminAuthenticated, isWriteTab]);
+  }, [displayPosts, currentCategory, searchQuery, currentUser.handle, currentUser.name, currentUser.avatarLetter, adminAuthenticated, isWriteTab, blacklistKeywords, blockedUids]);
 
   // Categories pill filters list
   const categoryFilterList = useMemo(() => {
@@ -3791,6 +3908,86 @@ export default function App() {
           </div>
         </div>
 
+        {/* 後台內容安全管理面板 (Content Safety Panel) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+          {/* 左欄：自動黑名單管理 (Keyword Blacklist) */}
+          <div className="blacklist-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0, fontSize: '14px', fontFamily: 'var(--font-heading)', color: 'var(--neon-amber)', textShadow: '0 0 8px rgba(251, 191, 36, 0.2)' }}>🛡️ 自動黑名單管理 (Keyword Blacklist)</h3>
+              </div>
+              <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: 'var(--text-muted)' }}>任何包含以下敏感字詞的貼文將自動隱藏：</p>
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '15px', maxHeight: '100px', overflowY: 'auto', padding: '4px' }}>
+                {blacklistKeywords.map(kw => (
+                  <span key={kw} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.3)', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', color: 'var(--neon-amber)' }}>
+                    {kw}
+                    <button onClick={() => handleRemoveKeyword(kw)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                      <X size={10} />
+                    </button>
+                  </span>
+                ))}
+                {blacklistKeywords.length === 0 && (
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>尚無設定任何關鍵字</span>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+              <input 
+                type="text" 
+                placeholder="新增敏感字詞..." 
+                value={newKeywordInput} 
+                onChange={(e) => setNewKeywordInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddKeyword()}
+                style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-primary)', fontSize: '12px' }}
+              />
+              <button 
+                onClick={handleAddKeyword}
+                style={{ padding: '6px 12px', background: 'rgba(251, 191, 36, 0.1)', border: '1px solid var(--neon-amber)', color: 'var(--neon-amber)', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                新增
+              </button>
+            </div>
+          </div>
+
+          {/* 右欄：已封鎖社群帳號管理 (Blocked Users) */}
+          <div className="blocked-users-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0, fontSize: '14px', fontFamily: 'var(--font-heading)', color: 'var(--neon-red)', textShadow: '0 0 8px rgba(239, 68, 68, 0.2)' }}>🚫 已封鎖用戶名單 (Blocked Accounts)</h3>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>共 {blockedUids.length} 個</span>
+            </div>
+            
+            <div style={{ maxHeight: '135px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '4px' }}>
+              {blockedUids.map(uid => {
+                const userObj = usersList.find(u => u.uid === uid || u.handle === uid);
+                const displayName = userObj ? userObj.name : uid;
+                const displayHandle = userObj ? userObj.handle : (uid.startsWith('@') ? uid : '');
+                
+                return (
+                  <div key={uid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-input)', border: '1px solid var(--border-color)', padding: '4px 10px', borderRadius: '4px' }}>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>{displayName}</span>
+                      {displayHandle && <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '6px' }}>{displayHandle}</span>}
+                    </div>
+                    <button 
+                      onClick={() => handleUnblockUser(uid)}
+                      style={{ background: 'none', border: 'none', color: 'var(--neon-green)', cursor: 'pointer', fontSize: '11px', fontWeight: 600, textDecoration: 'underline', padding: 0 }}
+                    >
+                      解除封鎖
+                    </button>
+                  </div>
+                );
+              })}
+              {blockedUids.length === 0 && (
+                <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', fontStyle: 'italic' }}>
+                  目前無被封鎖的社群帳號
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="section-header" style={{ margin: '40px 0 15px 0', fontFamily: 'var(--font-heading)', fontSize: '16px', color: 'var(--text-bright)', borderLeft: '3px solid var(--neon-cyan)', paddingLeft: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>貼文目錄清單 (Post Catalog)</div>
         <div className="data-table-container" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', boxShadow: 'var(--card-shadow)', width: '100%' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -3811,6 +4008,9 @@ export default function App() {
                 const isSystem = post.isDefault || post.id.toString().startsWith('def-');
                 const hasImage = !!post.image;
                 const privacy = post.privacy || 'public';
+
+                const isPostHidden = post.hidden === true || (post.content && blacklistKeywords.some(kw => post.content.toLowerCase().includes(kw.toLowerCase())));
+                const isAuthorBlocked = blockedUids.includes(post.uid) || blockedUids.includes(post.handle);
 
                 return (
                   <tr key={post.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
@@ -3848,6 +4048,26 @@ export default function App() {
                       }}>
                         {privacy === 'private' ? '🔒 私人' : '🌐 公開'}
                       </span>
+                      {isPostHidden && (
+                        <div style={{ marginTop: '4px' }}>
+                          <span style={{
+                            padding: '2px 6px', borderRadius: '3px', fontSize: '10px', fontWeight: 600,
+                            background: 'rgba(239, 68, 68, 0.1)', color: 'var(--neon-red)', border: '1px solid rgba(239, 68, 68, 0.2)'
+                          }}>
+                            🚫 隱藏 (黑名單)
+                          </span>
+                        </div>
+                      )}
+                      {isAuthorBlocked && (
+                        <div style={{ marginTop: '4px' }}>
+                          <span style={{
+                            padding: '2px 6px', borderRadius: '3px', fontSize: '10px', fontWeight: 600,
+                            background: 'rgba(239, 68, 68, 0.15)', color: 'var(--neon-red)', border: '1px solid rgba(239, 68, 68, 0.3)'
+                          }}>
+                            🔒 封鎖帳號
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
                       {hasImage ? (
@@ -3869,7 +4089,34 @@ export default function App() {
                       }}>{isSystem ? '系統常駐' : '用戶建立'}</span>
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
-                      <button style={{ color: 'var(--neon-red)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }} onClick={() => handleAdminDeletePost(post.id)}>徹底刪除</button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button 
+                          style={{ color: 'var(--neon-red)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline', padding: 0 }} 
+                          onClick={() => handleAdminDeletePost(post.id)}
+                        >
+                          徹底刪除
+                        </button>
+                        <button 
+                          style={{ 
+                            color: isAuthorBlocked ? 'var(--text-muted)' : 'var(--neon-amber)', 
+                            background: 'none', 
+                            border: 'none', 
+                            cursor: isAuthorBlocked ? 'not-allowed' : 'pointer', 
+                            fontWeight: 600, 
+                            textDecoration: isAuthorBlocked ? 'none' : 'underline',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: 0
+                          }} 
+                          disabled={isAuthorBlocked}
+                          onClick={() => handleHideAndBlock(post)}
+                          title={isAuthorBlocked ? "該帳號已被封鎖" : "下架貼文並封鎖此帳號"}
+                        >
+                          {isAuthorBlocked ? <UserX size={13} /> : <EyeOff size={13} />}
+                          {isAuthorBlocked ? '已封鎖' : '隱藏封鎖'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
