@@ -649,6 +649,9 @@ export default function App() {
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [activeCommentEmojiMsgId, setActiveCommentEmojiMsgId] = useState(null);
   const [activeCommentGifPostId, setActiveCommentGifPostId] = useState(null);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [selectedGroupMembers, setSelectedGroupMembers] = useState([]);
 
   const showToast = (message) => {
     const id = Date.now() + Math.random().toString();
@@ -2170,9 +2173,18 @@ export default function App() {
   };
 
   // Create Group Chat
-  const handleCreateGroup = async () => {
-    const groupName = prompt(currentLang === "en" ? "Enter group name:" : "請輸入群組名稱：");
-    if (!groupName || !groupName.trim()) return;
+  const handleCreateGroup = () => {
+    setNewGroupName("");
+    setSelectedGroupMembers([]);
+    setShowCreateGroupModal(true);
+  };
+
+  // Confirm group creation with selected members
+  const handleConfirmCreateGroup = async () => {
+    if (!newGroupName || !newGroupName.trim()) {
+      showToast(currentLang === "en" ? "Please enter a group name" : "請輸入群組名稱");
+      return;
+    }
 
     const currentUserUid = currentUser.googleId || currentUser.uid;
     if (!currentUserUid) {
@@ -2180,14 +2192,19 @@ export default function App() {
       return;
     }
 
+    const groupMembers = [currentUserUid, ...selectedGroupMembers];
+
     try {
       await addDoc(collection(db, "chats"), {
         type: "group",
-        name: groupName.trim(),
-        members: [currentUserUid],
+        name: newGroupName.trim(),
+        members: groupMembers,
         createdAt: Date.now()
       });
       showToast(currentLang === "en" ? "Group created successfully!" : "群組建立成功！");
+      setShowCreateGroupModal(false);
+      setNewGroupName("");
+      setSelectedGroupMembers([]);
     } catch (err) {
       console.error("Failed to create group:", err);
       showToast(currentLang === "en" ? "Failed to create group" : "無法建立群組");
@@ -4644,6 +4661,127 @@ export default function App() {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Group Modal */}
+      {showCreateGroupModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 5000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            padding: '24px',
+            width: '100%',
+            maxWidth: '400px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', fontSize: '18px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              👥 {currentLang === "en" ? "Create Group Chat" : "建立群組聊天"}
+            </h3>
+            
+            {/* Group Name input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-bright)' }}>
+                {currentLang === "en" ? "Group Name" : "群組名稱"}
+              </label>
+              <input
+                type="text"
+                style={{ padding: '8px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px', color: 'var(--text-bright)' }}
+                placeholder={currentLang === "en" ? "Enter group name..." : "請輸入群組名稱..."}
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+              />
+            </div>
+
+            {/* Friends selection checkboxes */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-bright)' }}>
+                {currentLang === "en" ? "Select Members" : "選擇群組成員（好友）"}
+              </label>
+              <div style={{
+                maxHeight: '180px',
+                overflowY: 'auto',
+                border: '1px solid var(--border-color)',
+                borderRadius: '4px',
+                padding: '8px',
+                background: 'var(--bg-input)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                {usersList
+                  .filter(u => {
+                    const uUid = u.googleId || u.uid;
+                    return sentRequests.some(r => r.toUid === uUid && r.status === "accepted") ||
+                           receivedRequests.some(r => r.fromUid === uUid && r.status === "accepted");
+                  })
+                  .map(friend => {
+                    const friendUid = friend.googleId || friend.uid;
+                    const isChecked = selectedGroupMembers.includes(friendUid);
+                    return (
+                      <label key={friendUid} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            if (isChecked) {
+                              setSelectedGroupMembers(prev => prev.filter(uid => uid !== friendUid));
+                            } else {
+                              setSelectedGroupMembers(prev => [...prev, friendUid]);
+                            }
+                          }}
+                        />
+                        <span style={{ color: 'var(--text-bright)', fontWeight: 500 }}>{friend.name}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{friend.handle}</span>
+                      </label>
+                    );
+                  })}
+                {usersList.filter(u => {
+                  const uUid = u.googleId || u.uid;
+                  return sentRequests.some(r => r.toUid === uUid && r.status === "accepted") ||
+                         receivedRequests.some(r => r.fromUid === uUid && r.status === "accepted");
+                }).length === 0 && (
+                  <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', padding: '10px 0' }}>
+                    {currentLang === "en" ? "No friends available to add." : "目前尚無好友可加入群組。"}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+              <button
+                type="button"
+                style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-muted)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+                onClick={() => setShowCreateGroupModal(false)}
+              >
+                {currentLang === "en" ? "Cancel" : "取消"}
+              </button>
+              <button
+                type="button"
+                style={{ padding: '8px 16px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+                onClick={handleConfirmCreateGroup}
+              >
+                {currentLang === "en" ? "Create" : "建立"}
+              </button>
             </div>
           </div>
         </div>
