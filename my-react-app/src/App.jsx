@@ -1647,6 +1647,46 @@ export default function App() {
     }
   };
 
+  // Delete category
+  const handleDeleteCategory = async () => {
+    const targetCat = categories.find(c => c.value === composerCategory);
+    if (!targetCat) return;
+
+    const confirmMsg = currentLang === "en" 
+      ? `Are you sure you want to delete the category "${targetCat.name}"?` 
+      : `確定要刪除「${targetCat.name}」分類嗎？`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    if (isFirebaseSetup) {
+      try {
+        if (targetCat.id) {
+          await deleteDoc(doc(db, "categories", targetCat.id));
+        } else {
+          const q = query(collection(db, "categories"), where("value", "==", composerCategory));
+          const snap = await getDocs(q);
+          const deletePromises = [];
+          snap.forEach(docSnap => {
+            deletePromises.push(deleteDoc(doc(db, "categories", docSnap.id)));
+          });
+          await Promise.all(deletePromises);
+        }
+        
+        const defaultVal = "Thoughts";
+        setComposerCategory(defaultVal);
+        showToast(currentLang === "en" ? `Category "${targetCat.name}" deleted` : `已成功刪除分類「${targetCat.name}」`);
+      } catch (err) {
+        console.error("Failed to delete category:", err);
+        showToast(currentLang === "en" ? "Failed to delete category from database" : "無法自資料庫刪除分類");
+      }
+    } else {
+      setCategories(prev => prev.filter(c => c.value !== composerCategory));
+      const defaultVal = "Thoughts";
+      setComposerCategory(defaultVal);
+      showToast(currentLang === "en" ? `Category "${targetCat.name}" deleted locally` : `已於本地刪除分類「${targetCat.name}」`);
+    }
+  };
+
   // Publish Post action
   const handlePublishPost = async () => {
     const textVal = composerText.trim();
@@ -3480,12 +3520,38 @@ export default function App() {
                           </button>
                         </div>
 
-                        <select id="composer-category" className="composer-category-select" aria-label="Category Selection" value={composerCategory} onChange={handleCategoryChange}>
-                          {categories.map(cat => (
-                            <option key={cat.value} value={cat.value}>{cat.name}</option>
-                          ))}
-                          <option value="ADD_NEW_CATEGORY">+ 新增自訂分類...</option>
-                        </select>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <select id="composer-category" className="composer-category-select" aria-label="Category Selection" value={composerCategory} onChange={handleCategoryChange}>
+                            {categories.map(cat => (
+                              <option key={cat.value} value={cat.value}>{cat.name}</option>
+                            ))}
+                            <option value="ADD_NEW_CATEGORY">+ 新增自訂分類...</option>
+                          </select>
+                          {!["Thoughts", "Tech", "Productivity", "Life", "Design", "ADD_NEW_CATEGORY"].includes(composerCategory) && (
+                            <button
+                              type="button"
+                              className="composer-tool-btn"
+                              style={{
+                                padding: '5px 8px',
+                                fontSize: '11px',
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                border: '1px solid var(--neon-red)',
+                                color: 'var(--neon-red)',
+                                borderRadius: 'var(--radius-sm)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                height: '100%',
+                                transition: 'all var(--transition-fast)'
+                              }}
+                              onClick={handleDeleteCategory}
+                              title={currentLang === "en" ? "Delete Category" : "刪除此分類"}
+                            >
+                              <Trash2 style={{ width: '12px', height: '12px' }} />
+                            </button>
+                          )}
+                        </div>
 
                         <select id="composer-privacy" className="composer-privacy-select" aria-label="Privacy Control" value={composerPrivacy} onChange={(e) => setComposerPrivacy(e.target.value)}>
                           <option value="public">{t("public")}</option>
