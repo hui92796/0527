@@ -58,51 +58,51 @@ const PRESET_AVATARS = [
 
 const PRESET_GIFS = [
   // Cats
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oriO0OEd9QIDdllqo/giphy.gif', keywords: ['cat', 'happy', 'cute', '貓咪', '開心', '可愛'], category: 'cat' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG9yYWhnbXB3c292ZTFwdmtiaXZxMHh4ejQ3Z3p3dThxdGoxNTR2YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13CoXDiaCcC2EA/giphy.gif', keywords: ['cat', 'cute', 'sleep', '貓咪', '可愛', '睡覺', '慵懶'], category: 'cat' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5i7umUqAOYYHC/giphy.gif', keywords: ['cat', 'dance', 'party', '貓咪', '跳舞', '派對'], category: 'cat' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9gISqB3tncMmY/giphy.gif', keywords: ['cat', 'sad', 'cry', '貓咪', '難過', '哭泣', '委屈'], category: 'cat' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2R4bTJkZGQ4a2QyOHB5Z3A0dDhpdmwwdHcxczNtbTBpcThtdGJpZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ule4vhcY1xEIw/giphy.gif', keywords: ['cat', 'typing', 'work', '貓咪', '打字', '工作', '社畜', '崩潰'], category: 'cat' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmt6czVnZG12bHppNmQxMXc5dnZsc3h5ZWNtdjRkMDgyNHA0aG5heSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFQ0ywscgobJK/giphy.gif', keywords: ['cat', 'shocked', 'funny', '驚訝', '貓咪', '傻眼', '搞笑'], category: 'cat' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VbnUQpnihPSIgIXNV1/giphy.gif', keywords: ['cat', 'wave', 'hello', '貓咪', '打招呼', '哈囉', '拜拜'], category: 'cat' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GeimqsH0TLDt4tScGw/giphy.gif', keywords: ['cat', 'judge', 'stare', '貓咪', '瞪人', '鄙視', '問號'], category: 'cat' },
+  { id: 'cat_1', url: 'https://i.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif', keywords: ['cat', 'happy', 'cute', '貓咪', '開心', '可愛'], tags: ['cat', 'happy', 'cute', '貓咪', '開心', '可愛'], category: 'cat' },
+  { id: 'cat_2', url: 'https://i.giphy.com/media/13CoXDiaCcC2EA/giphy.gif', keywords: ['cat', 'cute', 'sleep', '貓咪', '可愛', '睡覺', '慵懶'], tags: ['cat', 'cute', 'sleep', '貓咪', '可愛', '睡覺', '慵懶'], category: 'cat' },
+  { id: 'cat_3', url: 'https://i.giphy.com/media/5i7umUqAOYYHC/giphy.gif', keywords: ['cat', 'dance', 'party', '貓咪', '跳舞', '派對'], tags: ['cat', 'dance', 'party', '貓咪', '跳舞', '派對'], category: 'cat' },
+  { id: 'cat_4', url: 'https://i.giphy.com/media/9gISqB3tncMmY/giphy.gif', keywords: ['cat', 'sad', 'cry', '貓咪', '難過', '哭泣', '委屈'], tags: ['cat', 'sad', 'cry', '貓咪', '難過', '哭泣', '委屈'], category: 'cat' },
+  { id: 'cat_5', url: 'https://i.giphy.com/media/ule4vhcY1xEIw/giphy.gif', keywords: ['cat', 'typing', 'work', '貓咪', '打字', '工作', '社畜', '崩潰'], tags: ['cat', 'typing', 'work', '貓咪', '打字', '工作', '社畜', '崩潰'], category: 'cat' },
+  { id: 'cat_6', url: 'https://i.giphy.com/media/yFQ0ywscgobJK/giphy.gif', keywords: ['cat', 'shocked', 'funny', '驚訝', '貓咪', '傻眼', '搞笑'], tags: ['cat', 'shocked', 'funny', '驚訝', '貓咪', '傻眼', '搞笑'], category: 'cat' },
+  { id: 'cat_7', url: 'https://i.giphy.com/media/VbnUQpnihPSIgIXNV1/giphy.gif', keywords: ['cat', 'wave', 'hello', '貓咪', '打招呼', '哈囉', '拜拜'], tags: ['cat', 'wave', 'hello', '貓咪', '打招呼', '哈囉', '拜拜'], category: 'cat' },
+  { id: 'cat_8', url: 'https://i.giphy.com/media/GeimqsH0TLDt4tScGw/giphy.gif', keywords: ['cat', 'judge', 'stare', '貓咪', '瞪人', '鄙視', '問號'], tags: ['cat', 'judge', 'stare', '貓咪', '瞪人', '鄙視', '問號'], category: 'cat' },
 
   // Happy / Celebration
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzN2eThhMHlqY3VwNzh5NWhuYTQwdDV6MnU1Nng5NWhsM3o4bWxpbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/t3s3tC50UkY3C/giphy.gif', keywords: ['happy', 'yes', 'success', 'celebrate', '開心', '耶', '成功', '讚', '慶祝'], category: 'happy' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/14412cZqAhi34s/giphy.gif', keywords: ['dance', 'happy', 'party', '跳舞', '開心', '派對', '搖擺'], category: 'happy' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3N2eThhMHlqY3VwNzh5NWhuYTQwdDV6MnU1Nng5NWhsM3o4bWxpbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/nbvFVPiEiJH6JOGIok/giphy.gif', keywords: ['clap', 'good', 'bravo', 'clapping', '鼓掌', '拍手', '讚', '棒'], category: 'happy' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3hndzhkZnU4NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/111ebonMs90YLu/giphy.gif', keywords: ['thumbsup', 'ok', 'yes', 'good', '讚', '好的', '沒問題'], category: 'happy' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzk0MXpneHhqeDh2djBmcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0AMDAf3clIpL2aaQ/giphy.gif', keywords: ['celebrate', 'minions', 'party', '慶祝', '小小兵', '派對'], category: 'happy' },
+  { id: 'happy_1', url: 'https://i.giphy.com/media/t3s3tC50UkY3C/giphy.gif', keywords: ['happy', 'yes', 'success', 'celebrate', '開心', '耶', '成功', '讚', '慶祝'], tags: ['happy', 'yes', 'success', 'celebrate', '開心', '耶', '成功', '讚', '慶祝'], category: 'happy' },
+  { id: 'happy_2', url: 'https://i.giphy.com/media/14412cZqAhi34s/giphy.gif', keywords: ['dance', 'happy', 'party', '跳舞', '開心', '派對', '搖擺'], tags: ['dance', 'happy', 'party', '跳舞', '開心', '派對', '搖擺'], category: 'happy' },
+  { id: 'happy_3', url: 'https://i.giphy.com/media/nbvFVPiEiJH6JOGIok/giphy.gif', keywords: ['clap', 'good', 'bravo', 'clapping', '鼓掌', '拍手', '讚', '棒'], tags: ['clap', 'good', 'bravo', 'clapping', '鼓掌', '拍手', '讚', '棒'], category: 'happy' },
+  { id: 'happy_4', url: 'https://i.giphy.com/media/111ebonMs90YLu/giphy.gif', keywords: ['thumbsup', 'ok', 'yes', 'good', '讚', '好的', '沒問題'], tags: ['thumbsup', 'ok', 'yes', 'good', '讚', '好的', '沒問題'], category: 'happy' },
+  { id: 'happy_5', url: 'https://i.giphy.com/media/l0AMDAf3clIpL2aaQ/giphy.gif', keywords: ['celebrate', 'minions', 'party', '慶祝', '小小兵', '派對'], tags: ['celebrate', 'minions', 'party', '慶祝', '小小兵', '派對'], category: 'happy' },
 
   // Sad / Cry
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzRxeHlsa3d4MmhndzhkZnU4NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WxWlkKWUsQ5q/giphy.gif', keywords: ['cry', 'sad', 'tears', '哭', '難過', '眼淚', '落淚'], category: 'sad' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OPU6wFID8rJcI/giphy.gif', keywords: ['cry', 'sad', 'baby', '哭', '難過', '寶寶', '委屈'], category: 'sad' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d2LCipPTihEBq/giphy.gif', keywords: ['sad', 'lonely', 'rain', '難過', '孤單', '下雨', '憂鬱'], category: 'sad' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BEob5wK5CJAQs/giphy.gif', keywords: ['sad', 'depressed', 'sit', '難過', '沮喪', '抱膝', '無奈'], category: 'sad' },
+  { id: 'sad_1', url: 'https://i.giphy.com/media/2WxWlkKWUsQ5q/giphy.gif', keywords: ['cry', 'sad', 'tears', '哭', '難過', '眼淚', '落淚'], tags: ['cry', 'sad', 'tears', '哭', '難過', '眼淚', '落淚'], category: 'sad' },
+  { id: 'sad_2', url: 'https://i.giphy.com/media/OPU6wFID8rJcI/giphy.gif', keywords: ['cry', 'sad', 'baby', '哭', '難過', '寶寶', '委屈'], tags: ['cry', 'sad', 'baby', '哭', '難過', '寶寶', '委屈'], category: 'sad' },
+  { id: 'sad_3', url: 'https://i.giphy.com/media/d2LCipPTihEBq/giphy.gif', keywords: ['sad', 'lonely', 'rain', '難過', '孤單', '下雨', '憂鬱'], tags: ['sad', 'lonely', 'rain', '難過', '孤單', '下雨', '憂鬱'], category: 'sad' },
+  { id: 'sad_4', url: 'https://i.giphy.com/media/BEob5wK5CJAQs/giphy.gif', keywords: ['sad', 'depressed', 'sit', '難過', '沮喪', '抱膝', '無奈'], tags: ['sad', 'depressed', 'sit', '難過', '沮喪', '抱膝', '無奈'], category: 'sad' },
 
   // Angry / Rage
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzN2eThhMHlqY3VwNzh5NWhuYTQwdDV6MnU1Nng5NWhsM3o4bWxpbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l1J9u3TZfpmeDLkD6/giphy.gif', keywords: ['angry', 'mad', 'rage', '生氣', '憤怒', '抓狂', '氣炸'], category: 'angry' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/11tI5s0zPJUXg4/giphy.gif', keywords: ['angry', 'tableflip', 'rage', '生氣', '翻桌', '暴怒'], category: 'angry' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o72FiXyc7OIfi7aQs/giphy.gif', keywords: ['angry', 'scream', 'kid', '生氣', '尖叫', '憤怒', '暴躁'], category: 'angry' },
+  { id: 'angry_1', url: 'https://i.giphy.com/media/l1J9u3TZfpmeDLkD6/giphy.gif', keywords: ['angry', 'mad', 'rage', '生氣', '憤怒', '抓狂', '氣炸'], tags: ['angry', 'mad', 'rage', '生氣', '憤怒', '抓狂', '氣炸'], category: 'angry' },
+  { id: 'angry_2', url: 'https://i.giphy.com/media/11tI5s0zPJUXg4/giphy.gif', keywords: ['angry', 'tableflip', 'rage', '生氣', '翻桌', '暴怒'], tags: ['angry', 'tableflip', 'rage', '生氣', '翻桌', '暴怒'], category: 'angry' },
+  { id: 'angry_3', url: 'https://i.giphy.com/media/3o72FiXyc7OIfi7aQs/giphy.gif', keywords: ['angry', 'scream', 'kid', '生氣', '尖叫', '憤怒', '暴躁'], tags: ['angry', 'scream', 'kid', '生氣', '尖叫', '憤怒', '暴躁'], category: 'angry' },
 
   // Shock / Wow
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDVqNnVwbnJ6bXB2NmptNmxzYTR5NmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Um3ljJl8jrkKidv7hT/giphy.gif', keywords: ['wow', 'shocked', 'mindblown', '驚訝', '哇', '震撼', '爆腦'], category: 'shock' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzRxeHlsa3d4MmhndzhkZnU4NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/14ut8LMmgQJqq4/giphy.gif', keywords: ['scared', 'shocked', 'omg', '驚嚇', '驚訝', '天啊', '恐懼'], category: 'shock' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/80mXWkJHCgNtS/giphy.gif', keywords: ['eyes', 'shocked', 'what', '眼睛', '驚訝', '什麼', '瞪大'], category: 'shock' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jquwTstU7fO6a22g26/giphy.gif', keywords: ['wow', 'shocked', 'gasp', '大驚', '驚訝', '倒吸一口氣'], category: 'shock' },
+  { id: 'shock_1', url: 'https://i.giphy.com/media/Um3ljJl8jrkKidv7hT/giphy.gif', keywords: ['wow', 'shocked', 'mindblown', '驚訝', '哇', '震撼', '爆腦'], tags: ['wow', 'shocked', 'mindblown', '驚訝', '哇', '震撼', '爆腦'], category: 'shock' },
+  { id: 'shock_2', url: 'https://i.giphy.com/media/14ut8LMmgQJqq4/giphy.gif', keywords: ['scared', 'shocked', 'omg', '驚嚇', '驚訝', '天啊', '恐懼'], tags: ['scared', 'shocked', 'omg', '驚嚇', '驚訝', '天啊', '恐懼'], category: 'shock' },
+  { id: 'shock_3', url: 'https://i.giphy.com/media/80mXWkJHCgNtS/giphy.gif', keywords: ['eyes', 'shocked', 'what', '眼睛', '驚訝', '什麼', '瞪大'], tags: ['eyes', 'shocked', 'what', '眼睛', '驚訝', '什麼', '瞪大'], category: 'shock' },
+  { id: 'shock_4', url: 'https://i.giphy.com/media/jquwTstU7fO6a22g26/giphy.gif', keywords: ['wow', 'shocked', 'gasp', '大驚', '驚訝', '倒吸一口氣'], tags: ['wow', 'shocked', 'gasp', '大驚', '驚訝', '倒吸一口氣'], category: 'shock' },
 
   // Love / Cute
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3QxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l4pTkaQMK2S4bqV8c/giphy.gif', keywords: ['love', 'heart', 'cute', '愛心', '可愛', '心動', '喜歡'], category: 'love' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KztT2c4Yc5ppZ1eQKL/giphy.gif', keywords: ['love', 'heart', 'kiss', '愛心', '親親', '親一個', '飛吻'], category: 'love' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/I17T9wRkW6nCw/giphy.gif', keywords: ['love', 'heart', 'hug', '愛心', '抱抱', '溫暖', '擁抱'], category: 'love' },
+  { id: 'love_1', url: 'https://i.giphy.com/media/l4pTkaQMK2S4bqV8c/giphy.gif', keywords: ['love', 'heart', 'cute', '愛心', '可愛', '心動', '喜歡'], tags: ['love', 'heart', 'cute', '愛心', '可愛', '心動', '喜歡'], category: 'love' },
+  { id: 'love_2', url: 'https://i.giphy.com/media/KztT2c4Yc5ppZ1eQKL/giphy.gif', keywords: ['love', 'heart', 'kiss', '愛心', '親親', '親一個', '飛吻'], tags: ['love', 'heart', 'kiss', '愛心', '親親', '親一個', '飛吻'], category: 'love' },
+  { id: 'love_3', url: 'https://i.giphy.com/media/I17T9wRkW6nCw/giphy.gif', keywords: ['love', 'heart', 'hug', '愛心', '抱抱', '溫暖', '擁抱'], tags: ['love', 'heart', 'hug', '愛心', '抱抱', '溫暖', '擁抱'], category: 'love' },
 
   // Memes / Funny
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJ2NXk4azg3NXp6cHhncW0xeWZodHBseWJnbWw0b2F5Nm9kZnU5YiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3xz2BLBOKhvgJXMIXc/giphy.gif', keywords: ['meme', 'facepalm', 'oops', '無奈', '捂臉', '搞笑', '天啊'], category: 'meme' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDVqaWc5djVsc3hxZ2dnbm04NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/20k1gTOlfqiGY/giphy.gif', keywords: ['confused', 'where', 'travolta', '迷茫', '問號', '在哪裡', '傻眼'], category: 'meme' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3d6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/hVTouqNmVKiZy/giphy.gif', keywords: ['popcorn', 'watching', 'drama', '爆米花', '看戲', '吃瓜', '圍觀'], category: 'meme' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzN2eThhMHlqY3VwNzh5NWhuYTQwdDV6MnU1Nng5NWhsM3o4bWxpbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjei1Hi/giphy.gif', keywords: ['doge', 'meme', 'dog', '狗狗', '迷因', '逗趣'], category: 'meme' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzRxeHlsa3d4MmhndzhkZnU4NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26n6Gx9yn6up1g6TC/giphy.gif', keywords: ['laugh', 'funny', 'haha', '笑', '哈哈', '大笑', '搞笑'], category: 'meme' },
-  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2LzK1t6y59AXLO/giphy.gif', keywords: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], category: 'meme' }
+  { id: 'meme_1', url: 'https://i.giphy.com/media/3xz2BLBOKhvgJXMIXc/giphy.gif', keywords: ['meme', 'facepalm', 'oops', '無奈', '捂臉', '搞笑', '天啊'], tags: ['meme', 'facepalm', 'oops', '無奈', '捂臉', '搞笑', '天啊'], category: 'meme' },
+  { id: 'meme_2', url: 'https://i.giphy.com/media/20k1gTOlfqiGY/giphy.gif', keywords: ['confused', 'where', 'travolta', '迷茫', '問號', '在哪裡', '傻眼'], tags: ['confused', 'where', 'travolta', '迷茫', '問號', '在哪裡', '傻眼'], category: 'meme' },
+  { id: 'meme_3', url: 'https://i.giphy.com/media/hVTouqNmVKiZy/giphy.gif', keywords: ['popcorn', 'watching', 'drama', '爆米花', '看戲', '吃瓜', '圍觀'], tags: ['popcorn', 'watching', 'drama', '爆米花', '看戲', '吃瓜', '圍觀'], category: 'meme' },
+  { id: 'meme_4', url: 'https://i.giphy.com/media/3o7TKSjRrfIPjei1Hi/giphy.gif', keywords: ['doge', 'meme', 'dog', '狗狗', '迷因', '逗趣'], tags: ['doge', 'meme', 'dog', '狗狗', '迷因', '逗趣'], category: 'meme' },
+  { id: 'meme_5', url: 'https://i.giphy.com/media/26n6Gx9yn6up1g6TC/giphy.gif', keywords: ['laugh', 'funny', 'haha', '笑', '哈哈', '大笑', '搞笑'], tags: ['laugh', 'funny', 'haha', '笑', '哈哈', '大笑', '搞笑'], category: 'meme' },
+  { id: 'meme_6', url: 'https://i.giphy.com/media/l3q2LzK1t6y59AXLO/giphy.gif', keywords: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], tags: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], category: 'meme' }
 ];
 
 const DEFAULT_POSTS = [
@@ -694,6 +694,7 @@ export default function App() {
   const [activeChatFriend, setActiveChatFriend] = useState(null);
   const [messageText, setMessageText] = useState("");
   const [groupChats, setGroupChats] = useState([]);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [activeEmojiMenuMsgId, setActiveEmojiMenuMsgId] = useState(null);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [activeCommentEmojiMsgId, setActiveCommentEmojiMsgId] = useState(null);
@@ -1342,6 +1343,79 @@ export default function App() {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatMessages, activeChatFriend]);
+
+  // Subscribe to unread messages count
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn) {
+      setUnreadMessagesCount(0);
+      return;
+    }
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return;
+
+    const q = query(
+      collection(db, "messages"),
+      where("isRead", "==", false)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let count = 0;
+      const groupChatIds = new Set(groupChats.map(g => g.id));
+      
+      snapshot.forEach((doc) => {
+        const msg = doc.data();
+        if (msg.receiverId === currentUserUid) {
+          count++;
+        } else if (msg.chatId && groupChatIds.has(msg.chatId)) {
+          const readBy = msg.readBy || [];
+          if (msg.senderId !== currentUserUid && !readBy.includes(currentUserUid)) {
+            count++;
+          }
+        }
+      });
+      setUnreadMessagesCount(count);
+    }, (error) => {
+      console.error("Error fetching unread messages count:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser.googleId, currentUser.uid, isLoggedIn, groupChats]);
+
+  // Mark active chat messages as read
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn || !activeChatFriend || chatMessages.length === 0) return;
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return;
+
+    const isGroup = activeChatFriend.type === "group";
+    
+    chatMessages.forEach(async (msg) => {
+      if (isGroup) {
+        const readBy = msg.readBy || [];
+        if (msg.senderId !== currentUserUid && !readBy.includes(currentUserUid)) {
+          try {
+            const msgRef = doc(db, "messages", msg.id);
+            await updateDoc(msgRef, {
+              readBy: [...readBy, currentUserUid]
+            });
+          } catch (err) {
+            console.error("Failed to mark group message as read:", err);
+          }
+        }
+      } else {
+        if (msg.receiverId === currentUserUid && msg.isRead === false) {
+          try {
+            const msgRef = doc(db, "messages", msg.id);
+            await updateDoc(msgRef, {
+              isRead: true
+            });
+          } catch (err) {
+            console.error("Failed to mark DM as read:", err);
+          }
+        }
+      }
+    });
+  }, [chatMessages, activeChatFriend, currentUser.googleId, currentUser.uid]);
 
   useEffect(() => {
     localStorage.setItem("echoes_lang", currentLang);
@@ -2486,7 +2560,9 @@ export default function App() {
         senderHandle: currentUser.handle || "",
         text: text,
         timestamp: new Date(),
-        messageType: customType
+        messageType: customType,
+        isRead: false,
+        readBy: [currentUserUid]
       };
 
       if (isGroup) {
@@ -3725,8 +3801,19 @@ export default function App() {
                       }}></span>
                     )}
                   </li>
-                  <li className={currentRoute === "#/messages" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => window.location.hash = "#/messages"}>
+                  <li className={currentRoute === "#/messages" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }} onClick={() => window.location.hash = "#/messages"}>
                     <Mail style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{currentLang === "en" ? "Direct Messages" : "私訊功能"}</span>
+                    {unreadMessagesCount > 0 && (
+                      <span className="ml-2 w-2 h-2 bg-red-500 rounded-full inline-block" style={{
+                        position: 'absolute',
+                        right: '10px',
+                        width: '8px',
+                        height: '8px',
+                        backgroundColor: 'var(--neon-red)',
+                        borderRadius: '50%',
+                        boxShadow: '0 0 6px var(--neon-red)'
+                      }}></span>
+                    )}
                   </li>
                   <li className={currentRoute === "#/bookmarks" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => window.location.hash = "#/bookmarks"}>
                     <Bookmark style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{t("likes_history")}</span>
