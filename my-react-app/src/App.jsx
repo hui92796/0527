@@ -1499,7 +1499,13 @@ export default function App() {
   // Auto scroll to bottom of chat when messages update or chat friend changes
   useEffect(() => {
     if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+      const container = chatEndRef.current.parentElement;
+      if (container) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: "smooth"
+        });
+      }
     }
   }, [chatMessages, activeChatFriend]);
 
