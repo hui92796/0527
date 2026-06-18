@@ -695,6 +695,7 @@ export default function App() {
   const [messageText, setMessageText] = useState("");
   const [groupChats, setGroupChats] = useState([]);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState([]);
   const [activeEmojiMenuMsgId, setActiveEmojiMenuMsgId] = useState(null);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [activeCommentEmojiMsgId, setActiveCommentEmojiMsgId] = useState(null);
@@ -1344,9 +1345,10 @@ export default function App() {
     }
   }, [chatMessages, activeChatFriend]);
 
-  // Subscribe to unread messages count
+  // Subscribe to unread messages and count
   useEffect(() => {
     if (!isFirebaseSetup || !isLoggedIn) {
+      setUnreadMessages([]);
       setUnreadMessagesCount(0);
       return;
     }
@@ -1359,27 +1361,54 @@ export default function App() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      let count = 0;
+      const msgs = [];
+      let totalCount = 0;
       const groupChatIds = new Set(groupChats.map(g => g.id));
-      
+
       snapshot.forEach((doc) => {
         const msg = doc.data();
+        const msgId = doc.id;
+        msgs.push({ id: msgId, ...msg });
+
         if (msg.receiverId === currentUserUid) {
-          count++;
+          totalCount++;
         } else if (msg.chatId && groupChatIds.has(msg.chatId)) {
           const readBy = msg.readBy || [];
           if (msg.senderId !== currentUserUid && !readBy.includes(currentUserUid)) {
-            count++;
+            totalCount++;
           }
         }
       });
-      setUnreadMessagesCount(count);
+      setUnreadMessages(msgs);
+      setUnreadMessagesCount(totalCount);
     }, (error) => {
-      console.error("Error fetching unread messages count:", error);
+      console.error("Error fetching unread messages:", error);
     });
 
     return () => unsubscribe();
   }, [currentUser.googleId, currentUser.uid, isLoggedIn, groupChats]);
+
+  const getFriendUnreadCount = (friend) => {
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return 0;
+    const friendUid = friend.googleId || friend.uid;
+    if (!friendUid) return 0;
+    return unreadMessages.filter(msg => 
+      msg.senderId === friendUid && 
+      msg.receiverId === currentUserUid && 
+      msg.isRead === false
+    ).length;
+  };
+
+  const getGroupUnreadCount = (groupId) => {
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return 0;
+    return unreadMessages.filter(msg => 
+      msg.chatId === groupId && 
+      msg.senderId !== currentUserUid && 
+      !(msg.readBy || []).includes(currentUserUid)
+    ).length;
+  };
 
   // Mark active chat messages as read
   useEffect(() => {
@@ -4215,6 +4244,19 @@ export default function App() {
                                   {g.members ? g.members.length : 1} {currentLang === "en" ? "members" : "位成員"}
                                 </div>
                               </div>
+                              {getGroupUnreadCount(g.id) > 0 && (
+                                <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full" style={{
+                                  marginLeft: 'auto',
+                                  backgroundColor: 'var(--neon-red)',
+                                  boxShadow: '0 0 5px var(--neon-red)',
+                                  fontSize: '10px',
+                                  fontWeight: 'bold',
+                                  display: 'inline-block',
+                                  lineHeight: '1.2'
+                                }}>
+                                  {getGroupUnreadCount(g.id)}
+                                </span>
+                              )}
                             </button>
                           );
                         })}
@@ -4292,6 +4334,19 @@ export default function App() {
                                   <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-bright)' }}>{u.name}</div>
                                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{u.handle}</div>
                                 </div>
+                                {getFriendUnreadCount(u) > 0 && (
+                                  <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full" style={{
+                                    marginLeft: 'auto',
+                                    backgroundColor: 'var(--neon-red)',
+                                    boxShadow: '0 0 5px var(--neon-red)',
+                                    fontSize: '10px',
+                                    fontWeight: 'bold',
+                                    display: 'inline-block',
+                                    lineHeight: '1.2'
+                                  }}>
+                                    {getFriendUnreadCount(u)}
+                                  </span>
+                                )}
                               </button>
                             );
                           })
