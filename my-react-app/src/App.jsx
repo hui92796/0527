@@ -26,7 +26,8 @@ import {
   Globe,
   Phone,
   Upload,
-  X
+  X,
+  User
 } from 'lucide-react';
 import { db, isFirebaseSetup } from "./firebase";
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch, getDoc, setDoc, where, getDocs } from "firebase/firestore";
@@ -2625,10 +2626,10 @@ export default function App() {
                       <button 
                         className="profile-social-btn" 
                         style={{ background: 'none', padding: '8px', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
-                        aria-label="About Me"
-                        onClick={() => navigateToHash("#/about")}
+                        aria-label="My Thoughts"
+                        onClick={() => navigateToHash("#/write")}
                       >
-                        <Globe style={{ width: '18px', height: '18px' }} />
+                        <User style={{ width: '18px', height: '18px' }} />
                       </button>
                       <button 
                         className="profile-social-btn" 
