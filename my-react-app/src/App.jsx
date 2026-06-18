@@ -546,8 +546,13 @@ export default function App() {
     }
     return { name: "我", handle: "@me_creator", avatarLetter: "ME", avatarUrl: null, uid: "", googleId: "" };
   });
-  if (currentUser && currentUser.googleId && !currentUser.uid) {
-    currentUser.uid = currentUser.googleId;
+  if (currentUser) {
+    if (currentUser.googleId && !currentUser.uid) {
+      currentUser.uid = currentUser.googleId;
+    }
+    if (!currentUser.displayName && currentUser.name) {
+      currentUser.displayName = currentUser.name;
+    }
   }
   const [adminAuthenticated, setAdminAuthenticated] = useState(() => {
     return sessionStorage.getItem("admin_authenticated") === "true";
@@ -827,9 +832,14 @@ export default function App() {
       handleList.forEach(n => map.set(n.id, n));
       uidList.forEach(n => map.set(n.id, n));
       const sorted = Array.from(map.values()).sort((a, b) => {
-        const timeA = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : (typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime());
-        const timeB = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : (typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime());
-        return (timeB || 0) - (timeA || 0);
+        const getMs = (t) => {
+          if (!t) return 0;
+          if (t.toDate) return t.toDate().getTime();
+          if (typeof t === 'number') return t;
+          const parsed = new Date(t).getTime();
+          return isNaN(parsed) ? 0 : parsed;
+        };
+        return getMs(b.timestamp) - getMs(a.timestamp);
       });
       setNotificationsList(sorted);
     };
@@ -837,8 +847,7 @@ export default function App() {
     if (currentUser.handle) {
       const qHandle = query(
         collection(db, "notifications"),
-        where("userHandle", "==", currentUser.handle),
-        where("type", "in", ["new_post", "mention", "friend_request"])
+        where("userHandle", "==", currentUser.handle)
       );
       unsubHandle = onSnapshot(qHandle, (snapshot) => {
         const list = [];
@@ -858,8 +867,7 @@ export default function App() {
     if (currentUserUid) {
       const qUid = query(
         collection(db, "notifications"),
-        where("toUid", "==", currentUserUid),
-        where("type", "in", ["new_post", "mention", "friend_request"])
+        where("toUid", "==", currentUserUid)
       );
       unsubUid = onSnapshot(qUid, (snapshot) => {
         const list = [];
@@ -2041,13 +2049,14 @@ export default function App() {
       });
 
       await addDoc(collection(db, "notifications"), {
-        toUid: toUid,
-        fromUid: currentUser.uid || currentUser.googleId,
-        fromName: currentUser.displayName || currentUser.name || "有人",
+        toUid: toUid || targetUser.googleId || targetUser.uid || "",
+        fromUid: currentUser.uid || currentUser.googleId || "",
+        fromName: currentUser.displayName || currentUser.name || '有人',
         type: "friend_request",
         message: `${currentUser.displayName || currentUser.name || '有人'} 向您發送了好友請求！`,
         timestamp: Date.now(),
-        isRead: false
+        isRead: false,
+        read: false
       });
 
       showToast(`已向 ${targetUser.name} 送出好友申請！`);
@@ -3127,8 +3136,12 @@ export default function App() {
                           key={n.id}
                           style={{
                             background: 'var(--bg-card)',
-                            border: isUnread ? '1px solid var(--neon-cyan)' : '1px solid var(--border-color)',
-                            boxShadow: isUnread ? 'var(--glow-cyan)' : 'none',
+                            border: isUnread 
+                              ? (n.type === "friend_request" ? '1px solid var(--neon-amber)' : '1px solid var(--neon-cyan)') 
+                              : '1px solid var(--border-color)',
+                            boxShadow: isUnread 
+                              ? (n.type === "friend_request" ? '0 0 8px rgba(255, 209, 102, 0.3)' : 'var(--glow-cyan)') 
+                              : 'none',
                             borderRadius: '6px',
                             padding: '12px 16px',
                             display: 'flex',
@@ -3140,7 +3153,23 @@ export default function App() {
                         >
                           <div>
                             <p style={{ margin: 0, fontSize: '13px', color: isUnread ? 'var(--text-bright)' : 'var(--text-secondary)', fontWeight: isUnread ? 'bold' : 'normal' }}>
-                              {contentText}
+                              {n.type === "friend_request" && (
+                                <span style={{ 
+                                  fontSize: '10px', 
+                                  background: 'rgba(255, 209, 102, 0.1)', 
+                                  color: 'var(--neon-amber)', 
+                                  border: '1px solid rgba(255, 209, 102, 0.3)', 
+                                  padding: '1px 5px', 
+                                  borderRadius: '3px', 
+                                  marginRight: '6px',
+                                  fontWeight: 'bold',
+                                  display: 'inline-block',
+                                  verticalAlign: 'middle'
+                                }}>
+                                  {currentLang === "en" ? "Friend Request" : "好友請求"}
+                                </span>
+                              )}
+                              <span style={{ verticalAlign: 'middle' }}>{contentText}</span>
                             </p>
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                               {n.timestamp ? formatRelativeDate(n.timestamp.toDate ? n.timestamp.toDate() : new Date(n.timestamp), currentLang) : ""}
