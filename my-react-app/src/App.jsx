@@ -32,7 +32,6 @@ import {
 import { db, isFirebaseSetup } from "./firebase";
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch, getDoc, setDoc, where, getDocs } from "firebase/firestore";
 import './App.css';
-import UserProfile from "./UserProfile";
 
 // ==========================================================================
 // CONSTANTS & PRESETS
@@ -603,6 +602,12 @@ export default function App() {
     if (!currentUser.displayName && currentUser.name) {
       currentUser.displayName = currentUser.name;
     }
+    if (!currentUser.id) {
+      currentUser.id = currentUser.uid || currentUser.googleId;
+    }
+    if (!currentUser.photoURL) {
+      currentUser.photoURL = currentUser.avatarUrl || "";
+    }
   }
   const [adminAuthenticated, setAdminAuthenticated] = useState(() => {
     return sessionStorage.getItem("admin_authenticated") === "true";
@@ -713,7 +718,19 @@ export default function App() {
   const [unreadMessages, setUnreadMessages] = useState([]);
   const [currentPage, setCurrentPage] = useState("home"); // 頁面切換
   const [profileViewUid, setProfileViewUid] = useState(null); // 當前瀏覽的主頁 UID
-  // Profile editor states are now managed inside UserProfile component
+  const [editBio, setEditBio] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [isSaveSuccess, setIsSaveSuccess] = useState(false);
+
+  const users = useMemo(() => {
+    return usersList.map(u => ({
+      ...u,
+      id: u.uid || u.googleId,
+      displayName: u.name || u.displayName || "未知使用者",
+      photoURL: u.avatarUrl || u.photoURL || "",
+      bio: u.bio || ""
+    }));
+  }, [usersList]);
   const [activeEmojiMenuMsgId, setActiveEmojiMenuMsgId] = useState(null);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [activeCommentEmojiMsgId, setActiveCommentEmojiMsgId] = useState(null);
@@ -1440,7 +1457,60 @@ export default function App() {
     ).length;
   };
 
-  // profileUser memo and handleSaveProfileSettings function have been extracted to UserProfile component
+  const handleSaveProfileSettings = async () => {
+    const isLoggedIn = !!(currentUser.googleId && currentUser.handle !== "@me_creator");
+    if (!isLoggedIn) return;
+    const cleanUsername = editUsername.trim().replace(/\s+/g, "").replace(/[^a-zA-Z0-9_]/g, "");
+    if (!cleanUsername) {
+      showToast("請輸入有效的 @帳號名稱！");
+      return;
+    }
+
+    const nextUser = {
+      ...currentUser,
+      bio: editBio.trim(),
+      username: cleanUsername,
+      handle: "@" + cleanUsername
+    };
+
+    nextUser.id = nextUser.uid || nextUser.googleId;
+    nextUser.displayName = nextUser.name || nextUser.displayName;
+    nextUser.photoURL = nextUser.avatarUrl || nextUser.photoURL;
+
+    setCurrentUser(nextUser);
+    localStorage.setItem("echoes_user", JSON.stringify(nextUser));
+
+    if (isFirebaseSetup && currentUser.email) {
+      try {
+        const userDocRef = doc(db, "users", currentUser.email);
+        await setDoc(userDocRef, nextUser);
+
+        // Update posts with new handles
+        const q = query(
+          collection(db, "posts"),
+          where("handle", "==", currentUser.handle)
+        );
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        snapshot.forEach(docSnap => {
+          batch.update(docSnap.ref, {
+            handle: "@" + cleanUsername
+          });
+        });
+        await batch.commit();
+        showToast("✨ 個人資料設定已更新！");
+        setIsSaveSuccess(true);
+        setTimeout(() => setIsSaveSuccess(false), 2000);
+      } catch (err) {
+        console.error("Failed to save profile settings:", err);
+        showToast("儲存設定失敗");
+      }
+    } else {
+      showToast("✨ 本地個人資料已更新！");
+      setIsSaveSuccess(true);
+      setTimeout(() => setIsSaveSuccess(false), 2000);
+    }
+  };
 
   const getPostAuthorUid = (post) => {
     if (!post) return null;
@@ -1462,7 +1532,13 @@ export default function App() {
     return c.uid || (commentUser ? (commentUser.googleId || commentUser.uid) : c.authorHandle || c.author);
   };
 
-  // Profile settings sync useEffect has been extracted to UserProfile component
+  useEffect(() => {
+    const myUid = currentUser.googleId || currentUser.uid;
+    if (profileViewUid === myUid || !profileViewUid) {
+      setEditBio(currentUser.bio || "");
+      setEditUsername(currentUser.username || currentUser.handle?.replace("@", "") || "");
+    }
+  }, [profileViewUid, currentUser]);
 
   // Mark active chat messages as read
   useEffect(() => {
@@ -5047,21 +5123,129 @@ export default function App() {
                 </div>
               ) : currentPage === "profile" ? (
                 /* Profile View */
-                <UserProfile
-                  profileViewUid={profileViewUid}
-                  currentUser={currentUser}
-                  setCurrentUser={setCurrentUser}
-                  posts={posts}
-                  usersList={usersList}
-                  renderPostCard={renderPostCard}
-                  isFirebaseSetup={isFirebaseSetup}
-                  db={db}
-                  showToast={showToast}
-                  currentLang={currentLang}
-                  t={t}
-                  getLatestUserAvatar={getLatestUserAvatar}
-                  getPostAuthorUid={getPostAuthorUid}
-                />
+                (() => {
+                  const targetUser = users.find(u => u.id === profileViewUid) || currentUser;
+                  const userPosts = posts.filter(post => post.uid === profileViewUid);
+                  return (
+                    <div className="feed-container" style={{ maxWidth: '650px', margin: '0 auto' }}>
+                      {/* Top Profile Card */}
+                      <div className="profile-card" style={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '24px',
+                        position: 'relative',
+                        marginBottom: '20px',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                      }}>
+                        {/* Header info */}
+                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <div className="profile-avatar" style={{
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '50%',
+                            background: targetUser.photoURL ? `url(${targetUser.photoURL})` : (targetUser.avatarBg || 'var(--bg-elevated)'),
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '28px',
+                            fontWeight: 'bold',
+                            color: '#fff',
+                            border: '2px solid var(--neon-cyan)',
+                            boxShadow: '0 0 10px rgba(0, 243, 255, 0.4)'
+                          }}>
+                            {!targetUser.photoURL && (targetUser.avatarLetter || targetUser.displayName?.substring(0, 2).toUpperCase())}
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: '200px' }}>
+                            <h2 style={{ fontSize: '22px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', margin: '0 0 4px 0' }}>
+                              {targetUser.displayName}
+                            </h2>
+                            <p style={{ fontSize: '13px', color: 'var(--neon-cyan)', fontFamily: 'var(--font-heading)', fontWeight: 600, letterSpacing: '1px', margin: '0 0 8px 0' }}>
+                              {targetUser.handle || `@${targetUser.username}`}
+                            </p>
+                            
+                            {/* Bio display */}
+                            {profileViewUid !== currentUser.uid && (
+                              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0, padding: '10px', background: 'var(--bg-input)', borderRadius: '6px', borderLeft: '3px solid var(--neon-cyan)' }}>
+                                {targetUser.bio || "暫無自我介紹"}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Edit Form for self profile */}
+                        {profileViewUid === currentUser.uid && (
+                          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px dashed var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                              <div style={{ flex: 1, minWidth: '150px' }}>
+                                <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>
+                                  自訂 @帳號 (username)
+                                </label>
+                                <input
+                                  type="text"
+                                  style={{ width: '100%', padding: '8px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-bright)', fontSize: '13px' }}
+                                  value={editUsername}
+                                  onChange={(e) => setEditUsername(e.target.value)}
+                                  placeholder="例如: cyber_ninja"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>
+                                自我介紹 (bio)
+                              </label>
+                              <textarea
+                                style={{ width: '100%', padding: '8px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-bright)', fontSize: '13px', minHeight: '60px', resize: 'vertical' }}
+                                value={editBio}
+                                onChange={(e) => setEditBio(e.target.value)}
+                                placeholder="寫點什麼介紹自己吧..."
+                              />
+                            </div>
+
+                            <button
+                              style={{
+                                alignSelf: 'flex-end',
+                                padding: '8px 16px',
+                                background: isSaveSuccess ? '#1ea34d' : 'rgba(61, 220, 151, 0.1)',
+                                border: '1px solid var(--neon-green)',
+                                color: isSaveSuccess ? '#ffffff' : 'var(--neon-green)',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '12px',
+                                boxShadow: isSaveSuccess ? '0 0 10px rgba(30, 163, 77, 0.5)' : '0 0 5px rgba(61, 220, 151, 0.2)',
+                                transition: 'all 0.2s'
+                              }}
+                              onClick={handleSaveProfileSettings}
+                            >
+                              {isSaveSuccess ? "✓ 修改成功！" : "儲存修改"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Lower Part: User's posts wall */}
+                      <h3 style={{ fontSize: '14px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        📑 {targetUser.displayName} {currentLang === "en" ? "Posts" : "的歷史貼文"}
+                      </h3>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        {userPosts.length === 0 ? (
+                          <div style={{ textAlign: 'center', padding: '40px 10px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)' }}>
+                            <Frown style={{ width: '38px', height: '38px', marginBottom: '12px', opacity: 0.5 }} />
+                            <p>{currentLang === "en" ? "No posts found." : "目前尚無任何貼文"}</p>
+                          </div>
+                        ) : (
+                          userPosts.map((post) => renderPostCard(post))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 /* Feed View */
                 <div className="feed-container">
