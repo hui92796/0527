@@ -1113,7 +1113,7 @@ export default function App() {
     if (isGroup) {
       const q = query(
         collection(db, "messages"),
-        where("receiverId", "==", activeChatFriend.id)
+        where("chatId", "==", activeChatFriend.id)
       );
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -2326,15 +2326,22 @@ export default function App() {
     }
 
     try {
-      await addDoc(collection(db, "messages"), {
+      const messageData = {
         senderId: currentUserUid,
         senderName: currentUser.displayName || currentUser.name || "有人",
         senderHandle: currentUser.handle || "",
-        receiverId: isGroup ? activeChatFriend.id : activeChatFriendUid,
         text: text,
         timestamp: new Date(),
         messageType: customType
-      });
+      };
+
+      if (isGroup) {
+        messageData.chatId = activeChatFriend.id;
+      } else {
+        messageData.receiverId = activeChatFriendUid;
+      }
+
+      await addDoc(collection(db, "messages"), messageData);
       if (customText === null) {
         setMessageText("");
       }
