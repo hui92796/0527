@@ -3842,6 +3842,7 @@ export default function App() {
                                   {/* 😊 Reaction trigger button */}
                                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                     <button
+                                      type="button"
                                       onClick={() => setActiveEmojiMenuMsgId(activeEmojiMenuMsgId === m.id ? null : m.id)}
                                       style={{
                                         background: 'transparent',
@@ -3867,21 +3868,22 @@ export default function App() {
                                     {activeEmojiMenuMsgId === m.id && (
                                       <div style={{
                                         position: 'absolute',
-                                        bottom: '100%',
-                                        [isMine ? 'right' : 'left']: 0,
-                                        zIndex: 100,
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        [isMine ? 'right' : 'left']: '32px',
+                                        zIndex: 1000,
                                         display: 'flex',
                                         gap: '6px',
                                         padding: '6px 8px',
                                         background: 'var(--bg-card)',
                                         border: '1px solid var(--border-color)',
                                         borderRadius: '20px',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                        marginBottom: '6px'
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                                       }}>
                                         {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
                                           <button
                                             key={emoji}
+                                            type="button"
                                             onClick={() => {
                                               handleEmojiReact(m.id, emoji, m.reactions);
                                               setActiveEmojiMenuMsgId(null);
@@ -3911,77 +3913,92 @@ export default function App() {
                           <div ref={chatEndRef} />
                         </div>
 
-                        {/* Chatroom Input Panel */}
-                        <div style={{ padding: '15px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px', alignItems: 'center', position: 'relative' }}>
-                          <div style={{ position: 'relative' }}>
-                            <button
-                              style={{
-                                padding: '10px 14px',
-                                background: 'rgba(61, 220, 151, 0.1)',
-                                border: '1px solid var(--neon-green)',
-                                color: 'var(--neon-green)',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                fontSize: '13px'
-                              }}
-                              onClick={() => setShowGifPicker(!showGifPicker)}
-                            >
-                              GIF
-                            </button>
-
-                            {showGifPicker && (
-                              <div style={{
-                                position: 'absolute',
-                                bottom: '100%',
-                                left: 0,
-                                zIndex: 110,
-                                background: 'var(--bg-card)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '8px',
-                                padding: '10px',
-                                width: '260px',
-                                boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
-                                marginBottom: '10px'
-                              }}>
-                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-bright)', marginBottom: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
-                                  🐱 {currentLang === "en" ? "Select Cat GIF" : "選擇貓咪 GIF"}
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
-                                  {[
-                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oriO0OEd9QIDdllqo/giphy.gif',
-                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG9yYWhnbXB3c292ZTFwdmtiaXZxMHh4ejQ3Z3p3dThxdGoxNTR2YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13CoXDiaCcC2EA/giphy.gif',
-                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5i7umUqAOYYHC/giphy.gif',
-                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9gISqB3tncMmY/giphy.gif',
-                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2R4bTJkZGQ4a2QyOHB5Z3A0dDhpdmwwdHcxczNtbTBpcThtdGJpZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ule4vhcY1xEIw/giphy.gif',
-                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmt6czVnZG12bHppNmQxMXc5dnZsc3h5ZWNtdjRkMDgyNHA0aG5heSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFQ0ywscgobJK/giphy.gif'
-                                  ].map((gifUrl, idx) => (
-                                    <img
-                                      key={idx}
-                                      src={gifUrl}
-                                      onClick={() => {
-                                        handleSendMessage(gifUrl, "gif");
-                                        setShowGifPicker(false);
-                                      }}
-                                      style={{
-                                        width: '100%',
-                                        height: '60px',
-                                        objectFit: 'cover',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        border: '1px solid transparent',
-                                        transition: 'border-color 0.1s'
-                                      }}
-                                      onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--neon-green)'}
-                                      onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
-                                      alt="cat preview"
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                        {/* GIF Picker Tray (Inline, 100% visible, no clipping) */}
+                        {showGifPicker && (
+                          <div style={{
+                            padding: '10px 15px',
+                            borderTop: '1px solid var(--border-color)',
+                            background: 'var(--bg-card)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-bright)' }}>
+                                🐱 {currentLang === "en" ? "Select Cat GIF" : "選擇貓咪 GIF"}
+                              </span>
+                              <button
+                                type="button"
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: 'var(--neon-cyan)',
+                                  fontSize: '11px',
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline'
+                                }}
+                                onClick={() => {
+                                  const gifUrl = window.prompt(currentLang === "en" ? "Enter GIF Image URL:" : "請輸入 GIF 圖片網址（測試用）：");
+                                  if (gifUrl && gifUrl.trim()) {
+                                    handleSendMessage(gifUrl.trim(), "gif");
+                                    setShowGifPicker(false);
+                                  }
+                                }}
+                              >
+                                {currentLang === "en" ? "Custom URL..." : "自訂網址..."}
+                              </button>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px' }}>
+                              {[
+                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oriO0OEd9QIDdllqo/giphy.gif',
+                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG9yYWhnbXB3c292ZTFwdmtiaXZxMHh4ejQ3Z3p3dThxdGoxNTR2YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13CoXDiaCcC2EA/giphy.gif',
+                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5i7umUqAOYYHC/giphy.gif',
+                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9gISqB3tncMmY/giphy.gif',
+                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2R4bTJkZGQ4a2QyOHB5Z3A0dDhpdmwwdHcxczNtbTBpcThtdGJpZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ule4vhcY1xEIw/giphy.gif',
+                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmt6czVnZG12bHppNmQxMXc5dnZsc3h5ZWNtdjRkMDgyNHA0aG5heSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFQ0ywscgobJK/giphy.gif'
+                              ].map((gifUrl, idx) => (
+                                <img
+                                  key={idx}
+                                  src={gifUrl}
+                                  onClick={() => {
+                                    handleSendMessage(gifUrl, "gif");
+                                    setShowGifPicker(false);
+                                  }}
+                                  style={{
+                                    height: '60px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    border: '2px solid transparent',
+                                    transition: 'border-color 0.1s'
+                                  }}
+                                  onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--neon-green)'}
+                                  onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
+                                  alt="cat preview"
+                                />
+                              ))}
+                            </div>
                           </div>
+                        )}
 
+                        {/* Chatroom Input Panel */}
+                        <div style={{ padding: '15px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className="p-2 border rounded text-sm hover:bg-gray-100"
+                            style={{
+                              cursor: 'pointer',
+                              background: 'rgba(61, 220, 151, 0.1)',
+                              border: '1px solid var(--neon-green)',
+                              color: 'var(--neon-green)',
+                              borderRadius: '6px',
+                              fontWeight: 'bold',
+                              padding: '10px 14px',
+                              fontSize: '13px'
+                            }}
+                            onClick={() => setShowGifPicker(!showGifPicker)}
+                          >
+                            GIF
+                          </button>
                           <input
                             type="text"
                             style={{ flex: 1, padding: '10px 14px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px' }}
