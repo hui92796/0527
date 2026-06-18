@@ -1546,10 +1546,11 @@ export default function App() {
 
     if (isFirebaseSetup) {
       try {
-        await addDoc(collection(db, "posts"), {
+        const postDocRef = await addDoc(collection(db, "posts"), {
           ...postData,
           createdAt: new Date()
         });
+        const postId = postDocRef.id;
 
         // 1. 去 friendRequests 集合中查詢當前使用者的所有「已確認好友」
         const currentUserUid = currentUser.uid || currentUser.googleId;
@@ -1605,6 +1606,60 @@ export default function App() {
               });
             });
             await batch.commit();
+          }
+
+          // 3. 偵測貼文內容中的 @ 標記並寫入通知
+          const mentionMatches = [...textVal.matchAll(/@(\S+)/g)];
+          const uidsToNotify = new Set();
+
+          const findUserUid = (nickname) => {
+            const normalizedQuery = nickname.toLowerCase();
+            for (const u of usersList) {
+              const userHandle = (u.handle || "").toLowerCase();
+              const userName = (u.name || u.displayName || "").toLowerCase();
+              if (userHandle === normalizedQuery || 
+                  userHandle === "@" + normalizedQuery || 
+                  userName === normalizedQuery) {
+                return u.uid || u.googleId;
+              }
+            }
+            if (currentUser) {
+              const myHandle = (currentUser.handle || "").toLowerCase();
+              const myName = (currentUser.name || currentUser.displayName || "").toLowerCase();
+              if (myHandle === normalizedQuery ||
+                  myHandle === "@" + normalizedQuery ||
+                  myName === normalizedQuery) {
+                return currentUser.uid || currentUser.googleId;
+              }
+            }
+            return null;
+          };
+
+          mentionMatches.forEach(match => {
+            let nickname = match[1];
+            nickname = nickname.replace(/[,.!?:;)$]+$/, "");
+            const uid = findUserUid(nickname);
+            if (uid && uid !== currentUserUid) {
+              uidsToNotify.add(uid);
+            }
+          });
+
+          if (uidsToNotify.size > 0) {
+            const senderName = currentUser.displayName || currentUser.name || '有人';
+            const truncatedContent = textVal.substring(0, 15);
+            const mentionPromises = Array.from(uidsToNotify).map(toUid => {
+              return addDoc(collection(db, "notifications"), {
+                toUid: toUid,
+                fromUid: currentUserUid,
+                fromName: senderName,
+                type: "mention",
+                targetPostId: postId,
+                message: `${senderName} 在貼文中標記了您："${truncatedContent}..."`,
+                timestamp: Date.now(),
+                isRead: false
+              });
+            });
+            await Promise.all(mentionPromises);
           }
         }
       } catch (err) {
@@ -1752,8 +1807,33 @@ export default function App() {
       updates.isRead = true;
       await updateDoc(docRef, updates);
       
-      // Navigate to home feed
-      navigateToHash("#/");
+      if (n.type === "mention" && n.targetPostId) {
+        // Reset filters & search results
+        setCurrentCategory("All");
+        setSearchQuery("");
+        setSearchResults(null);
+        
+        // Navigate to home feed
+        navigateToHash("#/");
+        
+        // Set highlighted state and scroll into view with a short timeout to ensure rendering
+        setHighlightedPostId(n.targetPostId);
+        
+        setTimeout(() => {
+          const card = document.getElementById(`card-${n.targetPostId}`);
+          if (card) {
+            card.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 300);
+        
+        // Clear highlighted border after 3 seconds
+        setTimeout(() => {
+          setHighlightedPostId(null);
+        }, 3300);
+      } else {
+        // Navigate to home feed
+        navigateToHash("#/");
+      }
     } catch (err) {
       console.error("Failed to mark notification as read on click:", err);
     }
