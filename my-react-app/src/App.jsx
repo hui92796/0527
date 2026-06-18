@@ -56,6 +56,55 @@ const PRESET_AVATARS = [
   { id: "av8", label: "🐉", bg: "linear-gradient(135deg, #0a2e1a 0%, #34d399 100%)", letter: "龍" }
 ];
 
+const PRESET_GIFS = [
+  // Cats
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oriO0OEd9QIDdllqo/giphy.gif', keywords: ['cat', 'happy', 'cute', '貓咪', '開心', '可愛'], category: 'cat' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG9yYWhnbXB3c292ZTFwdmtiaXZxMHh4ejQ3Z3p3dThxdGoxNTR2YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13CoXDiaCcC2EA/giphy.gif', keywords: ['cat', 'cute', 'sleep', '貓咪', '可愛', '睡覺', '慵懶'], category: 'cat' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5i7umUqAOYYHC/giphy.gif', keywords: ['cat', 'dance', 'party', '貓咪', '跳舞', '派對'], category: 'cat' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9gISqB3tncMmY/giphy.gif', keywords: ['cat', 'sad', 'cry', '貓咪', '難過', '哭泣', '委屈'], category: 'cat' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2R4bTJkZGQ4a2QyOHB5Z3A0dDhpdmwwdHcxczNtbTBpcThtdGJpZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ule4vhcY1xEIw/giphy.gif', keywords: ['cat', 'typing', 'work', '貓咪', '打字', '工作', '社畜', '崩潰'], category: 'cat' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmt6czVnZG12bHppNmQxMXc5dnZsc3h5ZWNtdjRkMDgyNHA0aG5heSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFQ0ywscgobJK/giphy.gif', keywords: ['cat', 'shocked', 'funny', '驚訝', '貓咪', '傻眼', '搞笑'], category: 'cat' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VbnUQpnihPSIgIXNV1/giphy.gif', keywords: ['cat', 'wave', 'hello', '貓咪', '打招呼', '哈囉', '拜拜'], category: 'cat' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GeimqsH0TLDt4tScGw/giphy.gif', keywords: ['cat', 'judge', 'stare', '貓咪', '瞪人', '鄙視', '問號'], category: 'cat' },
+
+  // Happy / Celebration
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzN2eThhMHlqY3VwNzh5NWhuYTQwdDV6MnU1Nng5NWhsM3o4bWxpbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/t3s3tC50UkY3C/giphy.gif', keywords: ['happy', 'yes', 'success', 'celebrate', '開心', '耶', '成功', '讚', '慶祝'], category: 'happy' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/14412cZqAhi34s/giphy.gif', keywords: ['dance', 'happy', 'party', '跳舞', '開心', '派對', '搖擺'], category: 'happy' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3N2eThhMHlqY3VwNzh5NWhuYTQwdDV6MnU1Nng5NWhsM3o4bWxpbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/nbvFVPiEiJH6JOGIok/giphy.gif', keywords: ['clap', 'good', 'bravo', 'clapping', '鼓掌', '拍手', '讚', '棒'], category: 'happy' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3hndzhkZnU4NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/111ebonMs90YLu/giphy.gif', keywords: ['thumbsup', 'ok', 'yes', 'good', '讚', '好的', '沒問題'], category: 'happy' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzk0MXpneHhqeDh2djBmcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0AMDAf3clIpL2aaQ/giphy.gif', keywords: ['celebrate', 'minions', 'party', '慶祝', '小小兵', '派對'], category: 'happy' },
+
+  // Sad / Cry
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzRxeHlsa3d4MmhndzhkZnU4NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WxWlkKWUsQ5q/giphy.gif', keywords: ['cry', 'sad', 'tears', '哭', '難過', '眼淚', '落淚'], category: 'sad' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OPU6wFID8rJcI/giphy.gif', keywords: ['cry', 'sad', 'baby', '哭', '難過', '寶寶', '委屈'], category: 'sad' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d2LCipPTihEBq/giphy.gif', keywords: ['sad', 'lonely', 'rain', '難過', '孤單', '下雨', '憂鬱'], category: 'sad' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BEob5wK5CJAQs/giphy.gif', keywords: ['sad', 'depressed', 'sit', '難過', '沮喪', '抱膝', '無奈'], category: 'sad' },
+
+  // Angry / Rage
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzN2eThhMHlqY3VwNzh5NWhuYTQwdDV6MnU1Nng5NWhsM3o4bWxpbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l1J9u3TZfpmeDLkD6/giphy.gif', keywords: ['angry', 'mad', 'rage', '生氣', '憤怒', '抓狂', '氣炸'], category: 'angry' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/11tI5s0zPJUXg4/giphy.gif', keywords: ['angry', 'tableflip', 'rage', '生氣', '翻桌', '暴怒'], category: 'angry' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o72FiXyc7OIfi7aQs/giphy.gif', keywords: ['angry', 'scream', 'kid', '生氣', '尖叫', '憤怒', '暴躁'], category: 'angry' },
+
+  // Shock / Wow
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDVqNnVwbnJ6bXB2NmptNmxzYTR5NmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Um3ljJl8jrkKidv7hT/giphy.gif', keywords: ['wow', 'shocked', 'mindblown', '驚訝', '哇', '震撼', '爆腦'], category: 'shock' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzRxeHlsa3d4MmhndzhkZnU4NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/14ut8LMmgQJqq4/giphy.gif', keywords: ['scared', 'shocked', 'omg', '驚嚇', '驚訝', '天啊', '恐懼'], category: 'shock' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/80mXWkJHCgNtS/giphy.gif', keywords: ['eyes', 'shocked', 'what', '眼睛', '驚訝', '什麼', '瞪大'], category: 'shock' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/jquwTstU7fO6a22g26/giphy.gif', keywords: ['wow', 'shocked', 'gasp', '大驚', '驚訝', '倒吸一口氣'], category: 'shock' },
+
+  // Love / Cute
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3QxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l4pTkaQMK2S4bqV8c/giphy.gif', keywords: ['love', 'heart', 'cute', '愛心', '可愛', '心動', '喜歡'], category: 'love' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KztT2c4Yc5ppZ1eQKL/giphy.gif', keywords: ['love', 'heart', 'kiss', '愛心', '親親', '親一個', '飛吻'], category: 'love' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/I17T9wRkW6nCw/giphy.gif', keywords: ['love', 'heart', 'hug', '愛心', '抱抱', '溫暖', '擁抱'], category: 'love' },
+
+  // Memes / Funny
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJ2NXk4azg3NXp6cHhncW0xeWZodHBseWJnbWw0b2F5Nm9kZnU5YiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3xz2BLBOKhvgJXMIXc/giphy.gif', keywords: ['meme', 'facepalm', 'oops', '無奈', '捂臉', '搞笑', '天啊'], category: 'meme' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDVqaWc5djVsc3hxZ2dnbm04NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/20k1gTOlfqiGY/giphy.gif', keywords: ['confused', 'where', 'travolta', '迷茫', '問號', '在哪裡', '傻眼'], category: 'meme' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3d6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/hVTouqNmVKiZy/giphy.gif', keywords: ['popcorn', 'watching', 'drama', '爆米花', '看戲', '吃瓜', '圍觀'], category: 'meme' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzN2eThhMHlqY3VwNzh5NWhuYTQwdDV6MnU1Nng5NWhsM3o4bWxpbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjei1Hi/giphy.gif', keywords: ['doge', 'meme', 'dog', '狗狗', '迷因', '逗趣'], category: 'meme' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzRxeHlsa3d4MmhndzhkZnU4NHF0Z2oxNmtnbG92MXQ3cWFtdzhpajk3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26n6Gx9yn6up1g6TC/giphy.gif', keywords: ['laugh', 'funny', 'haha', '笑', '哈哈', '大笑', '搞笑'], category: 'meme' },
+  { url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXN6MHl5OW11bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2LzK1t6y59AXLO/giphy.gif', keywords: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], category: 'meme' }
+];
+
 const DEFAULT_POSTS = [
   {
     id: "def-post-1",
@@ -653,6 +702,97 @@ export default function App() {
   const [newGroupName, setNewGroupName] = useState("");
   const [selectedGroupMembers, setSelectedGroupMembers] = useState([]);
 
+  // GIF Search engine states
+  const [giphyApiKey, setGiphyApiKey] = useState(() => localStorage.getItem("echoes_giphy_api_key") || "");
+  const [showGiphyKeyInput, setShowGiphyKeyInput] = useState(false);
+  const [showCommentGiphyKeyInput, setShowCommentGiphyKeyInput] = useState(false);
+  const [gifSearchQuery, setGifSearchQuery] = useState("");
+  const [chatSearchedGifs, setChatSearchedGifs] = useState([]);
+  const [commentGifSearchQuery, setCommentGifSearchQuery] = useState("");
+  const [commentSearchedGifs, setCommentSearchedGifs] = useState([]);
+  const [isSearchingGifs, setIsSearchingGifs] = useState(false);
+  const [isCommentSearchingGifs, setIsCommentSearchingGifs] = useState(false);
+
+  const saveGiphyApiKey = (key) => {
+    localStorage.setItem("echoes_giphy_api_key", key);
+    setGiphyApiKey(key);
+  };
+
+  const loadInitialGifs = async (isComment = false) => {
+    const setResults = isComment ? setCommentSearchedGifs : setChatSearchedGifs;
+    const setLoading = isComment ? setIsCommentSearchingGifs : setIsSearchingGifs;
+    setLoading(true);
+
+    if (giphyApiKey && giphyApiKey.trim()) {
+      try {
+        const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(giphyApiKey.trim())}&limit=24&rating=g`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && Array.isArray(json.data)) {
+            const mapped = json.data.map(item => ({
+              url: item.images.fixed_height.url || item.images.original.url,
+              keywords: [item.title, ...item.tags].filter(Boolean),
+              category: 'trending'
+            }));
+            setResults(mapped);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Giphy initial load error:", err);
+      }
+    }
+
+    setResults(PRESET_GIFS);
+    setLoading(false);
+  };
+
+  const handleFetchGifs = async (queryText, isComment = false) => {
+    const query = queryText.trim().toLowerCase();
+    const setResults = isComment ? setCommentSearchedGifs : setChatSearchedGifs;
+    const setLoading = isComment ? setIsCommentSearchingGifs : setIsSearchingGifs;
+
+    if (!query) {
+      loadInitialGifs(isComment);
+      return;
+    }
+
+    setLoading(true);
+    if (giphyApiKey && giphyApiKey.trim()) {
+      try {
+        const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(giphyApiKey.trim())}&q=${encodeURIComponent(query)}&limit=24&rating=g`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && Array.isArray(json.data)) {
+            const mapped = json.data.map(item => ({
+              url: item.images.fixed_height.url || item.images.original.url,
+              keywords: [item.title, ...item.tags].filter(Boolean),
+              category: 'search'
+            }));
+            setResults(mapped);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Giphy search fetch error:", err);
+      }
+    }
+
+    const queryWords = query.split(/\s+/).filter(Boolean);
+    const matched = PRESET_GIFS.filter(gif => {
+      return queryWords.every(word => 
+        gif.keywords.some(kw => kw.toLowerCase().includes(word)) ||
+        (gif.category && gif.category.toLowerCase().includes(word))
+      );
+    });
+    setResults(matched);
+    setLoading(false);
+  };
+
   const showToast = (message) => {
     const id = Date.now() + Math.random().toString();
     setToasts(prev => [...prev, { id, message }]);
@@ -1206,6 +1346,20 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("echoes_lang", currentLang);
   }, [currentLang]);
+
+  useEffect(() => {
+    if (showGifPicker) {
+      setGifSearchQuery("");
+      loadInitialGifs(false);
+    }
+  }, [showGifPicker, giphyApiKey]);
+
+  useEffect(() => {
+    if (activeCommentGifPostId) {
+      setCommentGifSearchQuery("");
+      loadInitialGifs(true);
+    }
+  }, [activeCommentGifPostId, giphyApiKey]);
 
   // Online status updates / Interaction sensors
   useEffect(() => {
@@ -2967,69 +3121,238 @@ export default function App() {
           {/* GIF Picker Tray for Comment Composer */}
           {activeCommentGifPostId === post.id && (
             <div style={{
-              padding: '8px 10px',
+              padding: '12px 15px',
               border: '1px solid var(--border-color)',
-              borderRadius: '6px',
+              borderRadius: '8px',
               background: 'var(--bg-card)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '6px',
+              gap: '10px',
               marginTop: '10px'
             }}>
+              {/* Header row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-bright)' }}>
-                  🐱 {currentLang === "en" ? "Select Cat GIF" : "選擇貓咪 GIF"}
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-bright)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  🎬 {currentLang === "en" ? "Comment GIF Picker" : "留言 GIF 選擇器"}
                 </span>
-                <button
-                  type="button"
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--neon-cyan)',
-                    fontSize: '10px',
-                    cursor: 'pointer',
-                    textDecoration: 'underline'
-                  }}
-                  onClick={() => {
-                    const gifUrl = window.prompt(currentLang === "en" ? "Enter GIF Image URL:" : "請輸入 GIF 圖片網址（測試用）：");
-                    if (gifUrl && gifUrl.trim()) {
-                      submitComment(post.id, gifUrl.trim(), "gif");
-                      setActiveCommentGifPostId(null);
-                    }
-                  }}
-                >
-                  {currentLang === "en" ? "Prompt..." : "自訂網址..."}
-                </button>
-              </div>
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-                {[
-                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oriO0OEd9QIDdllqo/giphy.gif',
-                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG9yYWhnbXB3c292ZTFwdmtiaXZxMHh4ejQ3Z3p3dThxdGoxNTR2YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13CoXDiaCcC2EA/giphy.gif',
-                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5i7umUqAOYYHC/giphy.gif',
-                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9gISqB3tncMmY/giphy.gif',
-                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2R4bTJkZGQ4a2QyOHB5Z3A0dDhpdmwwdHcxczNtbTBpcThtdGJpZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ule4vhcY1xEIw/giphy.gif',
-                  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmt6czVnZG12bHppNmQxMXc5dnZsc3h5ZWNtdjRkMDgyNHA0aG5heSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFQ0ywscgobJK/giphy.gif'
-                ].map((gifUrl, idx) => (
-                  <img
-                    key={idx}
-                    src={gifUrl}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--neon-amber)',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px'
+                    }}
+                    onClick={() => setShowCommentGiphyKeyInput(!showCommentGiphyKeyInput)}
+                  >
+                    🔑 {currentLang === "en" ? "GIPHY Key" : "GIPHY 金鑰"}
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--neon-cyan)',
+                      fontSize: '10px',
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }}
                     onClick={() => {
-                      submitComment(post.id, gifUrl, "gif");
-                      setActiveCommentGifPostId(null);
+                      const gifUrl = window.prompt(currentLang === "en" ? "Enter GIF Image URL:" : "請輸入 GIF 圖片網址：");
+                      if (gifUrl && gifUrl.trim()) {
+                        submitComment(post.id, gifUrl.trim(), "gif");
+                        setActiveCommentGifPostId(null);
+                      }
+                    }}
+                  >
+                    {currentLang === "en" ? "Custom URL..." : "自訂網址..."}
+                  </button>
+                </div>
+              </div>
+
+              {/* Giphy Key settings input (collapsible) */}
+              {showCommentGiphyKeyInput && (
+                <div style={{
+                  padding: '8px 12px',
+                  background: 'var(--bg-input)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    {currentLang === "en" 
+                      ? "Enter GIPHY API Key for live web search. Get a free beta key from GIPHY Developer portal." 
+                      : "輸入 GIPHY API 金鑰以啟用雲端搜尋。可至 GIPHY 開發者後台免費申請。"}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      style={{
+                        flex: 1,
+                        padding: '6px 10px',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        color: 'var(--text-bright)'
+                      }}
+                      placeholder="Enter GIPHY API Key..."
+                      value={giphyApiKey}
+                      onChange={(e) => saveGiphyApiKey(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      style={{
+                        padding: '6px 12px',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid var(--neon-red)',
+                        color: 'var(--neon-red)',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        saveGiphyApiKey("");
+                        showToast("GIPHY API 金鑰已清除");
+                      }}
+                    >
+                      {currentLang === "en" ? "Clear" : "清除"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Search input field */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  style={{
+                    flex: 1,
+                    padding: '6px 10px',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: 'var(--text-bright)'
+                  }}
+                  placeholder={
+                    giphyApiKey 
+                      ? (currentLang === "en" ? "Search millions of GIFs from GIPHY..." : "搜尋 GIPHY 數百萬張 GIF 動圖...")
+                      : (currentLang === "en" ? "Search built-in GIFs (e.g. cat, happy, cry)..." : "搜尋內建 GIF（如：cat, happy, cry）...")
+                  }
+                  value={commentGifSearchQuery}
+                  onChange={(e) => {
+                    setCommentGifSearchQuery(e.target.value);
+                    handleFetchGifs(e.target.value, true);
+                  }}
+                />
+              </div>
+
+              {/* Categories tags row */}
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px', whiteSpace: 'nowrap' }}>
+                {[
+                  { label: '🔥 熱門/全部', val: '' },
+                  { label: '🐱 貓咪', val: 'cat' },
+                  { label: '😂 搞笑', val: 'meme' },
+                  { label: '🎉 慶祝', val: 'happy' },
+                  { label: '😢 難過', val: 'sad' },
+                  { label: '生氣', val: 'angry' },
+                  { label: '😮 驚訝', val: 'shock' },
+                  { label: '❤️ 戀愛', val: 'love' }
+                ].map(pill => (
+                  <button
+                    key={pill.label}
+                    type="button"
+                    onClick={() => {
+                      setCommentGifSearchQuery(pill.val);
+                      if (pill.val === '') {
+                        loadInitialGifs(true);
+                      } else {
+                        handleFetchGifs(pill.val, true);
+                      }
                     }}
                     style={{
-                      height: '50px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      border: '2px solid transparent',
-                      transition: 'border-color 0.1s'
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      border: commentGifSearchQuery === pill.val ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+                      background: commentGifSearchQuery === pill.val ? 'rgba(61, 220, 151, 0.1)' : 'var(--bg-input)',
+                      color: commentGifSearchQuery === pill.val ? 'var(--neon-green)' : 'var(--text-secondary)',
+                      fontSize: '11px',
+                      cursor: 'pointer'
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--neon-green)'}
-                    onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
-                    alt="cat preview"
-                  />
+                  >
+                    {pill.label}
+                  </button>
                 ))}
               </div>
+
+              {/* GIF Grid List */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                gap: '8px',
+                maxHeight: '150px',
+                overflowY: 'auto',
+                padding: '2px'
+              }}>
+                {isCommentSearchingGifs ? (
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '15px 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    ⏳ {currentLang === "en" ? "Searching GIFs..." : "正在搜尋 GIF..."}
+                  </div>
+                ) : commentSearchedGifs.length === 0 ? (
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '15px 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    📭 {currentLang === "en" ? "No GIFs found. Try another query." : "找不到相符的 GIF，換個關鍵字試試吧！"}
+                  </div>
+                ) : (
+                  commentSearchedGifs.map((gif, idx) => (
+                    <img
+                      key={idx}
+                      src={gif.url}
+                      onClick={() => {
+                        submitComment(post.id, gif.url, "gif");
+                        setActiveCommentGifPostId(null);
+                      }}
+                      style={{
+                        width: '100%',
+                        height: '60px',
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        border: '2px solid transparent',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--neon-green)';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                        e.currentTarget.style.boxShadow = '0 0 6px rgba(61, 220, 151, 0.4)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.borderColor = 'transparent';
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                      alt="gif search result"
+                    />
+                  ))
+                )}
+              </div>
+
+              {/* Caption Footer */}
+              {!giphyApiKey && (
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center', borderTop: '1px dashed var(--border-color)', paddingTop: '6px' }}>
+                  💡 {currentLang === "en" 
+                    ? "Currently showing presets. Configure GIPHY key to search online." 
+                    : "目前顯示精選內建庫。設定 GIPHY 金鑰後可搜尋全網動圖。"}
+                </div>
+              )}
             </div>
           )}
 
@@ -4218,67 +4541,236 @@ export default function App() {
                         {/* GIF Picker Tray (Inline, 100% visible, no clipping) */}
                         {showGifPicker && (
                           <div style={{
-                            padding: '10px 15px',
+                            padding: '12px 15px',
                             borderTop: '1px solid var(--border-color)',
                             background: 'var(--bg-card)',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '8px'
+                            gap: '10px'
                           }}>
+                            {/* Header row */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-bright)' }}>
-                                🐱 {currentLang === "en" ? "Select Cat GIF" : "選擇貓咪 GIF"}
+                              <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-bright)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                🎬 {currentLang === "en" ? "GIF Search Engine" : "GIF 搜尋引擎"}
                               </span>
-                              <button
-                                type="button"
-                                style={{
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: 'var(--neon-cyan)',
-                                  fontSize: '11px',
-                                  cursor: 'pointer',
-                                  textDecoration: 'underline'
-                                }}
-                                onClick={() => {
-                                  const gifUrl = window.prompt(currentLang === "en" ? "Enter GIF Image URL:" : "請輸入 GIF 圖片網址（測試用）：");
-                                  if (gifUrl && gifUrl.trim()) {
-                                    handleSendMessage(gifUrl.trim(), "gif");
-                                    setShowGifPicker(false);
-                                  }
-                                }}
-                              >
-                                {currentLang === "en" ? "Custom URL..." : "自訂網址..."}
-                              </button>
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px' }}>
-                              {[
-                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oriO0OEd9QIDdllqo/giphy.gif',
-                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG9yYWhnbXB3c292ZTFwdmtiaXZxMHh4ejQ3Z3p3dThxdGoxNTR2YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13CoXDiaCcC2EA/giphy.gif',
-                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5i7umUqAOYYHC/giphy.gif',
-                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9gISqB3tncMmY/giphy.gif',
-                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2R4bTJkZGQ4a2QyOHB5Z3A0dDhpdmwwdHcxczNtbTBpcThtdGJpZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ule4vhcY1xEIw/giphy.gif',
-                                'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmt6czVnZG12bHppNmQxMXc5dnZsc3h5ZWNtdjRkMDgyNHA0aG5heSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFQ0ywscgobJK/giphy.gif'
-                              ].map((gifUrl, idx) => (
-                                <img
-                                  key={idx}
-                                  src={gifUrl}
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <button
+                                  type="button"
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--neon-amber)',
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '2px'
+                                  }}
+                                  onClick={() => setShowGiphyKeyInput(!showGiphyKeyInput)}
+                                >
+                                  🔑 {currentLang === "en" ? "GIPHY Key" : "GIPHY 金鑰"}
+                                </button>
+                                <button
+                                  type="button"
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--neon-cyan)',
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline'
+                                  }}
                                   onClick={() => {
-                                    handleSendMessage(gifUrl, "gif");
-                                    setShowGifPicker(false);
+                                    const gifUrl = window.prompt(currentLang === "en" ? "Enter GIF Image URL:" : "請輸入 GIF 圖片網址：");
+                                    if (gifUrl && gifUrl.trim()) {
+                                      handleSendMessage(gifUrl.trim(), "gif");
+                                      setShowGifPicker(false);
+                                    }
+                                  }}
+                                >
+                                  {currentLang === "en" ? "Custom URL..." : "自訂網址..."}
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Giphy Key settings input (collapsible) */}
+                            {showGiphyKeyInput && (
+                              <div style={{
+                                padding: '8px 12px',
+                                background: 'var(--bg-input)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '6px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px'
+                              }}>
+                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                  {currentLang === "en" 
+                                    ? "Enter GIPHY API Key for live web search. Get a free beta key from GIPHY Developer portal." 
+                                    : "輸入 GIPHY API 金鑰以啟用雲端搜尋。可至 GIPHY 開發者後台免費申請。"}
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <input
+                                    type="text"
+                                    style={{
+                                      flex: 1,
+                                      padding: '6px 10px',
+                                      background: 'var(--bg-card)',
+                                      border: '1px solid var(--border-color)',
+                                      borderRadius: '4px',
+                                      fontSize: '11px',
+                                      color: 'var(--text-bright)'
+                                    }}
+                                    placeholder="Enter GIPHY API Key..."
+                                    value={giphyApiKey}
+                                    onChange={(e) => saveGiphyApiKey(e.target.value)}
+                                  />
+                                  <button
+                                    type="button"
+                                    style={{
+                                      padding: '6px 12px',
+                                      background: 'rgba(239, 68, 68, 0.1)',
+                                      border: '1px solid var(--neon-red)',
+                                      color: 'var(--neon-red)',
+                                      borderRadius: '4px',
+                                      fontSize: '11px',
+                                      cursor: 'pointer'
+                                    }}
+                                    onClick={() => {
+                                      saveGiphyApiKey("");
+                                      showToast("GIPHY API 金鑰已清除");
+                                    }}
+                                  >
+                                    {currentLang === "en" ? "Clear" : "清除"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Search input field */}
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <input
+                                type="text"
+                                style={{
+                                  flex: 1,
+                                  padding: '8px 12px',
+                                  background: 'var(--bg-input)',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  color: 'var(--text-bright)'
+                                }}
+                                placeholder={
+                                  giphyApiKey 
+                                    ? (currentLang === "en" ? "Search millions of GIFs from GIPHY..." : "搜尋 GIPHY 數百萬張 GIF 動圖...")
+                                    : (currentLang === "en" ? "Search built-in GIFs (e.g. cat, happy, cry)..." : "搜尋內建 GIF（如：cat, happy, cry）...")
+                                }
+                                value={gifSearchQuery}
+                                onChange={(e) => {
+                                  setGifSearchQuery(e.target.value);
+                                  handleFetchGifs(e.target.value, false);
+                                }}
+                              />
+                            </div>
+
+                            {/* Categories tags row */}
+                            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px', whiteSpace: 'nowrap' }}>
+                              {[
+                                { label: '🔥 熱門/全部', val: '' },
+                                { label: '🐱 貓咪', val: 'cat' },
+                                { label: '😂 搞笑', val: 'meme' },
+                                { label: '🎉 慶祝', val: 'happy' },
+                                { label: '😢 難過', val: 'sad' },
+                                { label: '生氣', val: 'angry' },
+                                { label: '😮 驚訝', val: 'shock' },
+                                { label: '❤️ 戀愛', val: 'love' }
+                              ].map(pill => (
+                                <button
+                                  key={pill.label}
+                                  type="button"
+                                  onClick={() => {
+                                    setGifSearchQuery(pill.val);
+                                    if (pill.val === '') {
+                                      loadInitialGifs(false);
+                                    } else {
+                                      handleFetchGifs(pill.val, false);
+                                    }
                                   }}
                                   style={{
-                                    height: '60px',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    border: '2px solid transparent',
-                                    transition: 'border-color 0.1s'
+                                    padding: '4px 8px',
+                                    borderRadius: '12px',
+                                    border: gifSearchQuery === pill.val ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+                                    background: gifSearchQuery === pill.val ? 'rgba(61, 220, 151, 0.1)' : 'var(--bg-input)',
+                                    color: gifSearchQuery === pill.val ? 'var(--neon-green)' : 'var(--text-secondary)',
+                                    fontSize: '11px',
+                                    cursor: 'pointer'
                                   }}
-                                  onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--neon-green)'}
-                                  onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
-                                  alt="cat preview"
-                                />
+                                >
+                                  {pill.label}
+                                </button>
                               ))}
                             </div>
+
+                            {/* GIF Grid List */}
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
+                              gap: '8px',
+                              maxHeight: '180px',
+                              overflowY: 'auto',
+                              padding: '2px'
+                            }}>
+                              {isSearchingGifs ? (
+                                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                  ⏳ {currentLang === "en" ? "Searching GIFs..." : "正在搜尋 GIF..."}
+                                </div>
+                              ) : chatSearchedGifs.length === 0 ? (
+                                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                  📭 {currentLang === "en" ? "No GIFs found. Try another query." : "找不到相符的 GIF，換個關鍵字試試吧！"}
+                                </div>
+                              ) : (
+                                chatSearchedGifs.map((gif, idx) => (
+                                  <img
+                                    key={idx}
+                                    src={gif.url}
+                                    onClick={() => {
+                                      handleSendMessage(gif.url, "gif");
+                                      setShowGifPicker(false);
+                                    }}
+                                    style={{
+                                      width: '100%',
+                                      height: '75px',
+                                      objectFit: 'cover',
+                                      borderRadius: '4px',
+                                      cursor: 'pointer',
+                                      border: '2px solid transparent',
+                                      transition: 'all 0.15s ease'
+                                    }}
+                                    onMouseOver={(e) => {
+                                      e.currentTarget.style.borderColor = 'var(--neon-green)';
+                                      e.currentTarget.style.transform = 'scale(1.05)';
+                                      e.currentTarget.style.boxShadow = '0 0 8px rgba(61, 220, 151, 0.5)';
+                                    }}
+                                    onMouseOut={(e) => {
+                                      e.currentTarget.style.borderColor = 'transparent';
+                                      e.currentTarget.style.transform = 'scale(1)';
+                                      e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                    alt="gif search result"
+                                  />
+                                ))
+                              )}
+                            </div>
+
+                            {/* Caption Footer */}
+                            {!giphyApiKey && (
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center', borderTop: '1px dashed var(--border-color)', paddingTop: '6px' }}>
+                                💡 {currentLang === "en" 
+                                  ? "Currently showing presets. Configure GIPHY key to search online." 
+                                  : "目前顯示精選內建庫。設定 GIPHY 金鑰後可搜尋全網動圖。"}
+                              </div>
+                            )}
                           </div>
                         )}
 
