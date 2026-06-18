@@ -917,6 +917,25 @@ export default function App() {
     return Array.from(registry.values());
   }, [usersList, posts]);
 
+  const displayPosts = useMemo(() => {
+    return posts.map(p => {
+      const myUid = currentUser.googleId || currentUser.uid;
+      let resolvedUid = p.uid;
+      if (p.handle === currentUser.handle) {
+        resolvedUid = myUid;
+      } else {
+        const postUser = usersList.find(u => u.handle === p.handle);
+        if (postUser) {
+          resolvedUid = postUser.uid || postUser.googleId;
+        }
+      }
+      return {
+        ...p,
+        uid: resolvedUid || p.uid || p.handle || p.author
+      };
+    });
+  }, [posts, usersList, currentUser]);
+
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [contactInfo, setContactInfo] = useState(() => {
     const saved = localStorage.getItem("echoes_contact_info");
@@ -5201,6 +5220,7 @@ export default function App() {
                 (() => {
                   const targetUser = users.find(u => u.id === profileViewUid) || currentUser;
                   const effectiveUid = profileViewUid || currentUser?.uid;
+                  const posts = displayPosts;
                   const userPosts = posts.filter(post => post.uid === effectiveUid);
                   return (
                     <div className="feed-container" style={{ maxWidth: '650px', margin: '0 auto' }}>
