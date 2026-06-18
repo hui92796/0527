@@ -105,10 +105,14 @@ const PRESET_GIFS = [
   { id: 'meme_6', url: 'https://i.giphy.com/media/l3q2LzK1t6y59AXLO/giphy.gif', keywords: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], tags: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], category: 'meme' }
 ];
 
-const SAFE_PRESET_GIFS = PRESET_GIFS.map(gif => ({
-  ...gif,
-  url: gif.url.replace("i.giphy.com/media/", "media.giphy.com/media/")
-}));
+const SAFE_PRESET_GIFS = PRESET_GIFS.map(gif => {
+  const match = gif.url.match(/\/media\/([^\/]+)\//);
+  const id = match ? match[1] : gif.id;
+  return {
+    ...gif,
+    url: `https://i.giphy.com/${id}.gif`
+  };
+});
 
 const DEFAULT_POSTS = [
   {
@@ -759,26 +763,25 @@ export default function App() {
     const setLoading = isComment ? setIsCommentSearchingGifs : setIsSearchingGifs;
     setLoading(true);
 
-    if (giphyApiKey && giphyApiKey.trim()) {
-      try {
-        const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(giphyApiKey.trim())}&limit=24&rating=g`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data && Array.isArray(json.data)) {
-            const mapped = json.data.map(item => ({
-              url: item.images.fixed_height.url || item.images.original.url,
-              keywords: [item.title, ...item.tags].filter(Boolean),
-              category: 'trending'
-            }));
-            setResults(mapped);
-            setLoading(false);
-            return;
-          }
+    const key = (giphyApiKey && giphyApiKey.trim()) || "dc6zaTOxFJmzC";
+    try {
+      const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(key)}&limit=24&rating=g`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data)) {
+          const mapped = json.data.map(item => ({
+            url: `https://i.giphy.com/${item.id}.gif`,
+            keywords: [item.title, ...item.tags].filter(Boolean),
+            category: 'trending'
+          }));
+          setResults(mapped);
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error("Giphy initial load error:", err);
       }
+    } catch (err) {
+      console.error("Giphy initial load error:", err);
     }
 
     setResults(SAFE_PRESET_GIFS);
@@ -796,26 +799,25 @@ export default function App() {
     }
 
     setLoading(true);
-    if (giphyApiKey && giphyApiKey.trim()) {
-      try {
-        const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(giphyApiKey.trim())}&q=${encodeURIComponent(query)}&limit=24&rating=g`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data && Array.isArray(json.data)) {
-            const mapped = json.data.map(item => ({
-              url: item.images.fixed_height.url || item.images.original.url,
-              keywords: [item.title, ...item.tags].filter(Boolean),
-              category: 'search'
-            }));
-            setResults(mapped);
-            setLoading(false);
-            return;
-          }
+    const key = (giphyApiKey && giphyApiKey.trim()) || "dc6zaTOxFJmzC";
+    try {
+      const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=24&rating=g`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data)) {
+          const mapped = json.data.map(item => ({
+            url: `https://i.giphy.com/${item.id}.gif`,
+            keywords: [item.title, ...item.tags].filter(Boolean),
+            category: 'search'
+          }));
+          setResults(mapped);
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error("Giphy search fetch error:", err);
       }
+    } catch (err) {
+      console.error("Giphy search fetch error:", err);
     }
 
     const queryWords = query.split(/\s+/).filter(Boolean);
