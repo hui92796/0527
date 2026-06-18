@@ -722,15 +722,6 @@ export default function App() {
   const [editUsername, setEditUsername] = useState("");
   const [isSaveSuccess, setIsSaveSuccess] = useState(false);
 
-  const users = useMemo(() => {
-    return usersList.map(u => ({
-      ...u,
-      id: u.uid || u.googleId,
-      displayName: u.name || u.displayName || "未知使用者",
-      photoURL: u.avatarUrl || u.photoURL || "",
-      bio: u.bio || ""
-    }));
-  }, [usersList]);
   const [activeEmojiMenuMsgId, setActiveEmojiMenuMsgId] = useState(null);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [activeCommentEmojiMsgId, setActiveCommentEmojiMsgId] = useState(null);
@@ -864,6 +855,65 @@ export default function App() {
     }
     return null;
   };
+
+  const users = useMemo(() => {
+    const registry = new Map();
+
+    // 1. Add all users from usersList
+    usersList.forEach(u => {
+      const id = u.uid || u.googleId;
+      if (id) {
+        registry.set(id, {
+          ...u,
+          id,
+          displayName: u.name || u.displayName || "未知使用者",
+          photoURL: u.avatarUrl || u.photoURL || "",
+          bio: u.bio || ""
+        });
+      }
+    });
+
+    // 2. Add users from posts (including DEFAULT_POSTS)
+    posts.forEach(p => {
+      const id = p.uid || p.handle || p.author;
+      if (id && !registry.has(id)) {
+        const latestProfile = getLatestUserAvatar(p.handle, p.author);
+        registry.set(id, {
+          id,
+          displayName: latestProfile ? latestProfile.name : p.author,
+          handle: p.handle,
+          avatarLetter: latestProfile ? latestProfile.avatarLetter : (p.avatarLetter || p.author.substring(0, 2).toUpperCase()),
+          avatarBg: latestProfile ? latestProfile.avatarBg : (p.avatarBg || null),
+          photoURL: latestProfile ? (latestProfile.avatarUrl || latestProfile.photoURL) : (p.avatarUrl || ""),
+          bio: ""
+        });
+      }
+    });
+
+    // 3. Add users from comments
+    posts.forEach(p => {
+      if (p.comments) {
+        p.comments.forEach(c => {
+          const id = c.uid || c.authorHandle || c.author;
+          if (id && !registry.has(id)) {
+            const latestProfile = getLatestUserAvatar(c.authorHandle, c.author);
+            registry.set(id, {
+              id,
+              displayName: latestProfile ? latestProfile.name : c.author,
+              handle: c.authorHandle || `@${c.author}`,
+              avatarLetter: latestProfile ? latestProfile.avatarLetter : c.author.substring(0, 2).toUpperCase(),
+              avatarBg: latestProfile ? latestProfile.avatarBg : null,
+              photoURL: latestProfile ? (latestProfile.avatarUrl || latestProfile.photoURL) : "",
+              bio: ""
+            });
+          }
+        });
+      }
+    });
+
+    return Array.from(registry.values());
+  }, [usersList, posts]);
+
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [contactInfo, setContactInfo] = useState(() => {
     const saved = localStorage.getItem("echoes_contact_info");
@@ -948,7 +998,10 @@ export default function App() {
       const batch = writeBatch(db);
       DEFAULT_POSTS.forEach((post) => {
         const docRef = doc(collection(db, "posts"));
+        const latestPostProfile = getLatestUserAvatar(post.handle, post.author);
+        const postUid = post.uid || (latestPostProfile ? (latestPostProfile.googleId || latestPostProfile.uid) : post.handle || post.author);
         batch.set(docRef, {
+          uid: postUid,
           author: post.author,
           handle: post.handle,
           avatarLetter: post.avatarLetter,
@@ -959,12 +1012,19 @@ export default function App() {
           gradient: post.gradient || null,
           likedBy: [],
           likes: post.likes,
-          comments: post.comments.map(c => ({
-            id: c.id,
-            author: c.author,
-            text: c.text,
-            time: c.time
-          })),
+          comments: post.comments.map(c => {
+            const latestProfile = getLatestUserAvatar(c.authorHandle, c.author);
+            const authorHandle = c.authorHandle || (latestProfile ? latestProfile.handle : `@${c.author.toLowerCase()}`);
+            const commentUid = c.uid || (latestProfile ? (latestProfile.googleId || latestProfile.uid) : authorHandle || c.author);
+            return {
+              id: c.id,
+              author: c.author,
+              authorHandle: authorHandle,
+              uid: commentUid,
+              text: c.text,
+              time: c.time
+            };
+          }),
           isDefault: true,
           createdAt: new Date(Date.now() - 3600000 * 2) // Offset for sorting order
         });
@@ -992,6 +1052,11 @@ export default function App() {
         postsList.push({
           id: doc.id,
           ...data,
+          uid: data.uid || data.handle || data.author,
+          comments: (data.comments || []).map(c => ({
+            ...c,
+            uid: c.uid || c.authorHandle || c.author
+          })),
           date: data.createdAt ? formatRelativeDate(data.createdAt.toDate(), currentLang) : "just now",
         });
       });
@@ -1010,7 +1075,14 @@ export default function App() {
         showToast("⚠️ 雲端資料庫載入失敗，已切換至本機暫存模式");
       }
       // Fallback
-      setPosts([...DEFAULT_POSTS]);
+      setPosts(DEFAULT_POSTS.map(p => {
+        const pUid = p.uid || p.handle || p.author;
+        const updatedComments = (p.comments || []).map(c => ({
+          ...c,
+          uid: c.uid || c.authorHandle || c.author
+        }));
+        return { ...p, uid: pUid, comments: updatedComments };
+      }));
     });
 
     return () => unsubscribe();
