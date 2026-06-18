@@ -2614,15 +2614,30 @@ export default function App() {
                     </div>
 
                     <div className="profile-socials" style={{ display: 'flex', gap: '10px', marginTop: '24px', justifyContent: 'center' }}>
-                      <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="profile-social-btn" style={{ padding: '8px', border: '1px solid var(--border-color)', borderRadius: '6px' }} aria-label="GitHub">
+                      <button 
+                        className="profile-social-btn" 
+                        style={{ background: 'none', padding: '8px', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+                        aria-label="Feed"
+                        onClick={() => navigateToHash("#/")}
+                      >
                         <Terminal style={{ width: '18px', height: '18px' }} />
-                      </a>
-                      <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="profile-social-btn" style={{ padding: '8px', border: '1px solid var(--border-color)', borderRadius: '6px' }} aria-label="Twitter">
+                      </button>
+                      <button 
+                        className="profile-social-btn" 
+                        style={{ background: 'none', padding: '8px', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+                        aria-label="About Me"
+                        onClick={() => navigateToHash("#/about")}
+                      >
                         <Globe style={{ width: '18px', height: '18px' }} />
-                      </a>
-                      <a href="mailto:creator@example.com" className="profile-social-btn" style={{ padding: '8px', border: '1px solid var(--border-color)', borderRadius: '6px' }} aria-label="Email">
+                      </button>
+                      <button 
+                        className="profile-social-btn" 
+                        style={{ background: 'none', padding: '8px', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+                        aria-label="Direct Messages"
+                        onClick={() => navigateToHash("#/messages")}
+                      >
                         <Mail style={{ width: '18px', height: '18px' }} />
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>
