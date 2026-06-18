@@ -847,8 +847,7 @@ export default function App() {
     if (currentUser.handle) {
       const qHandle = query(
         collection(db, "notifications"),
-        where("userHandle", "==", currentUser.handle),
-        orderBy("timestamp", "desc")
+        where("userHandle", "==", currentUser.handle)
       );
       unsubHandle = onSnapshot(qHandle, (snapshot) => {
         const list = [];
@@ -865,8 +864,7 @@ export default function App() {
     if (currentUserUid) {
       const qUid = query(
         collection(db, "notifications"),
-        where("toUid", "==", currentUserUid),
-        orderBy("timestamp", "desc")
+        where("toUid", "==", currentUserUid)
       );
       unsubUid = onSnapshot(qUid, (snapshot) => {
         const list = [];
@@ -1554,7 +1552,7 @@ export default function App() {
         });
 
         // 1. 去 friendRequests 集合中查詢當前使用者的所有「已確認好友」
-        const currentUserUid = currentUser.googleId || currentUser.uid;
+        const currentUserUid = currentUser.uid || currentUser.googleId;
         if (currentUserUid) {
           const friendUids = [];
 
@@ -1565,10 +1563,12 @@ export default function App() {
             where("status", "==", "accepted")
           );
           const snap1 = await getDocs(q1);
-          snap1.forEach(doc => {
-            const data = doc.data();
-            if (data.toUid && !friendUids.includes(data.toUid)) {
-              friendUids.push(data.toUid);
+          snap1.forEach(docSnap => {
+            const data = docSnap.data();
+            // 當 fromUid === currentUser.uid 時，好友的 UID 就是 toUid
+            const friendUid = data.toUid;
+            if (friendUid && !friendUids.includes(friendUid)) {
+              friendUids.push(friendUid);
             }
           });
 
@@ -1579,24 +1579,27 @@ export default function App() {
             where("status", "==", "accepted")
           );
           const snap2 = await getDocs(q2);
-          snap2.forEach(doc => {
-            const data = doc.data();
-            if (data.fromUid && !friendUids.includes(data.fromUid)) {
-              friendUids.push(data.fromUid);
+          snap2.forEach(docSnap => {
+            const data = docSnap.data();
+            // 當 toUid === currentUser.uid 時，好友的 UID 就是 fromUid
+            const friendUid = data.fromUid;
+            if (friendUid && !friendUids.includes(friendUid)) {
+              friendUids.push(friendUid);
             }
           });
 
           // 2. 向 notifications 為「每一位好友」寫入一筆新通知
           if (friendUids.length > 0) {
             const batch = writeBatch(db);
+            const senderName = currentUser.displayName || currentUser.name || '您的好友';
             friendUids.forEach(friendUid => {
               const notificationDocRef = doc(collection(db, "notifications"));
               batch.set(notificationDocRef, {
                 toUid: friendUid,
                 fromUid: currentUserUid,
-                fromName: currentUser.name,
+                fromName: senderName,
                 type: "new_post",
-                message: `您的好友 ${currentUser.name} 發布了新的動態貼文，快去看看吧！`,
+                message: `${senderName} 發佈了新貼文，快去看看吧！`,
                 timestamp: Date.now(),
                 isRead: false
               });
