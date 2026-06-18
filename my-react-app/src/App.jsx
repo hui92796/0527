@@ -639,6 +639,27 @@ export default function App() {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 2600);
   };
+
+  const getLatestUserAvatar = (handle) => {
+    if (handle === currentUser.handle) {
+      return {
+        name: currentUser.name,
+        avatarLetter: currentUser.avatarLetter,
+        avatarBg: currentUser.avatarBg,
+        avatarUrl: currentUser.avatarUrl
+      };
+    }
+    const found = usersList.find(u => u.handle === handle);
+    if (found) {
+      return {
+        name: found.name,
+        avatarLetter: found.avatarLetter,
+        avatarBg: found.avatarBg,
+        avatarUrl: found.avatarUrl
+      };
+    }
+    return null;
+  };
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [contactInfo, setContactInfo] = useState(() => {
     const saved = localStorage.getItem("echoes_contact_info");
@@ -1321,7 +1342,8 @@ export default function App() {
   };
 
   // Update profile setup details
-  const submitProfileSave = () => {
+  // Update profile setup details
+  const submitProfileSave = async () => {
     const name = profileName.trim() || currentUser.name;
     const handle = "@" + name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_\u4e00-\u9fff]/g, "").substring(0, 20);
 
@@ -1349,6 +1371,34 @@ export default function App() {
     setProfileName("");
     setProfilePresetAv(null);
     setProfileCustomAv(null);
+
+    // 同步到 Firestore
+    if (isFirebaseSetup && currentUser.email) {
+      try {
+        const userDocRef = doc(db, "users", currentUser.email);
+        await setDoc(userDocRef, nextUser);
+
+        // 解決方案 A：批次更新貼文集合中當前使用者的頭像與暱稱資訊
+        const q = query(
+          collection(db, "posts"),
+          where("handle", "==", currentUser.handle)
+        );
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        snapshot.forEach(docSnap => {
+          batch.update(docSnap.ref, {
+            author: nextUser.name,
+            avatarLetter: nextUser.avatarLetter || null,
+            avatarBg: nextUser.avatarBg || null,
+            avatarUrl: nextUser.avatarUrl || null
+          });
+        });
+        await batch.commit();
+      } catch (err) {
+        console.error("Failed to sync profile updates to Firestore:", err);
+      }
+    }
+
     showToast(currentLang === "en" ? "✨ Profile saved!" : "✨ 個人資料已儲存！");
   };
 
@@ -1374,11 +1424,37 @@ export default function App() {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (evt) => {
-        setCurrentUser(prev => ({
-          ...prev,
-          avatarUrl: evt.target.result
-        }));
+      reader.onload = async (evt) => {
+        const nextUser = {
+          ...currentUser,
+          avatarUrl: evt.target.result,
+          avatarBg: null
+        };
+        setCurrentUser(nextUser);
+
+        if (isFirebaseSetup && currentUser.email) {
+          try {
+            const userDocRef = doc(db, "users", currentUser.email);
+            await setDoc(userDocRef, nextUser);
+
+            // 更新貼文中的頭像
+            const q = query(
+              collection(db, "posts"),
+              where("handle", "==", currentUser.handle)
+            );
+            const snapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            snapshot.forEach(docSnap => {
+              batch.update(docSnap.ref, {
+                avatarUrl: evt.target.result,
+                avatarBg: null
+              });
+            });
+            await batch.commit();
+          } catch (err) {
+            console.error("Failed to sync avatar upload to Firestore:", err);
+          }
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -2041,26 +2117,37 @@ export default function App() {
       <div key={post.id} className={`post-card ${highlightedPostId === post.id ? "liked-post-highlight" : ""}`} id={`card-${post.id}`}>
         <div className="post-header">
           <div className="post-author-wrapper">
-            <div className="user-avatar" style={{
-              background: post.isDefault ? 'var(--bg-elevated)' : 'linear-gradient(135deg, var(--neon-green-dim) 0%, var(--neon-cyan) 100%)',
-              color: post.isDefault ? 'var(--neon-green)' : '#ffffff',
-              position: 'relative'
-            }}>
-              {post.avatarLetter}
-              {!post.isDefault && (
-                <span style={{
-                  position: 'absolute',
-                  bottom: '-2px',
-                  right: '-2px',
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: isAuthorOnline ? 'var(--neon-green)' : 'var(--neon-red)',
-                  border: '2px solid var(--bg-card)',
-                  boxShadow: `0 0 4px ${isAuthorOnline ? 'var(--neon-green)' : 'var(--neon-red)'}`
-                }} title={isAuthorOnline ? '在線 (Online)' : '離線 (Offline)'}></span>
-              )}
-            </div>
+            {(() => {
+              const latestProfile = getLatestUserAvatar(post.handle);
+              const avatarUrl = latestProfile ? latestProfile.avatarUrl : post.avatarUrl;
+              const avatarBg = latestProfile ? latestProfile.avatarBg : post.avatarBg;
+              const avatarLetter = latestProfile ? latestProfile.avatarLetter : post.avatarLetter;
+
+              return (
+                <div className="user-avatar" style={{
+                  background: avatarUrl ? `url(${avatarUrl})` : (avatarBg || (post.isDefault ? 'var(--bg-elevated)' : 'linear-gradient(135deg, var(--neon-green-dim) 0%, var(--neon-cyan) 100%)')),
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  color: post.isDefault ? 'var(--neon-green)' : '#ffffff',
+                  position: 'relative'
+                }}>
+                  {!avatarUrl && (avatarLetter || post.avatarLetter || post.author?.substring(0, 2).toUpperCase())}
+                  {!post.isDefault && (
+                    <span style={{
+                      position: 'absolute',
+                      bottom: '-2px',
+                      right: '-2px',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: isAuthorOnline ? 'var(--neon-green)' : 'var(--neon-red)',
+                      border: '2px solid var(--bg-card)',
+                      boxShadow: `0 0 4px ${isAuthorOnline ? 'var(--neon-green)' : 'var(--neon-red)'}`
+                    }} title={isAuthorOnline ? '在線 (Online)' : '離線 (Offline)'}></span>
+                  )}
+                </div>
+              );
+            })()}
             <div className="post-author-details">
               <span className="post-author-name">{post.author}</span>
               <span className="post-author-handle">{post.handle}</span>
@@ -2782,8 +2869,20 @@ export default function App() {
                                 border: '1px solid var(--neon-amber)'
                               }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <div className="user-avatar" style={{ width: '28px', height: '28px', background: sender.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {sender.avatarLetter || sender.name.substring(0, 2).toUpperCase()}
+                                  <div className="user-avatar" style={{ 
+                                    width: '28px', 
+                                    height: '28px', 
+                                    background: sender.avatarUrl ? `url(${sender.avatarUrl})` : (sender.avatarBg || 'var(--bg-elevated)'), 
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    borderRadius: '50%', 
+                                    color: '#fff', 
+                                    fontSize: '9px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center' 
+                                  }}>
+                                    {!sender.avatarUrl && (sender.avatarLetter || sender.name.substring(0, 2).toUpperCase())}
                                   </div>
                                   <div>
                                     <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-bright)' }}>{sender.name}</div>
@@ -2842,8 +2941,21 @@ export default function App() {
                                 }}
                                 onClick={() => setActiveChatFriend(u)}
                               >
-                                <div className="user-avatar" style={{ width: '30px', height: '30px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                  {u.avatarLetter || u.name.substring(0, 2).toUpperCase()}
+                                <div className="user-avatar" style={{ 
+                                  width: '30px', 
+                                  height: '30px', 
+                                  background: u.avatarUrl ? `url(${u.avatarUrl})` : (u.avatarBg || 'var(--bg-elevated)'), 
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                  borderRadius: '50%', 
+                                  color: '#fff', 
+                                  fontSize: '10px', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center', 
+                                  position: 'relative' 
+                                }}>
+                                  {!u.avatarUrl && (u.avatarLetter || u.name.substring(0, 2).toUpperCase())}
                                   <span style={{
                                     position: 'absolute',
                                     bottom: '-1px',
@@ -2898,8 +3010,21 @@ export default function App() {
                               border: '1px solid var(--border-color)'
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div className="user-avatar" style={{ width: '28px', height: '28px', background: u.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                  {u.avatarLetter || u.name.substring(0, 2).toUpperCase()}
+                                <div className="user-avatar" style={{ 
+                                  width: '28px', 
+                                  height: '28px', 
+                                  background: u.avatarUrl ? `url(${u.avatarUrl})` : (u.avatarBg || 'var(--bg-elevated)'), 
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                  borderRadius: '50%', 
+                                  color: '#fff', 
+                                  fontSize: '9px', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center', 
+                                  position: 'relative' 
+                                }}>
+                                  {!u.avatarUrl && (u.avatarLetter || u.name.substring(0, 2).toUpperCase())}
                                   <span style={{
                                     position: 'absolute',
                                     bottom: '-1px',
@@ -2970,8 +3095,20 @@ export default function App() {
                       <>
                         {/* Chatroom Header */}
                         <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div className="user-avatar" style={{ width: '32px', height: '32px', background: activeChatFriend.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {activeChatFriend.avatarLetter || activeChatFriend.name.substring(0, 2).toUpperCase()}
+                          <div className="user-avatar" style={{ 
+                            width: '32px', 
+                            height: '32px', 
+                            background: activeChatFriend.avatarUrl ? `url(${activeChatFriend.avatarUrl})` : (activeChatFriend.avatarBg || 'var(--bg-elevated)'), 
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            borderRadius: '50%', 
+                            color: '#fff', 
+                            fontSize: '10px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center' 
+                          }}>
+                            {!activeChatFriend.avatarUrl && (activeChatFriend.avatarLetter || activeChatFriend.name.substring(0, 2).toUpperCase())}
                           </div>
                           <div>
                             <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-bright)' }}>{activeChatFriend.name}</div>
