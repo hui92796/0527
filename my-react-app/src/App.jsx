@@ -2949,7 +2949,7 @@ export default function App() {
     }
 
     // 1. Search posts: check author, handle, content, category, tags
-    const matchedPosts = posts.filter(post => {
+    const matchedPosts = displayPosts.filter(post => {
       const isPrivate = post.privacy === "private";
       const isMine = post.handle === currentUser.handle;
       const matchesPrivacy = !isPrivate || isMine || adminAuthenticated;
@@ -3120,7 +3120,7 @@ export default function App() {
   const isWriteTab = currentRoute === "#/write";
 
   const filteredPosts = useMemo(() => {
-    let list = posts.filter(post => {
+    let list = displayPosts.filter(post => {
       const matchesCat = currentCategory === "All" || post.category === currentCategory;
       const matchesSearch = searchQuery === "" ||
         post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -3175,7 +3175,7 @@ export default function App() {
       ];
     }
     return list;
-  }, [posts, currentCategory, searchQuery, currentUser.handle, currentUser.name, currentUser.avatarLetter, adminAuthenticated, isWriteTab]);
+  }, [displayPosts, currentCategory, searchQuery, currentUser.handle, currentUser.name, currentUser.avatarLetter, adminAuthenticated, isWriteTab]);
 
   // Categories pill filters list
   const categoryFilterList = useMemo(() => {
@@ -5635,13 +5635,13 @@ export default function App() {
                 <div className="sidebar-card" id="likes-history-card">
                   <h3 id="likes-history-title">💖 {t("likes_history")}</h3>
                   <div id="liked-posts-list" className="liked-history-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {posts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).map(post => (
+                    {displayPosts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).map(post => (
                       <button key={post.id} className="liked-history-item" style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', background: 'transparent', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '6px', textAlign: 'left', cursor: 'pointer' }} onClick={() => handleBookmarkItemClick(post.id)}>
                         <Heart style={{ color: 'var(--neon-red)', fill: 'var(--neon-red)', width: '14px', height: '14px' }} />
                         <span className="liked-history-item-text" style={{ fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>{post.author}: {post.content.substring(0, 15)}...</span>
                       </button>
                     ))}
-                    {posts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).length === 0 && (
+                    {displayPosts.filter(p => p.likedBy ? p.likedBy.includes(currentUser.handle) : p.likedByUser).length === 0 && (
                       <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0', width: '100%' }}>{currentLang === "en" ? "No liked posts" : "無點讚或收藏貼文"}</div>
                     )}
                   </div>
