@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Moon,
   Sun,
@@ -104,6 +104,11 @@ const PRESET_GIFS = [
   { id: 'meme_5', url: 'https://i.giphy.com/media/26n6Gx9yn6up1g6TC/giphy.gif', keywords: ['laugh', 'funny', 'haha', '笑', '哈哈', '大笑', '搞笑'], tags: ['laugh', 'funny', 'haha', '笑', '哈哈', '大笑', '搞笑'], category: 'meme' },
   { id: 'meme_6', url: 'https://i.giphy.com/media/l3q2LzK1t6y59AXLO/giphy.gif', keywords: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], tags: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], category: 'meme' }
 ];
+
+const SAFE_PRESET_GIFS = PRESET_GIFS.map(gif => ({
+  ...gif,
+  url: gif.url.replace("i.giphy.com/media/", "media.giphy.com/media/")
+}));
 
 const DEFAULT_POSTS = [
   {
@@ -776,7 +781,7 @@ export default function App() {
       }
     }
 
-    setResults(PRESET_GIFS);
+    setResults(SAFE_PRESET_GIFS);
     setLoading(false);
   };
 
@@ -814,7 +819,7 @@ export default function App() {
     }
 
     const queryWords = query.split(/\s+/).filter(Boolean);
-    const matched = PRESET_GIFS.filter(gif => {
+    const matched = SAFE_PRESET_GIFS.filter(gif => {
       return queryWords.every(word => 
         gif.keywords.some(kw => kw.toLowerCase().includes(word)) ||
         (gif.category && gif.category.toLowerCase().includes(word))
@@ -832,7 +837,17 @@ export default function App() {
     }, 2600);
   };
 
-  const getLatestUserAvatar = (handle, name = null) => {
+  const usersMap = useMemo(() => {
+    const handleMap = new Map();
+    const nameMap = new Map();
+    usersList.forEach(u => {
+      if (u.handle) handleMap.set(u.handle, u);
+      if (u.name) nameMap.set(u.name, u);
+    });
+    return { handleMap, nameMap };
+  }, [usersList]);
+
+  const getLatestUserAvatar = useCallback((handle, name = null) => {
     if (handle === currentUser.handle || (name && name === currentUser.name)) {
       return {
         name: currentUser.name,
@@ -843,10 +858,10 @@ export default function App() {
     }
     let found = null;
     if (handle) {
-      found = usersList.find(u => u.handle === handle);
+      found = usersMap.handleMap.get(handle);
     }
     if (!found && name) {
-      found = usersList.find(u => u.name === name);
+      found = usersMap.nameMap.get(name);
     }
     if (found) {
       return {
@@ -857,7 +872,7 @@ export default function App() {
       };
     }
     return null;
-  };
+  }, [usersMap, currentUser]);
 
   const users = useMemo(() => {
     const registry = new Map();
@@ -924,7 +939,7 @@ export default function App() {
       if (p.handle === currentUser.handle) {
         resolvedUid = myUid;
       } else {
-        const postUser = usersList.find(u => u.handle === p.handle);
+        const postUser = usersMap.handleMap.get(p.handle);
         if (postUser) {
           resolvedUid = postUser.uid || postUser.googleId;
         }
@@ -934,7 +949,7 @@ export default function App() {
         uid: resolvedUid || p.uid || p.handle || p.author
       };
     });
-  }, [posts, usersList, currentUser]);
+  }, [posts, usersMap, currentUser]);
 
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [contactInfo, setContactInfo] = useState(() => {
