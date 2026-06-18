@@ -921,8 +921,14 @@ export default function App() {
         }
       } else {
         const list = [];
+        const currentUserUid = currentUser?.uid || currentUser?.googleId;
         snapshot.forEach((doc) => {
-          list.push({ id: doc.id, ...doc.data() });
+          const data = doc.data();
+          // 情況 A：無 userId 欄位（系統公共分類）
+          // 情況 B：userId === currentUser.uid（當前使用者自訂分類）
+          if (!data.userId || data.userId === currentUserUid) {
+            list.push({ id: doc.id, ...data });
+          }
         });
         // Sort categories by createdAt so they appear in a consistent order
         list.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
@@ -933,7 +939,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [isLoggedIn]);
+  }, [currentUser.uid, currentUser.googleId, isLoggedIn]);
 
   // Subscribe to all users list (for friends adding)
   useEffect(() => {
@@ -1609,9 +1615,11 @@ export default function App() {
 
     if (isFirebaseSetup) {
       try {
+        const currentUserUid = currentUser?.uid || currentUser?.googleId;
         await addDoc(collection(db, "categories"), {
           name: trimmed,
           value: trimmed,
+          userId: currentUserUid,
           createdAt: Date.now()
         });
         setComposerCategory(trimmed);
@@ -1624,7 +1632,8 @@ export default function App() {
       }
     } else {
       // Local fallback
-      const newCatObj = { name: trimmed, value: trimmed, createdAt: Date.now() };
+      const currentUserUid = currentUser?.uid || currentUser?.googleId;
+      const newCatObj = { name: trimmed, value: trimmed, userId: currentUserUid, createdAt: Date.now() };
       setCategories(prev => [...prev, newCatObj]);
       setComposerCategory(trimmed);
       showToast(currentLang === "en" ? `Category "${trimmed}" added locally` : `已於本地新增分類「${trimmed}」`);
@@ -3527,7 +3536,7 @@ export default function App() {
                             ))}
                             <option value="ADD_NEW_CATEGORY">+ 新增自訂分類...</option>
                           </select>
-                          {!["Thoughts", "Tech", "Productivity", "Life", "Design", "ADD_NEW_CATEGORY"].includes(composerCategory) && (
+                          {categories.find(cat => cat.value === composerCategory)?.userId === (currentUser?.uid || currentUser?.googleId) && (
                             <button
                               type="button"
                               className="composer-tool-btn"
