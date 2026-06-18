@@ -661,8 +661,8 @@ export default function App() {
     }, 2600);
   };
 
-  const getLatestUserAvatar = (handle) => {
-    if (handle === currentUser.handle) {
+  const getLatestUserAvatar = (handle, name = null) => {
+    if (handle === currentUser.handle || (name && name === currentUser.name)) {
       return {
         name: currentUser.name,
         avatarLetter: currentUser.avatarLetter,
@@ -670,7 +670,13 @@ export default function App() {
         avatarUrl: currentUser.avatarUrl
       };
     }
-    const found = usersList.find(u => u.handle === handle);
+    let found = null;
+    if (handle) {
+      found = usersList.find(u => u.handle === handle);
+    }
+    if (!found && name) {
+      found = usersList.find(u => u.name === name);
+    }
     if (found) {
       return {
         name: found.name,
@@ -2813,9 +2819,32 @@ export default function App() {
             ) : (
               post.comments.map(c => (
                 <div key={c.id} className="comment-item" style={{ display: 'flex', gap: '10px', margin: '8px 0' }}>
-                  <div className="comment-avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
-                    {c.author.charAt(0).toUpperCase()}
-                  </div>
+                  {(() => {
+                    const latestProfile = getLatestUserAvatar(c.authorHandle, c.author);
+                    const avatarUrl = latestProfile ? latestProfile.avatarUrl : null;
+                    const avatarBg = latestProfile ? latestProfile.avatarBg : null;
+                    const avatarLetter = latestProfile ? latestProfile.avatarLetter : null;
+                    const displayName = latestProfile ? latestProfile.name : c.author;
+
+                    return (
+                      <div className="comment-avatar" style={{ 
+                        width: '28px', 
+                        height: '28px', 
+                        borderRadius: '50%', 
+                        background: avatarUrl ? `url(${avatarUrl})` : (avatarBg || 'var(--bg-elevated)'),
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        fontSize: '10px', 
+                        fontWeight: 'bold',
+                        color: '#ffffff'
+                      }}>
+                        {!avatarUrl && (avatarLetter || displayName.charAt(0).toUpperCase())}
+                      </div>
+                    );
+                  })()}
                   <div className="comment-content-wrapper" style={{ flex: 1 }}>
                     <div className="comment-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
                       <div>
@@ -3968,54 +3997,64 @@ export default function App() {
                     {activeChatFriend ? (
                       <>
                         {/* Chatroom Header */}
-                        <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div className="user-avatar" style={{ 
-                              width: '32px', 
-                              height: '32px', 
-                              background: activeChatFriend.type === "group" 
-                                ? 'linear-gradient(135deg, var(--neon-cyan), var(--neon-green))'
-                                : (activeChatFriend.avatarUrl ? `url(${activeChatFriend.avatarUrl})` : (activeChatFriend.avatarBg || 'var(--bg-elevated)')), 
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center',
-                              borderRadius: '50%', 
-                              color: activeChatFriend.type === "group" ? '#000' : '#fff', 
-                              fontSize: '10px', 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center',
-                              fontWeight: activeChatFriend.type === "group" ? 'bold' : 'normal'
-                            }}>
-                              {activeChatFriend.type === "group" ? "👥" : (!activeChatFriend.avatarUrl && (activeChatFriend.avatarLetter || activeChatFriend.name.substring(0, 2).toUpperCase()))}
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-bright)' }}>{activeChatFriend.name}</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                {activeChatFriend.type === "group" 
-                                  ? `${activeChatFriend.members ? activeChatFriend.members.length : 1} ${currentLang === "en" ? "members" : "位成員"}`
-                                  : activeChatFriend.handle}
+                        {(() => {
+                          const latestProfile = activeChatFriend.type !== "group" ? getLatestUserAvatar(activeChatFriend.handle, activeChatFriend.name) : null;
+                          const avatarUrl = latestProfile ? latestProfile.avatarUrl : (activeChatFriend.type !== "group" ? activeChatFriend.avatarUrl : null);
+                          const avatarBg = latestProfile ? latestProfile.avatarBg : (activeChatFriend.type !== "group" ? activeChatFriend.avatarBg : null);
+                          const avatarLetter = latestProfile ? latestProfile.avatarLetter : (activeChatFriend.type !== "group" ? activeChatFriend.avatarLetter : null);
+                          const displayName = latestProfile ? latestProfile.name : activeChatFriend.name;
+
+                          return (
+                            <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div className="user-avatar" style={{ 
+                                  width: '32px', 
+                                  height: '32px', 
+                                  background: activeChatFriend.type === "group" 
+                                    ? 'linear-gradient(135deg, var(--neon-cyan), var(--neon-green))'
+                                    : (avatarUrl ? `url(${avatarUrl})` : (avatarBg || 'var(--bg-elevated)')), 
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                  borderRadius: '50%', 
+                                  color: activeChatFriend.type === "group" ? '#000' : '#fff', 
+                                  fontSize: '10px', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center',
+                                  fontWeight: activeChatFriend.type === "group" ? 'bold' : 'normal'
+                                }}>
+                                  {activeChatFriend.type === "group" ? "👥" : (!avatarUrl && (avatarLetter || displayName.substring(0, 2).toUpperCase()))}
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-bright)' }}>{displayName}</div>
+                                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                    {activeChatFriend.type === "group" 
+                                      ? `${activeChatFriend.members ? activeChatFriend.members.length : 1} ${currentLang === "en" ? "members" : "位成員"}`
+                                      : activeChatFriend.handle}
+                                  </div>
+                                </div>
                               </div>
+                              {activeChatFriend.type === "group" && (
+                                <button
+                                  style={{
+                                    padding: '6px 12px',
+                                    background: 'rgba(61, 220, 151, 0.1)',
+                                    border: '1px solid var(--neon-green)',
+                                    color: 'var(--neon-green)',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    transition: 'all 0.2s'
+                                  }}
+                                  onClick={handleInviteToGroup}
+                                >
+                                  ➕ {currentLang === "en" ? "Invite Friend" : "邀請好友"}
+                                </button>
+                              )}
                             </div>
-                          </div>
-                          {activeChatFriend.type === "group" && (
-                            <button
-                              style={{
-                                padding: '6px 12px',
-                                background: 'rgba(61, 220, 151, 0.1)',
-                                border: '1px solid var(--neon-green)',
-                                color: 'var(--neon-green)',
-                                borderRadius: '6px',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                transition: 'all 0.2s'
-                              }}
-                              onClick={handleInviteToGroup}
-                            >
-                              ➕ {currentLang === "en" ? "Invite Friend" : "邀請好友"}
-                            </button>
-                          )}
-                        </div>
+                          );
+                        })()}
 
                         {/* Message Pane */}
                         <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
