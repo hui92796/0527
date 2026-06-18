@@ -838,13 +838,13 @@ export default function App() {
       const qHandle = query(
         collection(db, "notifications"),
         where("userHandle", "==", currentUser.handle),
-        where("type", "in", ["new_post", "mention"])
+        where("type", "in", ["new_post", "mention", "friend_request"])
       );
       unsubHandle = onSnapshot(qHandle, (snapshot) => {
         const list = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
-          if (data.type === "new_post" || data.type === "mention") {
+          if (data.type === "new_post" || data.type === "mention" || data.type === "friend_request") {
             list.push({ id: doc.id, ...data });
           }
         });
@@ -859,13 +859,13 @@ export default function App() {
       const qUid = query(
         collection(db, "notifications"),
         where("toUid", "==", currentUserUid),
-        where("type", "in", ["new_post", "mention"])
+        where("type", "in", ["new_post", "mention", "friend_request"])
       );
       unsubUid = onSnapshot(qUid, (snapshot) => {
         const list = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
-          if (data.type === "new_post" || data.type === "mention") {
+          if (data.type === "new_post" || data.type === "mention" || data.type === "friend_request") {
             list.push({ id: doc.id, ...data });
           }
         });
@@ -878,6 +878,8 @@ export default function App() {
                 showToast(currentLang === "en" ? `New post from your friend ${newNotif.fromName || 'Friend'}!` : `好友 ${newNotif.fromName || '好友'} 發布了新貼文！`);
               } else if (newNotif.type === "mention") {
                 showToast(currentLang === "en" ? `${newNotif.fromName || 'Someone'} mentioned you in a post!` : `${newNotif.fromName || '有人'} 在貼文中標記了您！`);
+              } else if (newNotif.type === "friend_request") {
+                showToast(currentLang === "en" ? `${newNotif.fromName || 'Someone'} sent you a friend request!` : `${newNotif.fromName || '有人'} 向您發送了好友請求！`);
               }
             }
           });
@@ -2010,6 +2012,9 @@ export default function App() {
         setTimeout(() => {
           setHighlightedPostId(null);
         }, 3300);
+      } else if (n.type === "friend_request") {
+        // Navigate to friend request / friend management page
+        navigateToHash("#/messages");
       } else {
         // Navigate to home feed
         navigateToHash("#/");
@@ -2034,6 +2039,17 @@ export default function App() {
         status: "pending",
         timestamp: new Date()
       });
+
+      await addDoc(collection(db, "notifications"), {
+        toUid: toUid,
+        fromUid: currentUser.uid || currentUser.googleId,
+        fromName: currentUser.displayName || currentUser.name || "有人",
+        type: "friend_request",
+        message: `${currentUser.displayName || currentUser.name || '有人'} 向您發送了好友請求！`,
+        timestamp: Date.now(),
+        isRead: false
+      });
+
       showToast(`已向 ${targetUser.name} 送出好友申請！`);
     } catch (err) {
       console.error("Failed to send friend request:", err);
