@@ -534,10 +534,19 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     const cached = localStorage.getItem("echoes_user");
     if (cached) {
-      try { return JSON.parse(cached); } catch { /* ignore */ }
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.googleId && !parsed.uid) {
+          parsed.uid = parsed.googleId;
+        }
+        return parsed;
+      } catch { /* ignore */ }
     }
-    return { name: "我", handle: "@me_creator", avatarLetter: "ME", avatarUrl: null };
+    return { name: "我", handle: "@me_creator", avatarLetter: "ME", avatarUrl: null, uid: "", googleId: "" };
   });
+  if (currentUser && currentUser.googleId && !currentUser.uid) {
+    currentUser.uid = currentUser.googleId;
+  }
   const [adminAuthenticated, setAdminAuthenticated] = useState(() => {
     return sessionStorage.getItem("admin_authenticated") === "true";
   });
@@ -615,7 +624,9 @@ export default function App() {
   const [activeBookmarkTab, setActiveBookmarkTab] = useState("likes");
   const [notificationsList, setNotificationsList] = useState([]);
   const [usersList, setUsersList] = useState([]);
-  const [friendsRelations, setFriendsRelations] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
+  const [receivedRequests, setReceivedRequests] = useState([]);
+  const [incomingRequests, setIncomingRequests] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const [activeChatFriend, setActiveChatFriend] = useState(null);
   const [messageText, setMessageText] = useState("");
@@ -829,13 +840,19 @@ export default function App() {
     return () => unsubscribe();
   }, [currentUser.handle, isLoggedIn]);
 
-  // Subscribe to friend relationships
+  // Subscribe to incoming pending friend requests
   useEffect(() => {
-    if (!isFirebaseSetup || !isLoggedIn || !currentUser.handle) return;
+    if (!isFirebaseSetup || !isLoggedIn) {
+      setIncomingRequests([]);
+      return;
+    }
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return;
 
     const q = query(
-      collection(db, "friends"),
-      where("users", "arrayContains", currentUser.handle)
+      collection(db, "friendRequests"),
+      where("toUid", "==", currentUserUid),
+      where("status", "==", "pending")
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -843,13 +860,67 @@ export default function App() {
       snapshot.forEach((doc) => {
         list.push({ id: doc.id, ...doc.data() });
       });
-      setFriendsRelations(list);
+      setIncomingRequests(list);
     }, (error) => {
-      console.error("Error fetching friends:", error);
+      console.error("Error fetching incoming requests:", error);
     });
 
     return () => unsubscribe();
-  }, [currentUser.handle, isLoggedIn]);
+  }, [currentUser.googleId, currentUser.uid, isLoggedIn]);
+
+  // Subscribe to sent friend requests (all)
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn) {
+      setSentRequests([]);
+      return;
+    }
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return;
+
+    const q = query(
+      collection(db, "friendRequests"),
+      where("fromUid", "==", currentUserUid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setSentRequests(list);
+    }, (error) => {
+      console.error("Error fetching sent requests:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser.googleId, currentUser.uid, isLoggedIn]);
+
+  // Subscribe to received friend requests (all)
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn) {
+      setReceivedRequests([]);
+      return;
+    }
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    if (!currentUserUid) return;
+
+    const q = query(
+      collection(db, "friendRequests"),
+      where("toUid", "==", currentUserUid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setReceivedRequests(list);
+    }, (error) => {
+      console.error("Error fetching received requests:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser.googleId, currentUser.uid, isLoggedIn]);
 
   // Subscribe to chat messages
   useEffect(() => {
@@ -1104,7 +1175,8 @@ export default function App() {
           avatarLetter: nickname.substring(0, 2).toUpperCase() || "U",
           avatarBg: randomAv.bg,
           avatarUrl: null,
-          googleId: "uid_" + email.replace(/[^a-z0-9]/g, "_")
+          googleId: "uid_" + email.replace(/[^a-z0-9]/g, "_"),
+          uid: "uid_" + email.replace(/[^a-z0-9]/g, "_")
         };
 
         // 寫入資料庫
@@ -1144,7 +1216,8 @@ export default function App() {
         avatarLetter: nickname.substring(0, 2).toUpperCase() || "U",
         avatarBg: randomAv.bg,
         avatarUrl: null,
-        googleId: "uid_" + email.replace(/[^a-z0-9]/g, "_")
+        googleId: "uid_" + email.replace(/[^a-z0-9]/g, "_"),
+        uid: "uid_" + email.replace(/[^a-z0-9]/g, "_")
       };
 
       localUsers[email] = userData;
@@ -1428,30 +1501,50 @@ export default function App() {
   };
 
   // Send friend request
-  const handleAddFriend = async (targetUser) => {
+  const handleSendFriendRequest = async (targetUser) => {
     try {
-      await addDoc(collection(db, "friends"), {
-        users: [currentUser.handle, targetUser.handle],
+      const fromUid = currentUser.googleId || currentUser.uid;
+      const toUid = targetUser.googleId || targetUser.uid;
+      if (!fromUid || !toUid) {
+        showToast("使用者資訊不完整，無法發送申請");
+        return;
+      }
+      await addDoc(collection(db, "friendRequests"), {
+        fromUid,
+        toUid,
         status: "pending",
-        requester: currentUser.handle,
-        receiver: targetUser.handle,
         timestamp: new Date()
       });
       showToast(`已向 ${targetUser.name} 送出好友申請！`);
     } catch (err) {
-      console.error("Failed to add friend:", err);
+      console.error("Failed to send friend request:", err);
       showToast("無法送出好友申請");
     }
   };
 
   // Accept friend request
-  const handleAcceptFriend = async (relationId) => {
+  const handleAcceptFriendRequest = async (request) => {
     try {
-      const docRef = doc(db, "friends", relationId);
+      const docRef = doc(db, "friendRequests", request.id);
       await updateDoc(docRef, {
         status: "accepted",
         timestamp: new Date()
       });
+
+      // Find target user's handle from usersList (or currentUser if requested to ourselves)
+      const targetUser = usersList.find(u => (u.googleId || u.uid) === request.fromUid);
+      const targetHandle = targetUser?.handle || "";
+
+      if (targetHandle) {
+        await addDoc(collection(db, "notifications"), {
+          userHandle: targetHandle,
+          content: `${currentUser.name} 同意了您的好友申請！`,
+          timestamp: new Date(),
+          read: false,
+          type: "friend_accept"
+        });
+      }
+
       showToast("已成功加為好友！");
     } catch (err) {
       console.error("Failed to accept friend request:", err);
@@ -1459,15 +1552,14 @@ export default function App() {
     }
   };
 
-  // Remove/Unfriend/Cancel Friend request
-  const handleRemoveRelation = async (relationId) => {
-    if (window.confirm("確定要取消好友關係或申請嗎？")) {
-      try {
-        await deleteDoc(doc(db, "friends", relationId));
-        showToast("好友關係或申請已移除");
-      } catch (err) {
-        console.error("Failed to remove friend relation:", err);
-      }
+  // Decline or delete friend request
+  const handleDeclineFriendRequest = async (request) => {
+    try {
+      await deleteDoc(doc(db, "friendRequests", request.id));
+      showToast("好友申請已拒絕/取消");
+    } catch (err) {
+      console.error("Failed to decline friend request:", err);
+      showToast("操作失敗");
     }
   };
 
@@ -1475,6 +1567,16 @@ export default function App() {
   const handleSendMessage = async () => {
     const text = messageText.trim();
     if (!text || !activeChatFriend) return;
+
+    const activeChatFriendUid = activeChatFriend.googleId || activeChatFriend.uid;
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    const isFriend = sentRequests.some(r => r.toUid === activeChatFriendUid && r.status === "accepted") ||
+                     receivedRequests.some(r => r.fromUid === activeChatFriendUid && r.status === "accepted");
+
+    if (!isFriend) {
+      showToast("只有好友才能發送訊息");
+      return;
+    }
 
     const currentChatId = [currentUser.handle, activeChatFriend.handle].sort().join("_");
     try {
@@ -2501,6 +2603,57 @@ export default function App() {
                 <div className="messages-layout" style={{ display: 'flex', gap: '20px', minHeight: '500px', height: 'calc(100vh - 180px)', width: '100%' }}>
                   {/* Left Column: Friends list & Add Friend */}
                   <div className="messages-sidebar" style={{ width: '40%', display: 'flex', flexDirection: 'column', gap: '15px', borderRight: '1px solid var(--border-color)', paddingRight: '15px', height: '100%', overflowY: 'auto' }}>
+                    
+                    {/* 3. 好友申請清單與審核 */}
+                    {incomingRequests.length > 0 && (
+                      <div className="sidebar-section" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>
+                        <h3 style={{ fontSize: '12px', fontFamily: 'var(--font-heading)', color: 'var(--neon-amber)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>
+                          📩 待處理的好友申請
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {incomingRequests.map(req => {
+                            const sender = usersList.find(u => (u.googleId || u.uid) === req.fromUid);
+                            if (!sender) return null;
+                            return (
+                              <div key={req.id} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '8px 10px',
+                                borderRadius: '6px',
+                                background: 'rgba(251, 191, 36, 0.05)',
+                                border: '1px solid var(--neon-amber)'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div className="user-avatar" style={{ width: '28px', height: '28px', background: sender.avatarBg || 'var(--bg-elevated)', borderRadius: '50%', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {sender.avatarLetter || sender.name.substring(0, 2).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-bright)' }}>{sender.name}</div>
+                                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{sender.handle}</div>
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '4px' }}>
+                                  <button
+                                    style={{ padding: '4px 8px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                    onClick={() => handleAcceptFriendRequest(req)}
+                                  >
+                                    同意
+                                  </button>
+                                  <button
+                                    style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--neon-red)', color: 'var(--neon-red)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                    onClick={() => handleDeclineFriendRequest(req)}
+                                  >
+                                    拒絕
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="sidebar-section">
                       <h3 style={{ fontSize: '12px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '10px' }}>
                         👥 {currentLang === "en" ? "Friends" : "好友清單"}
@@ -2508,8 +2661,10 @@ export default function App() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {usersList
                           .filter(u => {
-                            const rel = friendsRelations.find(r => r.users.includes(u.handle) && r.status === "accepted");
-                            return !!rel;
+                            const uUid = u.googleId || u.uid;
+                            const isFriend = sentRequests.some(r => r.toUid === uUid && r.status === "accepted") ||
+                                             receivedRequests.some(r => r.fromUid === uUid && r.status === "accepted");
+                            return isFriend;
                           })
                           .map(u => {
                             const isSelected = activeChatFriend && activeChatFriend.handle === u.handle;
@@ -2552,7 +2707,11 @@ export default function App() {
                             );
                           })
                         }
-                        {usersList.filter(u => friendsRelations.some(r => r.users.includes(u.handle) && r.status === "accepted")).length === 0 && (
+                        {usersList.filter(u => {
+                          const uUid = u.googleId || u.uid;
+                          return sentRequests.some(r => r.toUid === uUid && r.status === "accepted") ||
+                                 receivedRequests.some(r => r.fromUid === uUid && r.status === "accepted");
+                        }).length === 0 && (
                           <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', padding: '10px 0' }}>
                             {currentLang === "en" ? "No friends yet." : "目前尚無好友，去新增好友吧！"}
                           </div>
@@ -2566,7 +2725,11 @@ export default function App() {
                       </h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {usersList.map(u => {
-                          const rel = friendsRelations.find(r => r.users.includes(u.handle));
+                          const uUid = u.googleId || u.uid;
+                          const sentReq = sentRequests.find(r => r.toUid === uUid);
+                          const recvReq = receivedRequests.find(r => r.fromUid === uUid);
+                          const isFriend = (sentReq && sentReq.status === "accepted") || (recvReq && recvReq.status === "accepted");
+
                           return (
                             <div key={u.handle} style={{
                               display: 'flex',
@@ -2599,42 +2762,42 @@ export default function App() {
                               </div>
 
                               <div>
-                                {!rel ? (
+                                {isFriend ? (
                                   <button
-                                    style={{ padding: '4px 8px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
-                                    onClick={() => handleAddFriend(u)}
+                                    disabled
+                                    style={{ padding: '4px 8px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--border-color)', color: 'var(--text-muted)', borderRadius: '4px', fontSize: '11px', cursor: 'not-allowed' }}
                                   >
-                                    加好友
+                                    已是好友
                                   </button>
-                                ) : rel.status === "accepted" ? (
+                                ) : sentReq && sentReq.status === "pending" ? (
                                   <button
-                                    style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-secondary)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
-                                    onClick={() => handleRemoveRelation(rel.id)}
+                                    disabled
+                                    style={{ padding: '4px 8px', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid var(--neon-amber)', color: 'var(--neon-amber)', borderRadius: '4px', fontSize: '11px', cursor: 'not-allowed', opacity: 0.7 }}
                                   >
-                                    好友 ✕
+                                    申請中...
                                   </button>
-                                ) : rel.requester === currentUser.handle ? (
-                                  <button
-                                    style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--neon-amber)', color: 'var(--neon-amber)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
-                                    onClick={() => handleRemoveRelation(rel.id)}
-                                  >
-                                    申請中 ✕
-                                  </button>
-                                ) : (
+                                ) : recvReq && recvReq.status === "pending" ? (
                                   <div style={{ display: 'flex', gap: '4px' }}>
                                     <button
                                       style={{ padding: '4px 8px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
-                                      onClick={() => handleAcceptFriend(rel.id)}
+                                      onClick={() => handleAcceptFriendRequest(recvReq)}
                                     >
                                       同意
                                     </button>
                                     <button
                                       style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--neon-red)', color: 'var(--neon-red)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
-                                      onClick={() => handleRemoveRelation(rel.id)}
+                                      onClick={() => handleDeclineFriendRequest(recvReq)}
                                     >
                                       拒絕
                                     </button>
                                   </div>
+                                ) : (
+                                  <button
+                                    style={{ padding: '4px 8px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                    onClick={() => handleSendFriendRequest(u)}
+                                  >
+                                    加好友
+                                  </button>
                                 )}
                               </div>
                             </div>
