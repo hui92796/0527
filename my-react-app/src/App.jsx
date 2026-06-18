@@ -1194,7 +1194,7 @@ export default function App() {
         const list = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
-          if (data.type === "new_post" || data.type === "mention" || data.type === "friend_request") {
+          if (data.type === "new_post" || data.type === "mention" || data.type === "friend_request" || data.type === "reply" || data.type === "comment") {
             list.push({ id: doc.id, ...data });
           }
         });
@@ -1214,7 +1214,7 @@ export default function App() {
         const list = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
-          if (data.type === "new_post" || data.type === "mention" || data.type === "friend_request") {
+          if (data.type === "new_post" || data.type === "mention" || data.type === "friend_request" || data.type === "reply" || data.type === "comment") {
             list.push({ id: doc.id, ...data });
           }
         });
@@ -1229,6 +1229,8 @@ export default function App() {
                 showToast(currentLang === "en" ? `${newNotif.fromName || 'Someone'} mentioned you in a post!` : `${newNotif.fromName || '有人'} 在貼文中標記了您！`);
               } else if (newNotif.type === "friend_request") {
                 showToast(currentLang === "en" ? `${newNotif.fromName || 'Someone'} sent you a friend request!` : `${newNotif.fromName || '有人'} 向您發送了好友請求！`);
+              } else if (newNotif.type === "reply" || newNotif.type === "comment") {
+                showToast(currentLang === "en" ? `${newNotif.fromName || 'Someone'} replied to your post!` : `${newNotif.fromName || '有人'} 回覆了您的貼文！`);
               }
             }
           });
@@ -2617,7 +2619,7 @@ export default function App() {
       updates.isRead = true;
       await updateDoc(docRef, updates);
       
-      if (n.type === "mention" && n.targetPostId) {
+      if ((n.type === "mention" || n.type === "reply" || n.type === "comment") && n.targetPostId) {
         // Reset filters & search results
         setCurrentCategory("All");
         setSearchQuery("");
@@ -2923,6 +2925,28 @@ export default function App() {
         await updateDoc(postDocRef, {
           comments: arrayUnion(newComment)
         });
+
+        // Send notification to post author
+        const targetPost = posts.find(p => p.id === postId);
+        if (targetPost) {
+          const postAuthorUid = targetPost.uid;
+          const myUid = currentUser.googleId || currentUser.uid;
+          if (postAuthorUid && postAuthorUid !== myUid) {
+            const senderName = currentUser.displayName || currentUser.name || "有人";
+            const truncatedComment = text.substring(0, 15);
+            await addDoc(collection(db, "notifications"), {
+              toUid: postAuthorUid,
+              fromUid: myUid,
+              fromName: senderName,
+              type: "reply",
+              targetPostId: postId,
+              message: `${senderName} 回覆了您的貼文："${truncatedComment}${text.length > 15 ? '...' : ''}"`,
+              timestamp: Date.now(),
+              isRead: false,
+              read: false
+            });
+          }
+        }
       } catch (err) {
         console.error("Failed to submit comment to Firestore:", err);
         showToast("無法同步留言到雲端");
@@ -2937,6 +2961,30 @@ export default function App() {
         }
         return p;
       }));
+
+      // Send local notification
+      const targetPost = posts.find(p => p.id === postId);
+      if (targetPost) {
+        const postAuthorUid = targetPost.uid;
+        const myUid = currentUser.googleId || currentUser.uid;
+        if (postAuthorUid && postAuthorUid !== myUid) {
+          const senderName = currentUser.displayName || currentUser.name || "有人";
+          const truncatedComment = text.substring(0, 15);
+          const newNotif = {
+            id: "notif-" + Date.now(),
+            toUid: postAuthorUid,
+            fromUid: myUid,
+            fromName: senderName,
+            type: "reply",
+            targetPostId: postId,
+            message: `${senderName} 回覆了您的貼文："${truncatedComment}${text.length > 15 ? '...' : ''}"`,
+            timestamp: Date.now(),
+            isRead: false,
+            read: false
+          };
+          setNotificationsList(prev => [newNotif, ...prev]);
+        }
+      }
       showToast(t("toast_reply_success"));
     }
     if (customText === null) {
@@ -4623,6 +4671,22 @@ export default function App() {
                                   verticalAlign: 'middle'
                                 }}>
                                   {currentLang === "en" ? "Friend Request" : "好友請求"}
+                                </span>
+                              )}
+                              {(n.type === "reply" || n.type === "comment") && (
+                                <span style={{ 
+                                  fontSize: '10px', 
+                                  background: 'rgba(61, 220, 151, 0.1)', 
+                                  color: 'var(--neon-green)', 
+                                  border: '1px solid rgba(61, 220, 151, 0.3)', 
+                                  padding: '1px 5px', 
+                                  borderRadius: '3px', 
+                                  marginRight: '6px',
+                                  fontWeight: 'bold',
+                                  display: 'inline-block',
+                                  verticalAlign: 'middle'
+                                }}>
+                                  {currentLang === "en" ? "Post Reply" : "貼文回覆"}
                                 </span>
                               )}
                               <span style={{ verticalAlign: 'middle' }}>{contentText}</span>
