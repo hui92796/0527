@@ -5388,8 +5388,12 @@ export default function App() {
                   {/* Composer Card */}
                   <div className="composer-card">
                     <div className="composer-main">
-                      <div className="user-avatar" style={{ background: currentUser.avatarBg || '' }}>
-                        {currentUser.avatarLetter || currentUser.name.substring(0, 2).toUpperCase()}
+                      <div className="user-avatar" style={{ background: currentUser.avatarBg || '', overflow: 'hidden' }}>
+                        {currentUser.avatarUrl ? (
+                          <img src={currentUser.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        ) : (
+                          currentUser.avatarLetter || currentUser.name.substring(0, 2).toUpperCase()
+                        )}
                       </div>
                       <div className="composer-inputs">
                         {composerGradient ? (
