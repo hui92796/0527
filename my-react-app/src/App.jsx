@@ -3801,14 +3801,30 @@ export default function App() {
               </tr>
             </thead>
             <tbody>
-              {posts.map(post => {
+              {displayPosts.map(post => {
                 const isSystem = post.isDefault || post.id.toString().startsWith('def-');
                 const hasImage = !!post.image;
                 const privacy = post.privacy || 'public';
 
                 return (
                   <tr key={post.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '12px 16px', fontSize: '13px' }}>
+                    <td 
+                      style={{ padding: '12px 16px', fontSize: '13px', cursor: 'pointer', transition: 'all 0.15s ease' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.textDecoration = 'underline';
+                        e.currentTarget.style.color = 'var(--neon-green)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.textDecoration = 'none';
+                        e.currentTarget.style.color = '';
+                      }}
+                      onClick={() => {
+                        setProfileViewUid(post.uid);
+                        setCurrentPage("profile");
+                        window.scrollTo(0, 0);
+                        window.location.hash = "#/profile";
+                      }}
+                    >
                       <strong>{post.author || '匿名'}</strong><br />
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{post.handle}</span>
                     </td>
