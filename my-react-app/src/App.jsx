@@ -696,8 +696,8 @@ export default function App() {
   const [groupChats, setGroupChats] = useState([]);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState([]);
-  const [currentPage, setCurrentPage] = useState("");
-  const [profileViewUid, setProfileViewUid] = useState("");
+  const [currentPage, setCurrentPage] = useState("home"); // 頁面切換
+  const [profileViewUid, setProfileViewUid] = useState(null); // 當前瀏覽的主頁 UID
   const [editBio, setEditBio] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [activeEmojiMenuMsgId, setActiveEmojiMenuMsgId] = useState(null);
@@ -3077,11 +3077,8 @@ export default function App() {
                   position: 'relative',
                   cursor: 'pointer'
                 }} onClick={() => {
-                  const authorUid = getPostAuthorUid(post);
-                  if (authorUid) {
-                    setProfileViewUid(authorUid);
-                    window.location.hash = "#/profile";
-                  }
+                  setProfileViewUid(post.uid);
+                  setCurrentPage("profile");
                 }}>
                   {!avatarUrl && (avatarLetter || post.avatarLetter || post.author?.substring(0, 2).toUpperCase())}
                   {!post.isDefault && (
@@ -3942,10 +3939,9 @@ export default function App() {
                   <li className={currentRoute === "#/bookmarks" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => window.location.hash = "#/bookmarks"}>
                     <Bookmark style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{t("likes_history")}</span>
                   </li>
-                  <li className={(currentRoute === "#/profile" || currentPage === "profile") && (profileViewUid === (currentUser.googleId || currentUser.uid) || !profileViewUid) ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => {
-                    const myUid = currentUser.googleId || currentUser.uid;
-                    setProfileViewUid(myUid);
-                    window.location.hash = "#/profile";
+                  <li className={currentPage === "profile" && profileViewUid === currentUser.uid ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => {
+                    setProfileViewUid(currentUser.uid);
+                    setCurrentPage("profile");
                   }}>
                     <User style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{currentLang === "en" ? "My Profile" : "個人主頁"}</span>
                   </li>
@@ -5061,7 +5057,7 @@ export default function App() {
                     )}
                   </div>
                 </div>
-              ) : (currentRoute === "#/profile" || currentPage === "profile") ? (
+              ) : currentPage === "profile" ? (
                 /* Profile View */
                 <div className="feed-container" style={{ maxWidth: '650px', margin: '0 auto' }}>
                   {/* Top Profile Card */}
@@ -5104,7 +5100,7 @@ export default function App() {
                         </p>
                         
                         {/* Bio display */}
-                        {!(profileViewUid === (currentUser.googleId || currentUser.uid) || !profileViewUid) && (
+                        {profileViewUid !== currentUser.uid && (
                           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0, padding: '10px', background: 'var(--bg-input)', borderRadius: '6px', borderLeft: '3px solid var(--neon-cyan)' }}>
                             {profileUser.bio || (currentLang === "en" ? "No introduction yet." : "這個人很懶，還沒有寫自我介紹。")}
                           </p>
@@ -5113,7 +5109,7 @@ export default function App() {
                     </div>
 
                     {/* Edit Form for self profile */}
-                    {(profileViewUid === (currentUser.googleId || currentUser.uid) || !profileViewUid) && (
+                    {profileViewUid === currentUser.uid && (
                       <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px dashed var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                           <div style={{ flex: 1, minWidth: '150px' }}>
@@ -5170,14 +5166,14 @@ export default function App() {
                   </h3>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {posts.filter(p => p.uid === profileViewUid || p.handle === profileUser.handle).length === 0 ? (
+                    {posts.filter(p => p.uid === profileViewUid).length === 0 ? (
                       <div style={{ textAlign: 'center', padding: '40px 10px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)' }}>
                         <Frown style={{ width: '38px', height: '38px', marginBottom: '12px', opacity: 0.5 }} />
                         <p>{currentLang === "en" ? "No posts found." : "目前尚無任何貼文"}</p>
                       </div>
                     ) : (
                       posts
-                        .filter(p => p.uid === profileViewUid || p.handle === profileUser.handle)
+                        .filter(p => p.uid === profileViewUid)
                         .map((post) => renderPostCard(post))
                     )}
                   </div>
