@@ -1425,7 +1425,7 @@ export default function App() {
           try {
             const msgRef = doc(db, "messages", msg.id);
             await updateDoc(msgRef, {
-              readBy: [...readBy, currentUserUid]
+              readBy: arrayUnion(currentUserUid)
             });
           } catch (err) {
             console.error("Failed to mark group message as read:", err);
