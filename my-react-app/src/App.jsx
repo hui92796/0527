@@ -3712,30 +3712,57 @@ export default function App() {
                     {activeChatFriend ? (
                       <>
                         {/* Chatroom Header */}
-                        <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div className="user-avatar" style={{ 
-                            width: '32px', 
-                            height: '32px', 
-                            background: activeChatFriend.avatarUrl ? `url(${activeChatFriend.avatarUrl})` : (activeChatFriend.avatarBg || 'var(--bg-elevated)'), 
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            borderRadius: '50%', 
-                            color: '#fff', 
-                            fontSize: '10px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center' 
-                          }}>
-                            {!activeChatFriend.avatarUrl && (activeChatFriend.avatarLetter || activeChatFriend.name.substring(0, 2).toUpperCase())}
+                        <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div className="user-avatar" style={{ 
+                              width: '32px', 
+                              height: '32px', 
+                              background: activeChatFriend.type === "group" 
+                                ? 'linear-gradient(135deg, var(--neon-cyan), var(--neon-green))'
+                                : (activeChatFriend.avatarUrl ? `url(${activeChatFriend.avatarUrl})` : (activeChatFriend.avatarBg || 'var(--bg-elevated)')), 
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                              borderRadius: '50%', 
+                              color: activeChatFriend.type === "group" ? '#000' : '#fff', 
+                              fontSize: '10px', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              fontWeight: activeChatFriend.type === "group" ? 'bold' : 'normal'
+                            }}>
+                              {activeChatFriend.type === "group" ? "👥" : (!activeChatFriend.avatarUrl && (activeChatFriend.avatarLetter || activeChatFriend.name.substring(0, 2).toUpperCase()))}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-bright)' }}>{activeChatFriend.name}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                {activeChatFriend.type === "group" 
+                                  ? `${activeChatFriend.members ? activeChatFriend.members.length : 1} ${currentLang === "en" ? "members" : "位成員"}`
+                                  : activeChatFriend.handle}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-bright)' }}>{activeChatFriend.name}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{activeChatFriend.handle}</div>
-                          </div>
+                          {activeChatFriend.type === "group" && (
+                            <button
+                              style={{
+                                padding: '6px 12px',
+                                background: 'rgba(61, 220, 151, 0.1)',
+                                border: '1px solid var(--neon-green)',
+                                color: 'var(--neon-green)',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                transition: 'all 0.2s'
+                              }}
+                              onClick={handleInviteToGroup}
+                            >
+                              ➕ {currentLang === "en" ? "Invite Friend" : "邀請好友"}
+                            </button>
+                          )}
                         </div>
 
                         {/* Message Pane */}
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                           {chatMessages.map(m => {
                             const isMine = m.senderId === (currentUser.googleId || currentUser.uid);
                             return (
@@ -3745,17 +3772,137 @@ export default function App() {
                                 width: '100%'
                               }}>
                                 <div style={{
-                                  maxWidth: '70%',
-                                  background: isMine ? 'rgba(61, 220, 151, 0.1)' : 'var(--bg-input)',
-                                  border: isMine ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
-                                  color: 'var(--text-bright)',
-                                  borderRadius: '8px',
-                                  padding: '10px 14px',
+                                  display: 'flex',
+                                  flexDirection: isMine ? 'row-reverse' : 'row',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  maxWidth: '75%',
                                   position: 'relative'
                                 }}>
-                                  <div style={{ fontSize: '13px', wordBreak: 'break-word' }}>{m.text}</div>
-                                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textAlign: 'right', marginTop: '4px' }}>
-                                    {m.timestamp ? formatRelativeDate(m.timestamp.toDate ? m.timestamp.toDate() : new Date(m.timestamp), currentLang) : ""}
+                                  <div style={{
+                                    background: isMine ? 'rgba(61, 220, 151, 0.1)' : 'var(--bg-input)',
+                                    border: isMine ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+                                    color: 'var(--text-bright)',
+                                    borderRadius: '8px',
+                                    padding: '10px 14px',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    flexDirection: 'column'
+                                  }}>
+                                    {!isMine && activeChatFriend.type === "group" && (
+                                      <div style={{ fontSize: '10px', color: 'var(--neon-green)', fontWeight: 'bold', marginBottom: '4px' }}>
+                                        {m.senderName || "成員"}
+                                      </div>
+                                    )}
+
+                                    {/* Message Text or GIF */}
+                                    {m.messageType === "gif" ? (
+                                      <img src={m.text} className="max-w-[150px] rounded" style={{ maxWidth: '150px', borderRadius: '4px', display: 'block' }} alt="Sticker GIF" />
+                                    ) : (
+                                      <div style={{ fontSize: '13px', wordBreak: 'break-word' }}>{m.text}</div>
+                                    )}
+
+                                    {/* Reactions list below message content */}
+                                    {m.reactions && Object.keys(m.reactions).length > 0 && (
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                                        {Object.entries(m.reactions).map(([emoji, uids]) => {
+                                          if (!uids || uids.length === 0) return null;
+                                          const userReacted = uids.includes(currentUser.googleId || currentUser.uid);
+                                          return (
+                                            <button
+                                              key={emoji}
+                                              onClick={() => handleEmojiReact(m.id, emoji, m.reactions)}
+                                              style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '3px',
+                                                padding: '2px 6px',
+                                                borderRadius: '10px',
+                                                background: userReacted ? 'rgba(61, 220, 151, 0.2)' : 'var(--bg-card)',
+                                                border: userReacted ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+                                                color: 'var(--text-bright)',
+                                                fontSize: '11px',
+                                                cursor: 'pointer',
+                                                lineHeight: 1
+                                              }}
+                                            >
+                                              <span>{emoji}</span>
+                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{uids.length}</span>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+
+                                    <div style={{ fontSize: '9px', color: 'var(--text-muted)', textAlign: 'right', marginTop: '4px' }}>
+                                      {m.timestamp ? formatRelativeDate(m.timestamp.toDate ? m.timestamp.toDate() : new Date(m.timestamp), currentLang) : ""}
+                                    </div>
+                                  </div>
+
+                                  {/* 😊 Reaction trigger button */}
+                                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <button
+                                      onClick={() => setActiveEmojiMenuMsgId(activeEmojiMenuMsgId === m.id ? null : m.id)}
+                                      style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        padding: '4px',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'background 0.2s'
+                                      }}
+                                      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                      onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                      title={currentLang === "en" ? "React with Emoji" : "新增表情回應"}
+                                    >
+                                      😊
+                                    </button>
+
+                                    {/* Emoji Options list popup */}
+                                    {activeEmojiMenuMsgId === m.id && (
+                                      <div style={{
+                                        position: 'absolute',
+                                        bottom: '100%',
+                                        [isMine ? 'right' : 'left']: 0,
+                                        zIndex: 100,
+                                        display: 'flex',
+                                        gap: '6px',
+                                        padding: '6px 8px',
+                                        background: 'var(--bg-card)',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '20px',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                        marginBottom: '6px'
+                                      }}>
+                                        {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
+                                          <button
+                                            key={emoji}
+                                            onClick={() => {
+                                              handleEmojiReact(m.id, emoji, m.reactions);
+                                              setActiveEmojiMenuMsgId(null);
+                                            }}
+                                            style={{
+                                              background: 'transparent',
+                                              border: 'none',
+                                              fontSize: '16px',
+                                              cursor: 'pointer',
+                                              padding: '2px',
+                                              borderRadius: '4px',
+                                              transition: 'transform 0.1s'
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                          >
+                                            {emoji}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -3765,7 +3912,76 @@ export default function App() {
                         </div>
 
                         {/* Chatroom Input Panel */}
-                        <div style={{ padding: '15px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px' }}>
+                        <div style={{ padding: '15px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px', alignItems: 'center', position: 'relative' }}>
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              style={{
+                                padding: '10px 14px',
+                                background: 'rgba(61, 220, 151, 0.1)',
+                                border: '1px solid var(--neon-green)',
+                                color: 'var(--neon-green)',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '13px'
+                              }}
+                              onClick={() => setShowGifPicker(!showGifPicker)}
+                            >
+                              GIF
+                            </button>
+
+                            {showGifPicker && (
+                              <div style={{
+                                position: 'absolute',
+                                bottom: '100%',
+                                left: 0,
+                                zIndex: 110,
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                padding: '10px',
+                                width: '260px',
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+                                marginBottom: '10px'
+                              }}>
+                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-bright)', marginBottom: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
+                                  🐱 {currentLang === "en" ? "Select Cat GIF" : "選擇貓咪 GIF"}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
+                                  {[
+                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3k4MTg5bDR0aXh3d2R6ZHdtNml3bTFhMmhvZjE5OHh4aWN4ZXpmaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oriO0OEd9QIDdllqo/giphy.gif',
+                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG9yYWhnbXB3c292ZTFwdmtiaXZxMHh4ejQ3Z3p3dThxdGoxNTR2YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13CoXDiaCcC2EA/giphy.gif',
+                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXl1MG4xYjN0cnp0NGx3M3Y0MXphbndxZzh4NDc4ODNuYm93ajVubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5i7umUqAOYYHC/giphy.gif',
+                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczl4cmcyeXBtdWNvM3V5N3N1bmd1bGR2bzBtcDM4ZXZudnptc2w1ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9gISqB3tncMmY/giphy.gif',
+                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2R4bTJkZGQ4a2QyOHB5Z3A0dDhpdmwwdHcxczNtbTBpcThtdGJpZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ule4vhcY1xEIw/giphy.gif',
+                                    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmt6czVnZG12bHppNmQxMXc5dnZsc3h5ZWNtdjRkMDgyNHA0aG5heSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yFQ0ywscgobJK/giphy.gif'
+                                  ].map((gifUrl, idx) => (
+                                    <img
+                                      key={idx}
+                                      src={gifUrl}
+                                      onClick={() => {
+                                        handleSendMessage(gifUrl, "gif");
+                                        setShowGifPicker(false);
+                                      }}
+                                      style={{
+                                        width: '100%',
+                                        height: '60px',
+                                        objectFit: 'cover',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        border: '1px solid transparent',
+                                        transition: 'border-color 0.1s'
+                                      }}
+                                      onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--neon-green)'}
+                                      onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
+                                      alt="cat preview"
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
                           <input
                             type="text"
                             style={{ flex: 1, padding: '10px 14px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px' }}
@@ -3776,7 +3992,7 @@ export default function App() {
                           />
                           <button
                             style={{ padding: '10px 20px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-                            onClick={handleSendMessage}
+                            onClick={() => handleSendMessage()}
                           >
                             傳送
                           </button>
