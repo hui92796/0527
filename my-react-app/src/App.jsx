@@ -1590,11 +1590,11 @@ export default function App() {
   // Add new category
   const handleAddCategory = async () => {
     const newCat = prompt(currentLang === "en" ? "Enter new category name:" : "請輸入新的分類名稱：");
-    if (!newCat) return;
+    if (!newCat) return null;
     const trimmed = newCat.trim();
     if (!trimmed) {
       showToast(currentLang === "en" ? "Category name cannot be empty" : "分類名稱不能為空");
-      return;
+      return null;
     }
     
     // Check if category already exists
@@ -1604,7 +1604,7 @@ export default function App() {
     );
     if (exists) {
       showToast(currentLang === "en" ? "Category already exists" : "該分類已存在");
-      return;
+      return null;
     }
 
     if (isFirebaseSetup) {
@@ -1616,9 +1616,11 @@ export default function App() {
         });
         setComposerCategory(trimmed);
         showToast(currentLang === "en" ? `Category "${trimmed}" added` : `已成功新增分類「${trimmed}」`);
+        return trimmed;
       } catch (err) {
         console.error("Failed to add category:", err);
         showToast(currentLang === "en" ? "Failed to add category to database" : "無法新增分類到資料庫");
+        return null;
       }
     } else {
       // Local fallback
@@ -1626,6 +1628,22 @@ export default function App() {
       setCategories(prev => [...prev, newCatObj]);
       setComposerCategory(trimmed);
       showToast(currentLang === "en" ? `Category "${trimmed}" added locally` : `已於本地新增分類「${trimmed}」`);
+      return trimmed;
+    }
+  };
+
+  // Handle category select change
+  const handleCategoryChange = async (e) => {
+    const val = e.target.value;
+    if (val === "ADD_NEW_CATEGORY") {
+      const added = await handleAddCategory();
+      if (!added) {
+        // Fallback to the first category
+        const defaultVal = categories[0]?.value || "Thoughts";
+        setComposerCategory(defaultVal);
+      }
+    } else {
+      setComposerCategory(val);
     }
   };
 
@@ -3462,35 +3480,12 @@ export default function App() {
                           </button>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <select id="composer-category" className="composer-category-select" aria-label="Category Selection" value={composerCategory} onChange={(e) => setComposerCategory(e.target.value)}>
-                            {categories.map(cat => (
-                              <option key={cat.value} value={cat.value}>{cat.name}</option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            className="composer-tool-btn"
-                            disabled={!isLoggedIn}
-                            style={{
-                              padding: '5px 8px',
-                              fontSize: '11px',
-                              background: 'rgba(56, 189, 248, 0.1)',
-                              border: '1px solid var(--neon-cyan)',
-                              color: 'var(--neon-cyan)',
-                              borderRadius: 'var(--radius-sm)',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              opacity: isLoggedIn ? 1 : 0.5,
-                              transition: 'all var(--transition-fast)'
-                            }}
-                            onClick={handleAddCategory}
-                          >
-                            <span>＋新增分類</span>
-                          </button>
-                        </div>
+                        <select id="composer-category" className="composer-category-select" aria-label="Category Selection" value={composerCategory} onChange={handleCategoryChange}>
+                          {categories.map(cat => (
+                            <option key={cat.value} value={cat.value}>{cat.name}</option>
+                          ))}
+                          <option value="ADD_NEW_CATEGORY">+ 新增自訂分類...</option>
+                        </select>
 
                         <select id="composer-privacy" className="composer-privacy-select" aria-label="Privacy Control" value={composerPrivacy} onChange={(e) => setComposerPrivacy(e.target.value)}>
                           <option value="public">{t("public")}</option>
