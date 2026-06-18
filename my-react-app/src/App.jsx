@@ -990,30 +990,77 @@ export default function App() {
 
   // Subscribe to chat messages
   useEffect(() => {
-    if (!isFirebaseSetup || !isLoggedIn || !currentUser.handle || !activeChatFriend) {
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    const activeChatFriendUid = activeChatFriend?.googleId || activeChatFriend?.uid;
+
+    if (!isFirebaseSetup || !isLoggedIn || !currentUserUid || !activeChatFriendUid) {
       setChatMessages([]);
       return;
     }
 
-    const currentChatId = [currentUser.handle, activeChatFriend.handle].sort().join("_");
-    const q = query(
+    let listA = [];
+    let listB = [];
+
+    const updateCombinedMessages = () => {
+      const map = new Map();
+      listA.forEach(m => map.set(m.id, m));
+      listB.forEach(m => map.set(m.id, m));
+      const combined = Array.from(map.values()).sort((a, b) => {
+        const timeA = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : (typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime());
+        const timeB = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : (typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime());
+        return (timeA || 0) - (timeB || 0);
+      });
+      setChatMessages(combined);
+    };
+
+    // Query 1: senderId == currentUserUid && receiverId == activeChatFriendUid
+    const q1 = query(
       collection(db, "messages"),
-      where("chatId", "==", currentChatId),
-      orderBy("timestamp", "asc")
+      where("senderId", "==", currentUserUid),
+      where("receiverId", "==", activeChatFriendUid)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsub1 = onSnapshot(q1, (snapshot) => {
       const list = [];
       snapshot.forEach((doc) => {
         list.push({ id: doc.id, ...doc.data() });
       });
-      setChatMessages(list);
+      listA = list;
+      updateCombinedMessages();
     }, (error) => {
-      console.error("Error fetching messages:", error);
+      console.error("Error fetching messages q1:", error);
     });
 
-    return () => unsubscribe();
-  }, [activeChatFriend, currentUser.handle, isLoggedIn]);
+    // Query 2: senderId == activeChatFriendUid && receiverId == currentUserUid
+    const q2 = query(
+      collection(db, "messages"),
+      where("senderId", "==", activeChatFriendUid),
+      where("receiverId", "==", currentUserUid)
+    );
+
+    const unsub2 = onSnapshot(q2, (snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      listB = list;
+      updateCombinedMessages();
+    }, (error) => {
+      console.error("Error fetching messages q2:", error);
+    });
+
+    return () => {
+      unsub1();
+      unsub2();
+    };
+  }, [activeChatFriend, currentUser.googleId, currentUser.uid, isLoggedIn]);
+
+  // Auto scroll to bottom of chat when messages update or chat friend changes
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages, activeChatFriend]);
 
   useEffect(() => {
     localStorage.setItem("echoes_lang", currentLang);
@@ -1787,12 +1834,10 @@ export default function App() {
       return;
     }
 
-    const currentChatId = [currentUser.handle, activeChatFriend.handle].sort().join("_");
     try {
       await addDoc(collection(db, "messages"), {
-        chatId: currentChatId,
-        sender: currentUser.handle,
-        receiver: activeChatFriend.handle,
+        senderId: currentUserUid,
+        receiverId: activeChatFriendUid,
         text: text,
         timestamp: new Date()
       });
@@ -3119,7 +3164,7 @@ export default function App() {
                         {/* Message Pane */}
                         <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           {chatMessages.map(m => {
-                            const isMine = m.sender === currentUser.handle;
+                            const isMine = m.senderId === (currentUser.googleId || currentUser.uid);
                             return (
                               <div key={m.id} style={{
                                 display: 'flex',
