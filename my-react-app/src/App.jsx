@@ -29,7 +29,7 @@ import {
   X
 } from 'lucide-react';
 import { db, isFirebaseSetup } from "./firebase";
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch, getDoc, setDoc, where } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch, getDoc, setDoc, where, getDocs } from "firebase/firestore";
 import './App.css';
 
 // ==========================================================================
@@ -799,26 +799,70 @@ export default function App() {
 
   // Subscribe to user notifications
   useEffect(() => {
-    if (!isFirebaseSetup || !isLoggedIn || !currentUser.handle) return;
+    if (!isFirebaseSetup || !isLoggedIn) {
+      setNotificationsList([]);
+      return;
+    }
 
-    const q = query(
-      collection(db, "notifications"),
-      where("userHandle", "==", currentUser.handle),
-      orderBy("timestamp", "desc")
-    );
+    const currentUserUid = currentUser.googleId || currentUser.uid;
+    let unsubHandle = () => {};
+    let unsubUid = () => {};
+    let handleList = [];
+    let uidList = [];
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = [];
-      snapshot.forEach((doc) => {
-        list.push({ id: doc.id, ...doc.data() });
+    const updateCombinedList = () => {
+      const map = new Map();
+      handleList.forEach(n => map.set(n.id, n));
+      uidList.forEach(n => map.set(n.id, n));
+      const sorted = Array.from(map.values()).sort((a, b) => {
+        const timeA = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : (typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime());
+        const timeB = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : (typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime());
+        return (timeB || 0) - (timeA || 0);
       });
-      setNotificationsList(list);
-    }, (error) => {
-      console.error("Error fetching notifications:", error);
-    });
+      setNotificationsList(sorted);
+    };
 
-    return () => unsubscribe();
-  }, [currentUser.handle, isLoggedIn]);
+    if (currentUser.handle) {
+      const qHandle = query(
+        collection(db, "notifications"),
+        where("userHandle", "==", currentUser.handle),
+        orderBy("timestamp", "desc")
+      );
+      unsubHandle = onSnapshot(qHandle, (snapshot) => {
+        const list = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        handleList = list;
+        updateCombinedList();
+      }, (error) => {
+        console.error("Error fetching notifications by handle:", error);
+      });
+    }
+
+    if (currentUserUid) {
+      const qUid = query(
+        collection(db, "notifications"),
+        where("toUid", "==", currentUserUid),
+        orderBy("timestamp", "desc")
+      );
+      unsubUid = onSnapshot(qUid, (snapshot) => {
+        const list = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        uidList = list;
+        updateCombinedList();
+      }, (error) => {
+        console.error("Error fetching notifications by toUid:", error);
+      });
+    }
+
+    return () => {
+      unsubHandle();
+      unsubUid();
+    };
+  }, [currentUser.handle, currentUser.googleId, currentUser.uid, isLoggedIn]);
 
   // Subscribe to all users list (for friends adding)
   useEffect(() => {
@@ -1384,6 +1428,58 @@ export default function App() {
           ...postData,
           createdAt: new Date()
         });
+
+        // 1. 去 friendRequests 集合中查詢當前使用者的所有「已確認好友」
+        const currentUserUid = currentUser.googleId || currentUser.uid;
+        if (currentUserUid) {
+          const friendUids = [];
+
+          // 查詢 A：由當前使用者送出的好友關係
+          const q1 = query(
+            collection(db, "friendRequests"),
+            where("fromUid", "==", currentUserUid),
+            where("status", "==", "accepted")
+          );
+          const snap1 = await getDocs(q1);
+          snap1.forEach(doc => {
+            const data = doc.data();
+            if (data.toUid && !friendUids.includes(data.toUid)) {
+              friendUids.push(data.toUid);
+            }
+          });
+
+          // 查詢 B：由他人送出並被當前使用者接受的好友關係
+          const q2 = query(
+            collection(db, "friendRequests"),
+            where("toUid", "==", currentUserUid),
+            where("status", "==", "accepted")
+          );
+          const snap2 = await getDocs(q2);
+          snap2.forEach(doc => {
+            const data = doc.data();
+            if (data.fromUid && !friendUids.includes(data.fromUid)) {
+              friendUids.push(data.fromUid);
+            }
+          });
+
+          // 2. 向 notifications 為「每一位好友」寫入一筆新通知
+          if (friendUids.length > 0) {
+            const batch = writeBatch(db);
+            friendUids.forEach(friendUid => {
+              const notificationDocRef = doc(collection(db, "notifications"));
+              batch.set(notificationDocRef, {
+                toUid: friendUid,
+                fromUid: currentUserUid,
+                fromName: currentUser.name,
+                type: "new_post",
+                message: `您的好友 ${currentUser.name} 發布了新的動態貼文，快去看看吧！`,
+                timestamp: Date.now(),
+                isRead: false
+              });
+            });
+            await batch.commit();
+          }
+        }
       } catch (err) {
         console.error("Failed to add post to Firestore:", err);
         if (err.message.includes("permission") || err.code === "permission-denied") {
@@ -1484,19 +1580,55 @@ export default function App() {
 
   // Mark all notifications read
   const handleMarkAllNotificationsRead = async () => {
-    const unreadNotifications = notificationsList.filter(n => !n.read);
+    const unreadNotifications = notificationsList.filter(n => {
+      const isOldUnread = n.read === false || n.read === undefined;
+      const isNewUnread = n.isRead === false;
+      const hasReadField = 'read' in n;
+      const hasIsReadField = 'isRead' in n;
+      if (hasReadField && hasIsReadField) {
+        return !n.read || !n.isRead;
+      } else if (hasIsReadField) {
+        return !n.isRead;
+      } else {
+        return !n.read;
+      }
+    });
+
     if (unreadNotifications.length === 0) return;
 
     try {
       const batch = writeBatch(db);
       unreadNotifications.forEach(n => {
         const docRef = doc(db, "notifications", n.id);
-        batch.update(docRef, { read: true });
+        const updates = {};
+        if ('read' in n) updates.read = true;
+        if ('isRead' in n) updates.isRead = true;
+        updates.read = true;
+        updates.isRead = true;
+        batch.update(docRef, updates);
       });
       await batch.commit();
       showToast("已將所有通知標記為已讀");
     } catch (err) {
       console.error("Failed to mark notifications read:", err);
+    }
+  };
+
+  // Handle single notification click (marking as read and navigating to Feed)
+  const handleNotificationClick = async (n) => {
+    try {
+      const docRef = doc(db, "notifications", n.id);
+      const updates = {};
+      if ('read' in n) updates.read = true;
+      if ('isRead' in n) updates.isRead = true;
+      updates.read = true;
+      updates.isRead = true;
+      await updateDoc(docRef, updates);
+      
+      // Navigate to home feed
+      navigateToHash("#/");
+    } catch (err) {
+      console.error("Failed to mark notification as read on click:", err);
     }
   };
 
@@ -2362,7 +2494,7 @@ export default function App() {
                   <li className={currentRoute === "#/notifications" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }} onClick={() => window.location.hash = "#/notifications"}>
                     <Bell style={{ width: '16px', height: '16px' }} />
                     <span className="sidebar-menu-text">{currentLang === "en" ? "Notifications" : "通知訊息"}</span>
-                    {notificationsList.filter(n => !n.read).length > 0 && (
+                    {notificationsList.filter(n => n.isRead !== undefined ? !n.isRead : !n.read).length > 0 && (
                       <span style={{
                         position: 'absolute',
                         right: '10px',
@@ -2548,7 +2680,7 @@ export default function App() {
                     <h2 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '20px', color: 'var(--accent)', textShadow: 'var(--glow-green)' }}>
                       🔔 {currentLang === "en" ? "Notifications" : "通知訊息"}
                     </h2>
-                    {notificationsList.some(n => !n.read) && (
+                    {notificationsList.some(n => n.isRead !== undefined ? !n.isRead : !n.read) && (
                       <button
                         className="feed-category-pill"
                         style={{ background: 'rgba(61, 220, 151, 0.1)', borderColor: 'var(--neon-green)', color: 'var(--neon-green)', cursor: 'pointer' }}
@@ -2560,36 +2692,45 @@ export default function App() {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {notificationsList.map(n => (
-                      <div key={n.id} style={{
-                        background: 'var(--bg-card)',
-                        border: n.read ? '1px solid var(--border-color)' : '1px solid var(--neon-cyan)',
-                        boxShadow: n.read ? 'none' : 'var(--glow-cyan)',
-                        borderRadius: '6px',
-                        padding: '12px 16px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <div>
-                          <p style={{ margin: 0, fontSize: '13px', color: n.read ? 'var(--text-secondary)' : 'var(--text-bright)', fontWeight: n.read ? 'normal' : 'bold' }}>
-                            {n.content}
-                          </p>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            {n.timestamp ? formatRelativeDate(n.timestamp.toDate ? n.timestamp.toDate() : new Date(n.timestamp), currentLang) : ""}
-                          </span>
+                    {notificationsList.map(n => {
+                      const isUnread = n.isRead !== undefined ? !n.isRead : !n.read;
+                      const contentText = n.message || n.content;
+                      return (
+                        <div
+                          key={n.id}
+                          style={{
+                            background: 'var(--bg-card)',
+                            border: isUnread ? '1px solid var(--neon-cyan)' : '1px solid var(--border-color)',
+                            boxShadow: isUnread ? 'var(--glow-cyan)' : 'none',
+                            borderRadius: '6px',
+                            padding: '12px 16px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleNotificationClick(n)}
+                        >
+                          <div>
+                            <p style={{ margin: 0, fontSize: '13px', color: isUnread ? 'var(--text-bright)' : 'var(--text-secondary)', fontWeight: isUnread ? 'bold' : 'normal' }}>
+                              {contentText}
+                            </p>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                              {n.timestamp ? formatRelativeDate(n.timestamp.toDate ? n.timestamp.toDate() : new Date(n.timestamp), currentLang) : ""}
+                            </span>
+                          </div>
+                          {isUnread && (
+                            <span style={{
+                              width: '8px',
+                              height: '8px',
+                              backgroundColor: 'var(--neon-cyan)',
+                              borderRadius: '50%',
+                              boxShadow: '0 0 6px var(--neon-cyan)'
+                            }}></span>
+                          )}
                         </div>
-                        {!n.read && (
-                          <span style={{
-                            width: '8px',
-                            height: '8px',
-                            backgroundColor: 'var(--neon-cyan)',
-                            borderRadius: '50%',
-                            boxShadow: '0 0 6px var(--neon-cyan)'
-                          }}></span>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                     {notificationsList.length === 0 && (
                       <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
                         <Bell style={{ width: '38px', height: '38px', marginBottom: '12px', opacity: 0.5 }} />
