@@ -615,6 +615,13 @@ export default function App() {
   const [composerGradient, setComposerGradient] = useState(null);
   const [composerImage, setComposerImage] = useState(null);
   const [showGradientsRow, setShowGradientsRow] = useState(false);
+  const [categories, setCategories] = useState([
+    { name: "個人想法", value: "Thoughts" },
+    { name: "技術科技", value: "Tech" },
+    { name: "生產力", value: "Productivity" },
+    { name: "生活日常", value: "Life" },
+    { name: "設計美學", value: "Design" }
+  ]);
 
   // Post Specific States (Expanded comments section, active drafts, highlights)
   const [activeCommentsPostId, setActiveCommentsPostId] = useState({});
@@ -883,6 +890,50 @@ export default function App() {
       unsubUid();
     };
   }, [currentUser.handle, currentUser.googleId, currentUser.uid, isLoggedIn]);
+
+  // Subscribe to categories in Firestore and seed if empty
+  useEffect(() => {
+    if (!isFirebaseSetup || !isLoggedIn) return;
+
+    const unsubscribe = onSnapshot(collection(db, "categories"), async (snapshot) => {
+      if (snapshot.empty) {
+        // Seed default categories
+        const defaults = [
+          { name: "個人想法", value: "Thoughts" },
+          { name: "技術科技", value: "Tech" },
+          { name: "生產力", value: "Productivity" },
+          { name: "生活日常", value: "Life" },
+          { name: "設計美學", value: "Design" }
+        ];
+        
+        try {
+          const batch = writeBatch(db);
+          defaults.forEach((cat) => {
+            const catDocRef = doc(collection(db, "categories"));
+            batch.set(catDocRef, {
+              ...cat,
+              createdAt: Date.now()
+            });
+          });
+          await batch.commit();
+        } catch (err) {
+          console.error("Failed to seed default categories:", err);
+        }
+      } else {
+        const list = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        // Sort categories by createdAt so they appear in a consistent order
+        list.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        setCategories(list);
+      }
+    }, (error) => {
+      console.error("Error listening to categories:", error);
+    });
+
+    return () => unsubscribe();
+  }, [isLoggedIn]);
 
   // Subscribe to all users list (for friends adding)
   useEffect(() => {
@@ -1518,6 +1569,63 @@ export default function App() {
         setComposerImage(event.target.result);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Helper to translate category values to Chinese
+  const getCategoryLabel = (catValue) => {
+    const found = categories.find(c => c.value === catValue || c.name === catValue);
+    if (found) return found.name;
+    
+    const fallbackMap = {
+      "Thoughts": "個人想法",
+      "Tech": "技術科技",
+      "Productivity": "生產力",
+      "Life": "生活日常",
+      "Design": "設計美學"
+    };
+    return fallbackMap[catValue] || catValue;
+  };
+
+  // Add new category
+  const handleAddCategory = async () => {
+    const newCat = prompt(currentLang === "en" ? "Enter new category name:" : "請輸入新的分類名稱：");
+    if (!newCat) return;
+    const trimmed = newCat.trim();
+    if (!trimmed) {
+      showToast(currentLang === "en" ? "Category name cannot be empty" : "分類名稱不能為空");
+      return;
+    }
+    
+    // Check if category already exists
+    const exists = categories.some(cat => 
+      cat.name.toLowerCase() === trimmed.toLowerCase() || 
+      cat.value.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (exists) {
+      showToast(currentLang === "en" ? "Category already exists" : "該分類已存在");
+      return;
+    }
+
+    if (isFirebaseSetup) {
+      try {
+        await addDoc(collection(db, "categories"), {
+          name: trimmed,
+          value: trimmed,
+          createdAt: Date.now()
+        });
+        setComposerCategory(trimmed);
+        showToast(currentLang === "en" ? `Category "${trimmed}" added` : `已成功新增分類「${trimmed}」`);
+      } catch (err) {
+        console.error("Failed to add category:", err);
+        showToast(currentLang === "en" ? "Failed to add category to database" : "無法新增分類到資料庫");
+      }
+    } else {
+      // Local fallback
+      const newCatObj = { name: trimmed, value: trimmed, createdAt: Date.now() };
+      setCategories(prev => [...prev, newCatObj]);
+      setComposerCategory(trimmed);
+      showToast(currentLang === "en" ? `Category "${trimmed}" added locally` : `已於本地新增分類「${trimmed}」`);
     }
   };
 
@@ -2288,7 +2396,7 @@ export default function App() {
                 <span>{t("private").split('（')[0]}</span>
               </span>
             )}
-            <span className="post-category-tag">{post.category}</span>
+            <span className="post-category-tag">{getCategoryLabel(post.category)}</span>
             <span className="post-time">{post.date}</span>
           </div>
         </div>
@@ -2441,7 +2549,7 @@ export default function App() {
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
                       <span style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>
-                        {post.category || 'Thoughts'}
+                        {getCategoryLabel(post.category || 'Thoughts')}
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '13px' }}>
@@ -3354,13 +3462,35 @@ export default function App() {
                           </button>
                         </div>
 
-                        <select id="composer-category" className="composer-category-select" aria-label="Category Selection" value={composerCategory} onChange={(e) => setComposerCategory(e.target.value)}>
-                          <option value="Thoughts">Thoughts</option>
-                          <option value="Tech">Tech</option>
-                          <option value="Productivity">Productivity</option>
-                          <option value="Life">Life</option>
-                          <option value="Design">Design</option>
-                        </select>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <select id="composer-category" className="composer-category-select" aria-label="Category Selection" value={composerCategory} onChange={(e) => setComposerCategory(e.target.value)}>
+                            {categories.map(cat => (
+                              <option key={cat.value} value={cat.value}>{cat.name}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="composer-tool-btn"
+                            disabled={!isLoggedIn}
+                            style={{
+                              padding: '5px 8px',
+                              fontSize: '11px',
+                              background: 'rgba(56, 189, 248, 0.1)',
+                              border: '1px solid var(--neon-cyan)',
+                              color: 'var(--neon-cyan)',
+                              borderRadius: 'var(--radius-sm)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              opacity: isLoggedIn ? 1 : 0.5,
+                              transition: 'all var(--transition-fast)'
+                            }}
+                            onClick={handleAddCategory}
+                          >
+                            <span>＋新增分類</span>
+                          </button>
+                        </div>
 
                         <select id="composer-privacy" className="composer-privacy-select" aria-label="Privacy Control" value={composerPrivacy} onChange={(e) => setComposerPrivacy(e.target.value)}>
                           <option value="public">{t("public")}</option>
@@ -3384,7 +3514,7 @@ export default function App() {
                     <div className="categories-scroll" id="categories-scroll">
                       {categoryFilterList.map(cat => (
                         <button key={cat} className={`feed-category-pill ${currentCategory === cat ? 'active' : ''}`} onClick={() => setCurrentCategory(cat)}>
-                          {cat === "All" ? t("all_categories") : cat}
+                          {cat === "All" ? t("all_categories") : getCategoryLabel(cat)}
                         </button>
                       ))}
                     </div>
