@@ -609,16 +609,30 @@ export default function App() {
 
   // Main Posts Data
   const [posts, setPosts] = useState(() => {
+    let rawPosts = [];
     if (!isFirebaseSetup) {
       const localPosts = localStorage.getItem("echoes_posts");
       if (localPosts) {
         try {
-          return JSON.parse(localPosts);
-        } catch { /* ignore */ }
+          rawPosts = JSON.parse(localPosts);
+        } catch {
+          rawPosts = [...DEFAULT_POSTS];
+        }
+      } else {
+        rawPosts = [...DEFAULT_POSTS];
       }
-      return [...DEFAULT_POSTS];
+    } else {
+      rawPosts = [];
     }
-    return [];
+    // Ensure mock posts and comments have a uid
+    return rawPosts.map(p => {
+      const pUid = p.uid || p.handle || p.author;
+      const updatedComments = (p.comments || []).map(c => ({
+        ...c,
+        uid: c.uid || c.authorHandle || c.author
+      }));
+      return { ...p, uid: pUid, comments: updatedComments };
+    });
   });
 
   // Admin Reports Data
@@ -700,6 +714,7 @@ export default function App() {
   const [profileViewUid, setProfileViewUid] = useState(null); // 當前瀏覽的主頁 UID
   const [editBio, setEditBio] = useState("");
   const [editUsername, setEditUsername] = useState("");
+  const [isSaveSuccess, setIsSaveSuccess] = useState(false);
   const [activeEmojiMenuMsgId, setActiveEmojiMenuMsgId] = useState(null);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [activeCommentEmojiMsgId, setActiveCommentEmojiMsgId] = useState(null);
@@ -1424,7 +1439,59 @@ export default function App() {
     if (profileViewUid === myUid || !profileViewUid) {
       return currentUser;
     }
-    return usersList.find(u => (u.googleId || u.uid) === profileViewUid) || {
+    
+    // 1. Try finding in usersList
+    const foundUser = usersList.find(u => 
+      (u.googleId || u.uid) === profileViewUid || 
+      u.handle === profileViewUid || 
+      u.name === profileViewUid
+    );
+    if (foundUser) return foundUser;
+    
+    // 2. Try finding in posts (including DEFAULT_POSTS) to build profile details
+    const foundPost = posts.find(p => 
+      p.uid === profileViewUid || 
+      p.handle === profileViewUid || 
+      p.author === profileViewUid
+    );
+    if (foundPost) {
+      return {
+        uid: foundPost.uid || foundPost.handle || foundPost.author,
+        name: foundPost.author,
+        handle: foundPost.handle,
+        avatarLetter: foundPost.avatarLetter || foundPost.author.substring(0, 2).toUpperCase(),
+        avatarBg: foundPost.avatarBg || null,
+        avatarUrl: foundPost.avatarUrl || null,
+        bio: "",
+        username: foundPost.handle ? foundPost.handle.replace("@", "") : ""
+      };
+    }
+
+    // 3. Try finding in comments of all posts to build profile details
+    for (const p of posts) {
+      if (p.comments) {
+        const foundComm = p.comments.find(c => 
+          c.uid === profileViewUid || 
+          c.authorHandle === profileViewUid || 
+          c.author === profileViewUid
+        );
+        if (foundComm) {
+          const latestProfile = getLatestUserAvatar(foundComm.authorHandle, foundComm.author);
+          return {
+            uid: foundComm.uid || foundComm.authorHandle || foundComm.author,
+            name: latestProfile ? latestProfile.name : foundComm.author,
+            handle: foundComm.authorHandle || `@${foundComm.author}`,
+            avatarLetter: latestProfile ? latestProfile.avatarLetter : foundComm.author.substring(0, 2).toUpperCase(),
+            avatarBg: latestProfile ? latestProfile.avatarBg : null,
+            avatarUrl: latestProfile ? latestProfile.avatarUrl : null,
+            bio: "",
+            username: foundComm.authorHandle ? foundComm.authorHandle.replace("@", "") : foundComm.author
+          };
+        }
+      }
+    }
+    
+    return {
       name: "未知使用者",
       handle: "@unknown",
       avatarLetter: "?",
@@ -1432,7 +1499,7 @@ export default function App() {
       bio: "",
       username: ""
     };
-  }, [profileViewUid, currentUser, usersList]);
+  }, [profileViewUid, currentUser, usersList, posts]);
 
   const handleSaveProfileSettings = async () => {
     if (!isLoggedIn) return;
@@ -1471,22 +1538,37 @@ export default function App() {
         });
         await batch.commit();
         showToast("✨ 個人資料設定已更新！");
+        setIsSaveSuccess(true);
+        setTimeout(() => setIsSaveSuccess(false), 2000);
       } catch (err) {
         console.error("Failed to save profile settings:", err);
         showToast("儲存設定失敗");
       }
     } else {
       showToast("✨ 本地個人資料已更新！");
+      setIsSaveSuccess(true);
+      setTimeout(() => setIsSaveSuccess(false), 2000);
     }
   };
 
   const getPostAuthorUid = (post) => {
+    if (!post) return null;
     const myUid = currentUser.googleId || currentUser.uid;
     if (post.handle === currentUser.handle) {
       return myUid;
     }
     const postUser = usersList.find(u => u.handle === post.handle);
-    return post.uid || (postUser ? (postUser.googleId || postUser.uid) : null);
+    return post.uid || (postUser ? (postUser.googleId || postUser.uid) : post.handle || post.author);
+  };
+
+  const getCommentAuthorUid = (c) => {
+    if (!c) return null;
+    const myUid = currentUser.googleId || currentUser.uid;
+    if (c.authorHandle === currentUser.handle || (c.author && c.author === currentUser.name)) {
+      return myUid;
+    }
+    const commentUser = usersList.find(u => u.handle === c.authorHandle || u.name === c.author);
+    return c.uid || (commentUser ? (commentUser.googleId || commentUser.uid) : c.authorHandle || c.author);
   };
 
   useEffect(() => {
@@ -2705,6 +2787,7 @@ export default function App() {
 
     const newComment = {
       id: "c-" + Date.now(),
+      uid: currentUser.googleId || currentUser.uid,
       author: currentUser.name,
       authorHandle: currentUser.handle || "",
       text: text,
@@ -3097,7 +3180,10 @@ export default function App() {
                 </div>
               );
             })()}
-            <div className="post-author-details">
+            <div className="post-author-details" style={{ cursor: 'pointer' }} onClick={() => {
+              setProfileViewUid(post.uid);
+              setCurrentPage("profile");
+            }}>
               <span className="post-author-name">{post.author}</span>
               <span className="post-author-handle">{post.handle}</span>
             </div>
@@ -3197,7 +3283,11 @@ export default function App() {
                         justifyContent: 'center', 
                         fontSize: '10px', 
                         fontWeight: 'bold',
-                        color: '#ffffff'
+                        color: '#ffffff',
+                        cursor: 'pointer'
+                      }} onClick={() => {
+                        setProfileViewUid(c.uid);
+                        setCurrentPage("profile");
                       }}>
                         {!avatarUrl && (avatarLetter || displayName.charAt(0).toUpperCase())}
                       </div>
@@ -3206,7 +3296,10 @@ export default function App() {
                   <div className="comment-content-wrapper" style={{ flex: 1 }}>
                     <div className="comment-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
                       <div>
-                        <span className="comment-author" style={{ fontWeight: 600 }}>{c.author}</span>
+                        <span className="comment-author" style={{ fontWeight: 600, cursor: 'pointer' }} onClick={() => {
+                          setProfileViewUid(c.uid);
+                          setCurrentPage("profile");
+                        }}>{c.author}</span>
                         <span className="comment-time" style={{ marginLeft: '10px' }}>{c.time}</span>
                       </div>
                       
@@ -3939,8 +4032,8 @@ export default function App() {
                   <li className={currentRoute === "#/bookmarks" ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => window.location.hash = "#/bookmarks"}>
                     <Bookmark style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{t("likes_history")}</span>
                   </li>
-                  <li className={currentPage === "profile" && profileViewUid === currentUser.uid ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => {
-                    setProfileViewUid(currentUser.uid);
+                  <li className={currentPage === "profile" && profileViewUid === (currentUser.googleId || currentUser.uid) ? "active" : ""} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => {
+                    setProfileViewUid(currentUser.googleId || currentUser.uid);
                     setCurrentPage("profile");
                   }}>
                     <User style={{ width: '16px', height: '16px' }} /> <span className="sidebar-menu-text">{currentLang === "en" ? "My Profile" : "個人主頁"}</span>
@@ -5100,7 +5193,7 @@ export default function App() {
                         </p>
                         
                         {/* Bio display */}
-                        {profileViewUid !== currentUser.uid && (
+                        {profileViewUid !== (currentUser.googleId || currentUser.uid) && (
                           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0, padding: '10px', background: 'var(--bg-input)', borderRadius: '6px', borderLeft: '3px solid var(--neon-cyan)' }}>
                             {profileUser.bio || (currentLang === "en" ? "No introduction yet." : "這個人很懶，還沒有寫自我介紹。")}
                           </p>
@@ -5109,7 +5202,7 @@ export default function App() {
                     </div>
 
                     {/* Edit Form for self profile */}
-                    {profileViewUid === currentUser.uid && (
+                    {profileViewUid === (currentUser.googleId || currentUser.uid) && (
                       <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px dashed var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                           <div style={{ flex: 1, minWidth: '150px' }}>
@@ -5142,19 +5235,19 @@ export default function App() {
                           style={{
                             alignSelf: 'flex-end',
                             padding: '8px 16px',
-                            background: 'rgba(61, 220, 151, 0.1)',
+                            background: isSaveSuccess ? '#1ea34d' : 'rgba(61, 220, 151, 0.1)',
                             border: '1px solid var(--neon-green)',
-                            color: 'var(--neon-green)',
+                            color: isSaveSuccess ? '#ffffff' : 'var(--neon-green)',
                             borderRadius: '6px',
                             cursor: 'pointer',
                             fontWeight: 'bold',
                             fontSize: '12px',
-                            boxShadow: '0 0 5px rgba(61, 220, 151, 0.2)',
+                            boxShadow: isSaveSuccess ? '0 0 10px rgba(30, 163, 77, 0.5)' : '0 0 5px rgba(61, 220, 151, 0.2)',
                             transition: 'all 0.2s'
                           }}
                           onClick={handleSaveProfileSettings}
                         >
-                          儲存修改
+                          {isSaveSuccess ? "✓ 修改成功！" : "儲存修改"}
                         </button>
                       </div>
                     )}
