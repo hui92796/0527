@@ -728,6 +728,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([]);
   const [activeChatFriend, setActiveChatFriend] = useState(null);
   const [friendSearchQuery, setFriendSearchQuery] = useState("");
+  const [findFriendSearchQuery, setFindFriendSearchQuery] = useState("");
   const [messageText, setMessageText] = useState("");
   const [groupChats, setGroupChats] = useState([]);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -5221,101 +5222,141 @@ export default function App() {
                       <h3 style={{ fontSize: '12px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '10px' }}>
                         ➕ {currentLang === "en" ? "Find Friends" : "新增與管理好友"}
                       </h3>
+                      {/* Search Bar for Finding/Managing Friends */}
+                      <div style={{ marginBottom: '12px', position: 'relative' }}>
+                        <input
+                          type="text"
+                          placeholder={currentLang === "en" ? "Search users..." : "搜尋使用者..."}
+                          value={findFriendSearchQuery}
+                          onChange={(e) => setFindFriendSearchQuery(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-color)',
+                            backgroundColor: 'var(--bg-input)',
+                            color: 'var(--text-primary)',
+                            fontSize: '12px',
+                            transition: 'all 0.2s'
+                          }}
+                          onFocus={(e) => e.target.style.borderColor = 'var(--neon-green)'}
+                          onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                        />
+                      </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {usersList.map(u => {
-                          const uUid = u.googleId || u.uid;
-                          const sentReq = sentRequests.find(r => r.toUid === uUid);
-                          const recvReq = receivedRequests.find(r => r.fromUid === uUid);
-                          const isFriend = (sentReq && sentReq.status === "accepted") || (recvReq && recvReq.status === "accepted");
+                        {usersList
+                          .filter(u => {
+                            if (findFriendSearchQuery.trim() !== "") {
+                              const q = findFriendSearchQuery.toLowerCase();
+                              return u.name?.toLowerCase().includes(q) || u.handle?.toLowerCase().includes(q);
+                            }
+                            return true;
+                          })
+                          .map(u => {
+                            const uUid = u.googleId || u.uid;
+                            const sentReq = sentRequests.find(r => r.toUid === uUid);
+                            const recvReq = receivedRequests.find(r => r.fromUid === uUid);
+                            const isFriend = (sentReq && sentReq.status === "accepted") || (recvReq && recvReq.status === "accepted");
 
-                          return (
-                            <div key={u.handle} style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '8px 10px',
-                              borderRadius: '6px',
-                              background: 'var(--bg-input)',
-                              border: '1px solid var(--border-color)'
-                            }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div className="user-avatar" style={{ 
-                                  width: '28px', 
-                                  height: '28px', 
-                                  background: u.avatarUrl ? `url(${u.avatarUrl})` : (u.avatarBg || 'var(--bg-elevated)'), 
-                                  backgroundSize: 'cover',
-                                  backgroundPosition: 'center',
-                                  backgroundRepeat: 'no-repeat',
-                                  borderRadius: '50%', 
-                                  color: '#fff', 
-                                  fontSize: '9px', 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center', 
-                                  position: 'relative',
-                                  flexShrink: 0
-                                }}>
-                                  {!u.avatarUrl && (u.avatarLetter || u.name.substring(0, 2).toUpperCase())}
-                                  <span style={{
-                                    position: 'absolute',
-                                    bottom: '-1px',
-                                    right: '-1px',
-                                    width: '7px',
-                                    height: '7px',
-                                    borderRadius: '50%',
-                                    background: onlineUsers.some(os => os.handle === u.handle) ? 'var(--neon-green)' : 'var(--neon-red)',
-                                    border: '1.5px solid var(--bg-card)',
-                                    boxShadow: `0 0 3px ${onlineUsers.some(os => os.handle === u.handle) ? 'var(--neon-green)' : 'var(--neon-red)'}`
-                                  }}></span>
+                            return (
+                              <div key={u.handle} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '8px 10px',
+                                borderRadius: '6px',
+                                background: 'var(--bg-input)',
+                                border: '1px solid var(--border-color)'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div className="user-avatar" style={{ 
+                                    width: '28px', 
+                                    height: '28px', 
+                                    background: u.avatarUrl ? `url(${u.avatarUrl})` : (u.avatarBg || 'var(--bg-elevated)'), 
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    backgroundRepeat: 'no-repeat',
+                                    borderRadius: '50%', 
+                                    color: '#fff', 
+                                    fontSize: '9px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    position: 'relative',
+                                    flexShrink: 0
+                                  }}>
+                                    {!u.avatarUrl && (u.avatarLetter || u.name.substring(0, 2).toUpperCase())}
+                                    <span style={{
+                                      position: 'absolute',
+                                      bottom: '-1px',
+                                      right: '-1px',
+                                      width: '7px',
+                                      height: '7px',
+                                      borderRadius: '50%',
+                                      background: onlineUsers.some(os => os.handle === u.handle) ? 'var(--neon-green)' : 'var(--neon-red)',
+                                      border: '1.5px solid var(--bg-card)',
+                                      boxShadow: `0 0 3px ${onlineUsers.some(os => os.handle === u.handle) ? 'var(--neon-green)' : 'var(--neon-red)'}`
+                                    }}></span>
+                                  </div>
+                                  <div>
+                                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-bright)' }}>{u.name}</div>
+                                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{u.handle}</div>
+                                  </div>
                                 </div>
+
                                 <div>
-                                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-bright)' }}>{u.name}</div>
-                                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{u.handle}</div>
-                                </div>
-                              </div>
-
-                              <div>
-                                {isFriend ? (
-                                  <button
-                                    disabled
-                                    style={{ padding: '4px 8px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--border-color)', color: 'var(--text-muted)', borderRadius: '4px', fontSize: '11px', cursor: 'not-allowed' }}
-                                  >
-                                    已是好友
-                                  </button>
-                                ) : sentReq && sentReq.status === "pending" ? (
-                                  <button
-                                    disabled
-                                    style={{ padding: '4px 8px', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid var(--neon-amber)', color: 'var(--neon-amber)', borderRadius: '4px', fontSize: '11px', cursor: 'not-allowed', opacity: 0.7 }}
-                                  >
-                                    申請中...
-                                  </button>
-                                ) : recvReq && recvReq.status === "pending" ? (
-                                  <div style={{ display: 'flex', gap: '4px' }}>
+                                  {isFriend ? (
+                                    <button
+                                      disabled
+                                      style={{ padding: '4px 8px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--border-color)', color: 'var(--text-muted)', borderRadius: '4px', fontSize: '11px', cursor: 'not-allowed' }}
+                                    >
+                                      已是好友
+                                    </button>
+                                  ) : sentReq && sentReq.status === "pending" ? (
+                                    <button
+                                      disabled
+                                      style={{ padding: '4px 8px', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid var(--neon-amber)', color: 'var(--neon-amber)', borderRadius: '4px', fontSize: '11px', cursor: 'not-allowed', opacity: 0.7 }}
+                                    >
+                                      申請中...
+                                    </button>
+                                  ) : recvReq && recvReq.status === "pending" ? (
+                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                      <button
+                                        style={{ padding: '4px 8px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                        onClick={() => handleAcceptFriendRequest(recvReq)}
+                                      >
+                                        同意
+                                      </button>
+                                      <button
+                                        style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--neon-red)', color: 'var(--neon-red)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                                        onClick={() => handleDeclineFriendRequest(recvReq)}
+                                      >
+                                        拒絕
+                                      </button>
+                                    </div>
+                                  ) : (
                                     <button
                                       style={{ padding: '4px 8px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
-                                      onClick={() => handleAcceptFriendRequest(recvReq)}
+                                      onClick={() => handleSendFriendRequest(u)}
                                     >
-                                      同意
+                                      加好友
                                     </button>
-                                    <button
-                                      style={{ padding: '4px 8px', background: 'transparent', border: '1px solid var(--neon-red)', color: 'var(--neon-red)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
-                                      onClick={() => handleDeclineFriendRequest(recvReq)}
-                                    >
-                                      拒絕
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    style={{ padding: '4px 8px', background: 'rgba(61, 220, 151, 0.1)', border: '1px solid var(--neon-green)', color: 'var(--neon-green)', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
-                                    onClick={() => handleSendFriendRequest(u)}
-                                  >
-                                    加好友
-                                  </button>
-                                )}
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        {usersList.filter(u => {
+                          if (findFriendSearchQuery.trim() !== "") {
+                            const q = findFriendSearchQuery.toLowerCase();
+                            return u.name?.toLowerCase().includes(q) || u.handle?.toLowerCase().includes(q);
+                          }
+                          return true;
+                        }).length === 0 && (
+                          <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', padding: '10px 0' }}>
+                            {currentLang === "en" ? "No users found." : "找不到相符的使用者。"}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
