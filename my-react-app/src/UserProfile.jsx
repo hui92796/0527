@@ -263,8 +263,13 @@ export default function UserProfile({
             <p>{currentLang === "en" ? "No posts found." : "目前尚無任何貼文"}</p>
           </div>
         ) : (
-          posts
+          [...posts]
             .filter(p => p.uid === profileViewUid)
+            .sort((a, b) => {
+              if (a.pinned && !b.pinned) return -1;
+              if (!a.pinned && b.pinned) return 1;
+              return 0; // maintain original chronological order
+            })
             .map((post) => renderPostCard(post))
         )}
       </div>

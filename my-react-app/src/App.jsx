@@ -29,7 +29,8 @@ import {
   X,
   User,
   EyeOff,
-  UserX
+  UserX,
+  Pin
 } from 'lucide-react';
 import { db, isFirebaseSetup } from "./firebase";
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, writeBatch, getDoc, setDoc, where, getDocs } from "firebase/firestore";
@@ -2889,6 +2890,59 @@ export default function App() {
     }
   };
 
+  // Pin / Unpin Post
+  const handlePinPost = async (postId, currentPinned = false) => {
+    try {
+      if (!isFirebaseSetup) {
+        // LocalStorage mode
+        const updatedPosts = posts.map(p => {
+          if (p.id === postId) {
+            return { ...p, pinned: !currentPinned };
+          } else {
+            // Unpin all other posts of the current user
+            if (!currentPinned && p.handle === currentUser.handle) {
+              return { ...p, pinned: false };
+            }
+            return p;
+          }
+        });
+        setPosts(updatedPosts);
+        localStorage.setItem("echoes_posts", JSON.stringify(updatedPosts));
+        showToast(!currentPinned ? "貼文已置頂" : "已取消置頂");
+        return;
+      }
+
+      // Firestore mode
+      const myHandle = currentUser.handle;
+      
+      // If pinning a new post, first find and unpin all other posts of the current user
+      if (!currentPinned) {
+        const q = query(
+          collection(db, "posts"),
+          where("handle", "==", myHandle),
+          where("pinned", "==", true)
+        );
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        snapshot.forEach(docSnap => {
+          batch.update(docSnap.ref, { pinned: false });
+        });
+        await batch.commit();
+      }
+
+      // Toggle pinned status of current post
+      const postRef = doc(db, "posts", postId);
+      await updateDoc(postRef, {
+        pinned: !currentPinned
+      });
+
+      showToast(!currentPinned ? "貼文已置頂！" : "已取消置頂！");
+    } catch (err) {
+      console.error("Failed to pin post:", err);
+      showToast("操作失敗");
+    }
+  };
+
   // Delete a friend
   const handleDeleteFriend = async (friend) => {
     if (!friend) return;
@@ -3485,6 +3539,16 @@ export default function App() {
         }
       ];
     }
+
+    // Sort: pinned posts first if viewing own tab
+    if (isWriteTab) {
+      list.sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return 0;
+      });
+    }
+
     return list;
   }, [displayPosts, currentCategory, searchQuery, currentUser.handle, currentUser.name, currentUser.avatarLetter, adminAuthenticated, isWriteTab, blacklistKeywords, blockedUids]);
 
@@ -3561,6 +3625,12 @@ export default function App() {
             </div>
           </div>
           <div className="post-meta-right">
+            {post.pinned && (
+              <span className="post-pinned-badge" style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--neon-amber)', marginRight: '6px' }}>
+                <Pin style={{ width: '11px', height: '11px', transform: 'rotate(45deg)' }} />
+                <span>{currentLang === "en" ? "Pinned" : "置頂"}</span>
+              </span>
+            )}
             {isPrivate && (
               <span className="post-privacy-badge" style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--neon-magenta)' }}>
                 <Lock style={{ width: '11px', height: '11px' }} />
@@ -3620,8 +3690,27 @@ export default function App() {
             <span>分享</span>
           </button>
 
+          {post.handle === currentUser.handle && (
+            <button 
+              className={`post-action-btn btn-pin ${post.pinned ? 'pinned' : ''}`} 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '4px', 
+                cursor: 'pointer', 
+                color: post.pinned ? 'var(--neon-amber)' : 'var(--text-muted)',
+                marginLeft: 'auto'
+              }} 
+              onClick={() => handlePinPost(post.id, post.pinned)}
+              title={post.pinned ? (currentLang === "en" ? "Unpin Post" : "取消置頂") : (currentLang === "en" ? "Pin Post" : "置頂貼文")}
+            >
+              <Pin style={{ width: '15px', height: '15px', transform: post.pinned ? 'rotate(0deg)' : 'rotate(45deg)' }} />
+              <span>{post.pinned ? (currentLang === "en" ? "Pinned" : "已置頂") : (currentLang === "en" ? "Pin" : "置頂")}</span>
+            </button>
+          )}
+
           {((post.handle === currentUser.handle || adminAuthenticated) && !post.isDefault) && (
-            <button className="post-action-btn post-action-delete" style={{ color: 'var(--text-muted)', cursor: 'pointer', marginLeft: 'auto' }} onClick={() => handleDeletePost(post.id)}>
+            <button className="post-action-btn post-action-delete" style={{ color: 'var(--text-muted)', cursor: 'pointer', marginLeft: post.handle === currentUser.handle ? '0px' : 'auto' }} onClick={() => handleDeletePost(post.id)}>
               <Trash2 style={{ width: '16px', height: '16px' }} />
             </button>
           )}
