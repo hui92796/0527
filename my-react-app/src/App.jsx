@@ -3487,8 +3487,7 @@ export default function App() {
 
               return (
                 <div className="user-avatar" style={{
-                  backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
-                  backgroundColor: avatarUrl ? 'transparent' : (avatarBg || (post.isDefault ? 'var(--bg-elevated)' : 'linear-gradient(135deg, var(--neon-green-dim) 0%, var(--neon-cyan) 100%)')),
+                  background: avatarUrl ? `url(${avatarUrl})` : (avatarBg || (post.isDefault ? 'var(--bg-elevated)' : 'linear-gradient(135deg, var(--neon-green-dim) 0%, var(--neon-cyan) 100%)')),
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
@@ -3616,8 +3615,7 @@ export default function App() {
                         width: '28px', 
                         height: '28px', 
                         borderRadius: '50%', 
-                        backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
-                        backgroundColor: avatarUrl ? 'transparent' : (avatarBg || 'var(--bg-elevated)'),
+                        background: avatarUrl ? `url(${avatarUrl})` : (avatarBg || 'var(--bg-elevated)'),
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat',
@@ -4842,8 +4840,7 @@ export default function App() {
                                   <div className="user-avatar" style={{ 
                                     width: '28px', 
                                     height: '28px', 
-                                    backgroundImage: sender.avatarUrl ? `url(${sender.avatarUrl})` : 'none',
-                                    backgroundColor: sender.avatarUrl ? 'transparent' : (sender.avatarBg || 'var(--bg-elevated)'), 
+                                    background: sender.avatarUrl ? `url(${sender.avatarUrl})` : (sender.avatarBg || 'var(--bg-elevated)'), 
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center',
                                     backgroundRepeat: 'no-repeat',
@@ -5013,8 +5010,7 @@ export default function App() {
                                 <div className="user-avatar" style={{ 
                                   width: '30px', 
                                   height: '30px', 
-                                  backgroundImage: u.avatarUrl ? `url(${u.avatarUrl})` : 'none',
-                                  backgroundColor: u.avatarUrl ? 'transparent' : (u.avatarBg || 'var(--bg-elevated)'), 
+                                  background: u.avatarUrl ? `url(${u.avatarUrl})` : (u.avatarBg || 'var(--bg-elevated)'), 
                                   backgroundSize: 'cover',
                                   backgroundPosition: 'center',
                                   backgroundRepeat: 'no-repeat',
@@ -5098,8 +5094,7 @@ export default function App() {
                                 <div className="user-avatar" style={{ 
                                   width: '28px', 
                                   height: '28px', 
-                                  backgroundImage: u.avatarUrl ? `url(${u.avatarUrl})` : 'none',
-                                  backgroundColor: u.avatarUrl ? 'transparent' : (u.avatarBg || 'var(--bg-elevated)'), 
+                                  background: u.avatarUrl ? `url(${u.avatarUrl})` : (u.avatarBg || 'var(--bg-elevated)'), 
                                   backgroundSize: 'cover',
                                   backgroundPosition: 'center',
                                   backgroundRepeat: 'no-repeat',
@@ -5195,11 +5190,9 @@ export default function App() {
                                 <div className="user-avatar" style={{ 
                                   width: '32px', 
                                   height: '32px', 
-                                  backgroundImage: activeChatFriend.type !== "group" && avatarUrl ? `url(${avatarUrl})` : 'none',
                                   background: activeChatFriend.type === "group" 
                                     ? 'linear-gradient(135deg, var(--neon-cyan), var(--neon-green))'
-                                    : undefined,
-                                  backgroundColor: activeChatFriend.type !== "group" && !avatarUrl ? (avatarBg || 'var(--bg-elevated)') : undefined,
+                                    : (avatarUrl ? `url(${avatarUrl})` : (avatarBg || 'var(--bg-elevated)')), 
                                   backgroundSize: 'cover',
                                   backgroundPosition: 'center',
                                   backgroundRepeat: 'no-repeat',
