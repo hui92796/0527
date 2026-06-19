@@ -5864,7 +5864,13 @@ export default function App() {
                   const targetUser = users.find(u => u.id === profileViewUid) || currentUser;
                   const effectiveUid = profileViewUid || currentUser?.uid;
                   const posts = displayPosts;
-                  const userPosts = posts.filter(post => post.uid === effectiveUid);
+                  const userPosts = posts
+                    .filter(post => post.uid === effectiveUid)
+                    .sort((a, b) => {
+                      if (a.pinned && !b.pinned) return -1;
+                      if (!a.pinned && b.pinned) return 1;
+                      return 0;
+                    });
                   return (
                     <div className="feed-container" style={{ maxWidth: '650px', margin: '0 auto' }}>
                       {/* Top Profile Card */}
