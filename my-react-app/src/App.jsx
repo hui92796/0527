@@ -871,8 +871,9 @@ export default function App() {
     return { handleMap, nameMap };
   }, [usersList]);
 
-  const getLatestUserAvatar = useCallback((handle, name = null) => {
-    if (handle === currentUser.handle || (name && name === currentUser.name)) {
+  const getLatestUserAvatar = useCallback((handle, name = null, uid = null) => {
+    const myUid = currentUser.googleId || currentUser.uid;
+    if ((uid && uid === myUid) || handle === currentUser.handle || (name && name === currentUser.name)) {
       return {
         name: currentUser.name,
         avatarLetter: currentUser.avatarLetter,
@@ -919,7 +920,7 @@ export default function App() {
     posts.forEach(p => {
       const id = p.uid || p.handle || p.author;
       if (id && !registry.has(id)) {
-        const latestProfile = getLatestUserAvatar(p.handle, p.author);
+        const latestProfile = getLatestUserAvatar(p.handle, p.author, p.uid);
         registry.set(id, {
           id,
           displayName: latestProfile ? latestProfile.name : p.author,
@@ -938,7 +939,7 @@ export default function App() {
         p.comments.forEach(c => {
           const id = c.uid || c.authorHandle || c.author;
           if (id && !registry.has(id)) {
-            const latestProfile = getLatestUserAvatar(c.authorHandle, c.author);
+            const latestProfile = getLatestUserAvatar(c.authorHandle, c.author, c.uid);
             registry.set(id, {
               id,
               displayName: latestProfile ? latestProfile.name : c.author,
@@ -1067,7 +1068,7 @@ export default function App() {
       const batch = writeBatch(db);
       DEFAULT_POSTS.forEach((post) => {
         const docRef = doc(collection(db, "posts"));
-        const latestPostProfile = getLatestUserAvatar(post.handle, post.author);
+        const latestPostProfile = getLatestUserAvatar(post.handle, post.author, post.uid);
         const postUid = post.uid || (latestPostProfile ? (latestPostProfile.googleId || latestPostProfile.uid) : post.handle || post.author);
         batch.set(docRef, {
           uid: postUid,
@@ -1082,7 +1083,7 @@ export default function App() {
           likedBy: [],
           likes: post.likes,
           comments: post.comments.map(c => {
-            const latestProfile = getLatestUserAvatar(c.authorHandle, c.author);
+            const latestProfile = getLatestUserAvatar(c.authorHandle, c.author, c.uid);
             const authorHandle = c.authorHandle || (latestProfile ? latestProfile.handle : `@${c.author.toLowerCase()}`);
             const commentUid = c.uid || (latestProfile ? (latestProfile.googleId || latestProfile.uid) : authorHandle || c.author);
             return {
@@ -1311,7 +1312,9 @@ export default function App() {
       const dbBlockedUids = [];
       snapshot.forEach((doc) => {
         const u = doc.data();
-        if (u.handle !== currentUser.handle) {
+        const myUid = currentUser.googleId || currentUser.uid;
+        const userUid = u.uid || u.googleId;
+        if (userUid !== myUid && u.handle !== currentUser.handle) {
           list.push(u);
         }
         if (u.blocked) {
@@ -2902,7 +2905,8 @@ export default function App() {
             return { ...p, pinned: !currentPinned };
           } else {
             // Unpin all other posts of the current user
-            if (!currentPinned && p.handle === currentUser.handle) {
+            const myUid = currentUser.googleId || currentUser.uid;
+            if (!currentPinned && (p.uid === myUid || p.handle === currentUser.handle)) {
               return { ...p, pinned: false };
             }
             return p;
@@ -2916,12 +2920,13 @@ export default function App() {
 
       // Firestore mode
       const myHandle = currentUser.handle;
+      const myUid = currentUser.googleId || currentUser.uid;
       
       // If pinning a new post, first find and unpin all other posts of the current user
       if (!currentPinned) {
         const q = query(
           collection(db, "posts"),
-          where("handle", "==", myHandle),
+          where("uid", "==", myUid),
           where("pinned", "==", true)
         );
         const snapshot = await getDocs(q);
@@ -3245,7 +3250,8 @@ export default function App() {
     // 1. Search posts: check author, handle, content, category, tags
     const matchedPosts = displayPosts.filter(post => {
       const isPrivate = post.privacy === "private";
-      const isMine = post.handle === currentUser.handle;
+      const myUid = currentUser.googleId || currentUser.uid;
+      const isMine = (post.uid && post.uid === myUid) || post.handle === currentUser.handle;
       const matchesPrivacy = !isPrivate || isMine || adminAuthenticated;
       
       if (!matchesPrivacy) return false;
@@ -3487,7 +3493,8 @@ export default function App() {
         post.author.toLowerCase().includes(searchQuery.toLowerCase());
 
       const isPrivate = post.privacy === "private";
-      const isMine = post.handle === currentUser.handle;
+      const myUid = currentUser.googleId || currentUser.uid;
+      const isMine = (post.uid && post.uid === myUid) || post.handle === currentUser.handle;
       const matchesPrivacy = !isPrivate || isMine || adminAuthenticated;
 
       const matchesTab = isWriteTab ? isMine : true;
@@ -3578,7 +3585,7 @@ export default function App() {
         <div className="post-header">
           <div className="post-author-wrapper">
             {(() => {
-              const latestProfile = getLatestUserAvatar(post.handle);
+              const latestProfile = getLatestUserAvatar(post.handle, post.author, post.uid);
               const avatarUrl = latestProfile ? latestProfile.avatarUrl : post.avatarUrl;
               const avatarBg = latestProfile ? latestProfile.avatarBg : post.avatarBg;
               const avatarLetter = latestProfile ? latestProfile.avatarLetter : post.avatarLetter;
@@ -3692,7 +3699,7 @@ export default function App() {
             <span>分享</span>
           </button>
 
-          {post.handle === currentUser.handle && (
+          {((post.uid && post.uid === (currentUser.googleId || currentUser.uid)) || post.handle === currentUser.handle) && (
             <button 
               className={`post-action-btn btn-pin ${post.pinned ? 'pinned' : ''}`} 
               style={{ 
@@ -3711,8 +3718,8 @@ export default function App() {
             </button>
           )}
 
-          {((post.handle === currentUser.handle || adminAuthenticated) && !post.isDefault) && (
-            <button className="post-action-btn post-action-delete" style={{ color: 'var(--text-muted)', cursor: 'pointer', marginLeft: post.handle === currentUser.handle ? '0px' : 'auto' }} onClick={() => handleDeletePost(post.id)}>
+          {((post.uid === (currentUser.googleId || currentUser.uid) || post.handle === currentUser.handle || adminAuthenticated) && !post.isDefault) && (
+            <button className="post-action-btn post-action-delete" style={{ color: 'var(--text-muted)', cursor: 'pointer', marginLeft: ((post.uid && post.uid === (currentUser.googleId || currentUser.uid)) || post.handle === currentUser.handle) ? '0px' : 'auto' }} onClick={() => handleDeletePost(post.id)}>
               <Trash2 style={{ width: '16px', height: '16px' }} />
             </button>
           )}
@@ -3727,7 +3734,7 @@ export default function App() {
               post.comments.map(c => (
                 <div key={c.id} className="comment-item" style={{ display: 'flex', gap: '10px', margin: '8px 0' }}>
                   {(() => {
-                    const latestProfile = getLatestUserAvatar(c.authorHandle, c.author);
+                    const latestProfile = getLatestUserAvatar(c.authorHandle, c.author, c.uid);
                     const avatarUrl = latestProfile ? latestProfile.avatarUrl : null;
                     const avatarBg = latestProfile ? latestProfile.avatarBg : null;
                     const avatarLetter = latestProfile ? latestProfile.avatarLetter : null;
@@ -5367,7 +5374,7 @@ export default function App() {
                       <>
                         {/* Chatroom Header */}
                         {(() => {
-                          const latestProfile = activeChatFriend.type !== "group" ? getLatestUserAvatar(activeChatFriend.handle, activeChatFriend.name) : null;
+                          const latestProfile = activeChatFriend.type !== "group" ? getLatestUserAvatar(activeChatFriend.handle, activeChatFriend.name, activeChatFriend.googleId || activeChatFriend.uid) : null;
                           const avatarUrl = latestProfile ? latestProfile.avatarUrl : (activeChatFriend.type !== "group" ? activeChatFriend.avatarUrl : null);
                           const avatarBg = latestProfile ? latestProfile.avatarBg : (activeChatFriend.type !== "group" ? activeChatFriend.avatarBg : null);
                           const avatarLetter = latestProfile ? latestProfile.avatarLetter : (activeChatFriend.type !== "group" ? activeChatFriend.avatarLetter : null);
