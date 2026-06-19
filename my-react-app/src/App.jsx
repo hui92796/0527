@@ -727,6 +727,7 @@ export default function App() {
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const [activeChatFriend, setActiveChatFriend] = useState(null);
+  const [friendSearchQuery, setFriendSearchQuery] = useState("");
   const [messageText, setMessageText] = useState("");
   const [groupChats, setGroupChats] = useState([]);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -5097,13 +5098,39 @@ export default function App() {
                       <h3 style={{ fontSize: '12px', fontFamily: 'var(--font-heading)', color: 'var(--text-bright)', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '10px' }}>
                         👥 {currentLang === "en" ? "Friends" : "好友清單"}
                       </h3>
+                      <div style={{ marginBottom: '12px', position: 'relative' }}>
+                        <input
+                          type="text"
+                          placeholder={currentLang === "en" ? "Search friends..." : "搜尋好友..."}
+                          value={friendSearchQuery}
+                          onChange={(e) => setFriendSearchQuery(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-color)',
+                            backgroundColor: 'var(--bg-input)',
+                            color: 'var(--text-primary)',
+                            fontSize: '12px',
+                            transition: 'all 0.2s'
+                          }}
+                          onFocus={(e) => e.target.style.borderColor = 'var(--neon-green)'}
+                          onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                        />
+                      </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {usersList
                           .filter(u => {
                             const uUid = u.googleId || u.uid;
                             const isFriend = sentRequests.some(r => r.toUid === uUid && r.status === "accepted") ||
                                              receivedRequests.some(r => r.fromUid === uUid && r.status === "accepted");
-                            return isFriend;
+                            if (!isFriend) return false;
+                            
+                            if (friendSearchQuery.trim() !== "") {
+                              const q = friendSearchQuery.toLowerCase();
+                              return u.name?.toLowerCase().includes(q) || u.handle?.toLowerCase().includes(q);
+                            }
+                            return true;
                           })
                           .map(u => {
                             const isSelected = activeChatFriend && activeChatFriend.handle === u.handle;
