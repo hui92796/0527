@@ -2857,6 +2857,38 @@ export default function App() {
     }
   };
 
+  // Leave Group Chat
+  const handleLeaveGroup = async (group) => {
+    if (!group) return;
+    const confirmLeave = window.confirm(
+      currentLang === "en" 
+        ? `Are you sure you want to leave the group "${group.name}"?` 
+        : `確定要退出群組「${group.name}」嗎？`
+    );
+    if (!confirmLeave) return;
+
+    try {
+      const currentUserUid = currentUser.googleId || currentUser.uid;
+      if (!currentUserUid) {
+        showToast("請先登入");
+        return;
+      }
+
+      const groupDocRef = doc(db, "chats", group.id);
+      await updateDoc(groupDocRef, {
+        members: arrayRemove(currentUserUid)
+      });
+
+      showToast(currentLang === "en" ? "You have left the group" : "已成功退出群組");
+      if (activeChatFriend && activeChatFriend.id === group.id) {
+        setActiveChatFriend(null);
+      }
+    } catch (err) {
+      console.error("Failed to leave group:", err);
+      showToast(currentLang === "en" ? "Failed to leave group" : "退出群組失敗");
+    }
+  };
+
   // Delete a friend
   const handleDeleteFriend = async (friend) => {
     if (!friend) return;
@@ -5257,6 +5289,26 @@ export default function App() {
                                     >
                                       <Trash2 style={{ width: '13px', height: '13px' }} />
                                       {currentLang === "en" ? "Delete Group" : "刪除群組"}
+                                    </button>
+                                    <button
+                                      style={{
+                                        padding: '6px 12px',
+                                        background: 'rgba(255, 209, 102, 0.1)',
+                                        border: '1px solid var(--neon-amber)',
+                                        color: 'var(--neon-amber)',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                      onClick={() => handleLeaveGroup(activeChatFriend)}
+                                    >
+                                      <LogOut style={{ width: '13px', height: '13px' }} />
+                                      {currentLang === "en" ? "Leave" : "退出群組"}
                                     </button>
                                   </>
                                 ) : (
