@@ -61,61 +61,71 @@ const PRESET_AVATARS = [
 
 const PRESET_GIFS = [
   // Cats
-  { id: 'cat_1', url: 'https://i.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif', keywords: ['cat', 'happy', 'cute', '貓咪', '開心', '可愛'], tags: ['cat', 'happy', 'cute', '貓咪', '開心', '可愛'], category: 'cat' },
-  { id: 'cat_2', url: 'https://i.giphy.com/media/13CoXDiaCcC2EA/giphy.gif', keywords: ['cat', 'cute', 'sleep', '貓咪', '可愛', '睡覺', '慵懶'], tags: ['cat', 'cute', 'sleep', '貓咪', '可愛', '睡覺', '慵懶'], category: 'cat' },
-  { id: 'cat_3', url: 'https://i.giphy.com/media/5i7umUqAOYYHC/giphy.gif', keywords: ['cat', 'dance', 'party', '貓咪', '跳舞', '派對'], tags: ['cat', 'dance', 'party', '貓咪', '跳舞', '派對'], category: 'cat' },
-  { id: 'cat_4', url: 'https://i.giphy.com/media/9gISqB3tncMmY/giphy.gif', keywords: ['cat', 'sad', 'cry', '貓咪', '難過', '哭泣', '委屈'], tags: ['cat', 'sad', 'cry', '貓咪', '難過', '哭泣', '委屈'], category: 'cat' },
-  { id: 'cat_5', url: 'https://i.giphy.com/media/ule4vhcY1xEIw/giphy.gif', keywords: ['cat', 'typing', 'work', '貓咪', '打字', '工作', '社畜', '崩潰'], tags: ['cat', 'typing', 'work', '貓咪', '打字', '工作', '社畜', '崩潰'], category: 'cat' },
-  { id: 'cat_6', url: 'https://i.giphy.com/media/yFQ0ywscgobJK/giphy.gif', keywords: ['cat', 'shocked', 'funny', '驚訝', '貓咪', '傻眼', '搞笑'], tags: ['cat', 'shocked', 'funny', '驚訝', '貓咪', '傻眼', '搞笑'], category: 'cat' },
-  { id: 'cat_7', url: 'https://i.giphy.com/media/VbnUQpnihPSIgIXNV1/giphy.gif', keywords: ['cat', 'wave', 'hello', '貓咪', '打招呼', '哈囉', '拜拜'], tags: ['cat', 'wave', 'hello', '貓咪', '打招呼', '哈囉', '拜拜'], category: 'cat' },
-  { id: 'cat_8', url: 'https://i.giphy.com/media/GeimqsH0TLDt4tScGw/giphy.gif', keywords: ['cat', 'judge', 'stare', '貓咪', '瞪人', '鄙視', '問號'], tags: ['cat', 'judge', 'stare', '貓咪', '瞪人', '鄙視', '問號'], category: 'cat' },
+  { id: 'cat_1', url: 'https://media.tenor.com/R2PQXAm8uasAAAAM/cat-nyan-cat.gif', keywords: ['cat', 'happy', 'cute', '貓咪', '開心', '可愛', '彩虹貓'], tags: ['cat', 'happy', 'cute', '貓咪', '開心', '可愛'], category: 'cat' },
+  { id: 'cat_2', url: 'https://media.tenor.com/yRRFB5oVjSEAAAAM/cat-cute.gif', keywords: ['cat', 'cute', 'sleep', '貓咪', '可愛', '睡覺', '慵懶'], tags: ['cat', 'cute', 'sleep', '貓咪', '可愛', '睡覺'], category: 'cat' },
+  { id: 'cat_3', url: 'https://media.tenor.com/5q7yH8GPfccAAAAM/cat-dance.gif', keywords: ['cat', 'dance', 'party', '貓咪', '跳舞', '搖擺'], tags: ['cat', 'dance', 'party', '貓咪', '跳舞'], category: 'cat' },
+  { id: 'cat_4', url: 'https://media.tenor.com/sEBCHsVMkpkAAAAM/cat-mad.gif', keywords: ['cat', 'angry', 'mad', '貓咪', '生氣', '暴怒', '發火'], tags: ['cat', 'angry', 'mad', '貓咪', '生氣'], category: 'cat' },
+  { id: 'cat_5', url: 'https://media.tenor.com/oq__bLkMpEUAAAAM/cat-typing.gif', keywords: ['cat', 'typing', 'work', '貓咪', '打字', '工作', '社畜'], tags: ['cat', 'typing', 'work', '貓咪', '打字', '工作'], category: 'cat' },
+  { id: 'cat_6', url: 'https://media.tenor.com/4ZfGpH3pTCwAAAAM/shocked-cat.gif', keywords: ['cat', 'shocked', 'funny', '驚訝', '貓咪', '傻眼', '搞笑'], tags: ['cat', 'shocked', 'funny', '驚訝', '貓咪'], category: 'cat' },
+  { id: 'cat_7', url: 'https://media.tenor.com/FN7gKLb-9PsAAAAM/cat-waving.gif', keywords: ['cat', 'wave', 'hello', '貓咪', '打招呼', '哈囉', '拜拜'], tags: ['cat', 'wave', 'hello', '貓咪', '打招呼'], category: 'cat' },
+  { id: 'cat_8', url: 'https://media.tenor.com/CUkk9TmMfuUAAAAM/cat-stare.gif', keywords: ['cat', 'judge', 'stare', '貓咪', '瞪人', '鄙視', '問號'], tags: ['cat', 'judge', 'stare', '貓咪', '瞪人'], category: 'cat' },
 
   // Happy / Celebration
-  { id: 'happy_1', url: 'https://i.giphy.com/media/t3s3tC50UkY3C/giphy.gif', keywords: ['happy', 'yes', 'success', 'celebrate', '開心', '耶', '成功', '讚', '慶祝'], tags: ['happy', 'yes', 'success', 'celebrate', '開心', '耶', '成功', '讚', '慶祝'], category: 'happy' },
-  { id: 'happy_2', url: 'https://i.giphy.com/media/14412cZqAhi34s/giphy.gif', keywords: ['dance', 'happy', 'party', '跳舞', '開心', '派對', '搖擺'], tags: ['dance', 'happy', 'party', '跳舞', '開心', '派對', '搖擺'], category: 'happy' },
-  { id: 'happy_3', url: 'https://i.giphy.com/media/nbvFVPiEiJH6JOGIok/giphy.gif', keywords: ['clap', 'good', 'bravo', 'clapping', '鼓掌', '拍手', '讚', '棒'], tags: ['clap', 'good', 'bravo', 'clapping', '鼓掌', '拍手', '讚', '棒'], category: 'happy' },
-  { id: 'happy_4', url: 'https://i.giphy.com/media/111ebonMs90YLu/giphy.gif', keywords: ['thumbsup', 'ok', 'yes', 'good', '讚', '好的', '沒問題'], tags: ['thumbsup', 'ok', 'yes', 'good', '讚', '好的', '沒問題'], category: 'happy' },
-  { id: 'happy_5', url: 'https://i.giphy.com/media/l0AMDAf3clIpL2aaQ/giphy.gif', keywords: ['celebrate', 'minions', 'party', '慶祝', '小小兵', '派對'], tags: ['celebrate', 'minions', 'party', '慶祝', '小小兵', '派對'], category: 'happy' },
+  { id: 'happy_1', url: 'https://media.tenor.com/iFNFMdPK_AoAAAAM/happy-dance.gif', keywords: ['happy', 'yes', 'success', 'celebrate', '開心', '耶', '成功', '讚', '慶祝'], tags: ['happy', 'yes', 'success', 'celebrate', '開心', '耶'], category: 'happy' },
+  { id: 'happy_2', url: 'https://media.tenor.com/lWbbLqDFbFkAAAAM/dance-party.gif', keywords: ['dance', 'happy', 'party', '跳舞', '開心', '派對', '搖擺'], tags: ['dance', 'happy', 'party', '跳舞', '開心'], category: 'happy' },
+  { id: 'happy_3', url: 'https://media.tenor.com/6G0Rz3FvyAkAAAAM/clapping.gif', keywords: ['clap', 'good', 'bravo', '鼓掌', '拍手', '讚', '棒'], tags: ['clap', 'good', 'bravo', '鼓掌', '拍手'], category: 'happy' },
+  { id: 'happy_4', url: 'https://media.tenor.com/lQpCxGDKNqMAAAAM/thumbs-up.gif', keywords: ['thumbsup', 'ok', 'yes', 'good', '讚', '好的', '沒問題', '可以'], tags: ['thumbsup', 'ok', 'yes', 'good', '讚'], category: 'happy' },
+  { id: 'happy_5', url: 'https://media.tenor.com/BhCP0mG5MisAAAAM/happy-celebrate.gif', keywords: ['celebrate', 'party', 'woohoo', '慶祝', '派對', '開心'], tags: ['celebrate', 'party', '慶祝'], category: 'happy' },
 
   // Sad / Cry
-  { id: 'sad_1', url: 'https://i.giphy.com/media/2WxWlkKWUsQ5q/giphy.gif', keywords: ['cry', 'sad', 'tears', '哭', '難過', '眼淚', '落淚'], tags: ['cry', 'sad', 'tears', '哭', '難過', '眼淚', '落淚'], category: 'sad' },
-  { id: 'sad_2', url: 'https://i.giphy.com/media/OPU6wFID8rJcI/giphy.gif', keywords: ['cry', 'sad', 'baby', '哭', '難過', '寶寶', '委屈'], tags: ['cry', 'sad', 'baby', '哭', '難過', '寶寶', '委屈'], category: 'sad' },
-  { id: 'sad_3', url: 'https://i.giphy.com/media/d2LCipPTihEBq/giphy.gif', keywords: ['sad', 'lonely', 'rain', '難過', '孤單', '下雨', '憂鬱'], tags: ['sad', 'lonely', 'rain', '難過', '孤單', '下雨', '憂鬱'], category: 'sad' },
-  { id: 'sad_4', url: 'https://i.giphy.com/media/BEob5wK5CJAQs/giphy.gif', keywords: ['sad', 'depressed', 'sit', '難過', '沮喪', '抱膝', '無奈'], tags: ['sad', 'depressed', 'sit', '難過', '沮喪', '抱膝', '無奈'], category: 'sad' },
+  { id: 'sad_1', url: 'https://media.tenor.com/rFsNZgHbvfUAAAAM/cry-sad.gif', keywords: ['cry', 'sad', 'tears', '哭', '難過', '眼淚', '落淚'], tags: ['cry', 'sad', 'tears', '哭', '難過'], category: 'sad' },
+  { id: 'sad_2', url: 'https://media.tenor.com/aWvV2p5yzM8AAAAS/sad-cry.gif', keywords: ['cry', 'sad', 'baby', '哭', '難過', '委屈', '眼淚'], tags: ['cry', 'sad', 'baby', '哭', '難過'], category: 'sad' },
+  { id: 'sad_3', url: 'https://media.tenor.com/QZ00PaWcfaYAAAAM/sad-rain.gif', keywords: ['sad', 'lonely', 'rain', '難過', '孤單', '下雨', '憂鬱'], tags: ['sad', 'lonely', 'rain', '難過', '孤單'], category: 'sad' },
+  { id: 'sad_4', url: 'https://media.tenor.com/kBt4jtCiIiIAAAAM/sad-depressed.gif', keywords: ['sad', 'depressed', 'tired', '難過', '沮喪', '累', '無奈'], tags: ['sad', 'depressed', '難過', '沮喪'], category: 'sad' },
 
   // Angry / Rage
-  { id: 'angry_1', url: 'https://i.giphy.com/media/l1J9u3TZfpmeDLkD6/giphy.gif', keywords: ['angry', 'mad', 'rage', '生氣', '憤怒', '抓狂', '氣炸'], tags: ['angry', 'mad', 'rage', '生氣', '憤怒', '抓狂', '氣炸'], category: 'angry' },
-  { id: 'angry_2', url: 'https://i.giphy.com/media/11tI5s0zPJUXg4/giphy.gif', keywords: ['angry', 'tableflip', 'rage', '生氣', '翻桌', '暴怒'], tags: ['angry', 'tableflip', 'rage', '生氣', '翻桌', '暴怒'], category: 'angry' },
-  { id: 'angry_3', url: 'https://i.giphy.com/media/3o72FiXyc7OIfi7aQs/giphy.gif', keywords: ['angry', 'scream', 'kid', '生氣', '尖叫', '憤怒', '暴躁'], tags: ['angry', 'scream', 'kid', '生氣', '尖叫', '憤怒', '暴躁'], category: 'angry' },
+  { id: 'angry_1', url: 'https://media.tenor.com/r2fxBcpI-MAAAAAM/angry-mad.gif', keywords: ['angry', 'mad', 'rage', '生氣', '憤怒', '抓狂', '氣炸'], tags: ['angry', 'mad', 'rage', '生氣', '憤怒'], category: 'angry' },
+  { id: 'angry_2', url: 'https://media.tenor.com/s3LHGrVWMcAAAAAS/angry-table-flip.gif', keywords: ['angry', 'tableflip', 'rage', '生氣', '翻桌', '暴怒'], tags: ['angry', 'tableflip', 'rage', '生氣', '翻桌'], category: 'angry' },
+  { id: 'angry_3', url: 'https://media.tenor.com/UoI-lHZIVcAAAAAS/no-angry.gif', keywords: ['angry', 'no', 'stop', '生氣', '不要', '停止', '暴躁'], tags: ['angry', 'no', 'stop', '生氣', '不要'], category: 'angry' },
 
   // Shock / Wow
-  { id: 'shock_1', url: 'https://i.giphy.com/media/Um3ljJl8jrkKidv7hT/giphy.gif', keywords: ['wow', 'shocked', 'mindblown', '驚訝', '哇', '震撼', '爆腦'], tags: ['wow', 'shocked', 'mindblown', '驚訝', '哇', '震撼', '爆腦'], category: 'shock' },
-  { id: 'shock_2', url: 'https://i.giphy.com/media/14ut8LMmgQJqq4/giphy.gif', keywords: ['scared', 'shocked', 'omg', '驚嚇', '驚訝', '天啊', '恐懼'], tags: ['scared', 'shocked', 'omg', '驚嚇', '驚訝', '天啊', '恐懼'], category: 'shock' },
-  { id: 'shock_3', url: 'https://i.giphy.com/media/80mXWkJHCgNtS/giphy.gif', keywords: ['eyes', 'shocked', 'what', '眼睛', '驚訝', '什麼', '瞪大'], tags: ['eyes', 'shocked', 'what', '眼睛', '驚訝', '什麼', '瞪大'], category: 'shock' },
-  { id: 'shock_4', url: 'https://i.giphy.com/media/jquwTstU7fO6a22g26/giphy.gif', keywords: ['wow', 'shocked', 'gasp', '大驚', '驚訝', '倒吸一口氣'], tags: ['wow', 'shocked', 'gasp', '大驚', '驚訝', '倒吸一口氣'], category: 'shock' },
+  { id: 'shock_1', url: 'https://media.tenor.com/pW80EBl1MHQAAAAS/mind-blown.gif', keywords: ['wow', 'shocked', 'mindblown', '驚訝', '哇', '震撼', '爆腦'], tags: ['wow', 'shocked', 'mindblown', '驚訝', '哇'], category: 'shock' },
+  { id: 'shock_2', url: 'https://media.tenor.com/H-gV3X1cNg4AAAAS/shocked-omg.gif', keywords: ['scared', 'shocked', 'omg', '驚嚇', '驚訝', '天啊', '恐懼'], tags: ['scared', 'shocked', 'omg', '驚嚇', '驚訝'], category: 'shock' },
+  { id: 'shock_3', url: 'https://media.tenor.com/SzJfkbVMNV0AAAAS/what-shocked.gif', keywords: ['eyes', 'shocked', 'what', '眼睛', '驚訝', '什麼', '瞪大'], tags: ['eyes', 'shocked', 'what', '眼睛', '驚訝'], category: 'shock' },
+  { id: 'shock_4', url: 'https://media.tenor.com/cj9oy_LHo_QAAAAS/wow-gasp.gif', keywords: ['wow', 'shocked', 'gasp', '大驚', '驚訝', '倒吸一口氣'], tags: ['wow', 'shocked', 'gasp', '大驚', '驚訝'], category: 'shock' },
 
   // Love / Cute
-  { id: 'love_1', url: 'https://i.giphy.com/media/l4pTkaQMK2S4bqV8c/giphy.gif', keywords: ['love', 'heart', 'cute', '愛心', '可愛', '心動', '喜歡'], tags: ['love', 'heart', 'cute', '愛心', '可愛', '心動', '喜歡'], category: 'love' },
-  { id: 'love_2', url: 'https://i.giphy.com/media/KztT2c4Yc5ppZ1eQKL/giphy.gif', keywords: ['love', 'heart', 'kiss', '愛心', '親親', '親一個', '飛吻'], tags: ['love', 'heart', 'kiss', '愛心', '親親', '親一個', '飛吻'], category: 'love' },
-  { id: 'love_3', url: 'https://i.giphy.com/media/I17T9wRkW6nCw/giphy.gif', keywords: ['love', 'heart', 'hug', '愛心', '抱抱', '溫暖', '擁抱'], tags: ['love', 'heart', 'hug', '愛心', '抱抱', '溫暖', '擁抱'], category: 'love' },
+  { id: 'love_1', url: 'https://media.tenor.com/bkYWABuFuREAAAAM/love-heart.gif', keywords: ['love', 'heart', 'cute', '愛心', '可愛', '心動', '喜歡'], tags: ['love', 'heart', 'cute', '愛心', '可愛'], category: 'love' },
+  { id: 'love_2', url: 'https://media.tenor.com/0o9UiMUB8SAAAAAM/love-kiss.gif', keywords: ['love', 'heart', 'kiss', '愛心', '親親', '親一個', '飛吻'], tags: ['love', 'heart', 'kiss', '愛心', '親親'], category: 'love' },
+  { id: 'love_3', url: 'https://media.tenor.com/3mh4dSiF79AAAAAM/hug-love.gif', keywords: ['love', 'heart', 'hug', '愛心', '抱抱', '溫暖', '擁抱'], tags: ['love', 'heart', 'hug', '愛心', '抱抱'], category: 'love' },
 
   // Memes / Funny
-  { id: 'meme_1', url: 'https://i.giphy.com/media/3xz2BLBOKhvgJXMIXc/giphy.gif', keywords: ['meme', 'facepalm', 'oops', '無奈', '捂臉', '搞笑', '天啊'], tags: ['meme', 'facepalm', 'oops', '無奈', '捂臉', '搞笑', '天啊'], category: 'meme' },
-  { id: 'meme_2', url: 'https://i.giphy.com/media/20k1gTOlfqiGY/giphy.gif', keywords: ['confused', 'where', 'travolta', '迷茫', '問號', '在哪裡', '傻眼'], tags: ['confused', 'where', 'travolta', '迷茫', '問號', '在哪裡', '傻眼'], category: 'meme' },
-  { id: 'meme_3', url: 'https://i.giphy.com/media/hVTouqNmVKiZy/giphy.gif', keywords: ['popcorn', 'watching', 'drama', '爆米花', '看戲', '吃瓜', '圍觀'], tags: ['popcorn', 'watching', 'drama', '爆米花', '看戲', '吃瓜', '圍觀'], category: 'meme' },
-  { id: 'meme_4', url: 'https://i.giphy.com/media/3o7TKSjRrfIPjei1Hi/giphy.gif', keywords: ['doge', 'meme', 'dog', '狗狗', '迷因', '逗趣'], tags: ['doge', 'meme', 'dog', '狗狗', '迷因', '逗趣'], category: 'meme' },
-  { id: 'meme_5', url: 'https://i.giphy.com/media/26n6Gx9yn6up1g6TC/giphy.gif', keywords: ['laugh', 'funny', 'haha', '笑', '哈哈', '大笑', '搞笑'], tags: ['laugh', 'funny', 'haha', '笑', '哈哈', '大笑', '搞笑'], category: 'meme' },
-  { id: 'meme_6', url: 'https://i.giphy.com/media/l3q2LzK1t6y59AXLO/giphy.gif', keywords: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], tags: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], category: 'meme' }
+  { id: 'meme_1', url: 'https://media.tenor.com/3e3wqaHvdCsAAAAM/facepalm.gif', keywords: ['meme', 'facepalm', 'oops', '無奈', '捂臉', '搞笑', '天啊'], tags: ['meme', 'facepalm', 'oops', '無奈', '捂臉'], category: 'meme' },
+  { id: 'meme_2', url: 'https://media.tenor.com/LnqCyaqE64UAAAAM/confused-where.gif', keywords: ['confused', 'where', 'lost', '迷茫', '問號', '在哪裡', '傻眼'], tags: ['confused', 'where', '迷茫', '問號', '傻眼'], category: 'meme' },
+  { id: 'meme_3', url: 'https://media.tenor.com/TM0pXqL2ghkAAAAM/popcorn.gif', keywords: ['popcorn', 'watching', 'drama', '爆米花', '看戲', '吃瓜', '圍觀'], tags: ['popcorn', 'watching', 'drama', '爆米花', '看戲', '吃瓜'], category: 'meme' },
+  { id: 'meme_4', url: 'https://media.tenor.com/pXGSYq2xXaAAAAAS/doge-meme.gif', keywords: ['doge', 'meme', 'dog', '狗狗', '迷因', '逗趣'], tags: ['doge', 'meme', 'dog', '狗狗', '迷因'], category: 'meme' },
+  { id: 'meme_5', url: 'https://media.tenor.com/I5b6Np_kAkYAAAAM/laugh-haha.gif', keywords: ['laugh', 'funny', 'haha', '笑', '哈哈', '大笑', '搞笑'], tags: ['laugh', 'funny', 'haha', '笑', '哈哈'], category: 'meme' },
+  { id: 'meme_6', url: 'https://media.tenor.com/v5qFu4Oj5AAAAAAS/shrug-whatever.gif', keywords: ['shrug', 'whatever', '攤手', '無奈', '隨便', '聳肩'], tags: ['shrug', 'whatever', '攤手', '無奈', '隨便'], category: 'meme' },
+
+  // OK / Thumbs Up (台式常用)
+  { id: 'ok_1', url: 'https://media.tenor.com/4zXwpSWIIGwAAAAM/ok-okay.gif', keywords: ['ok', 'okay', 'sure', '好', '沒問題', 'OK', '了解'], tags: ['ok', 'okay', 'sure', '好', '沒問題'], category: 'ok' },
+  { id: 'ok_2', url: 'https://media.tenor.com/7U5bz0pQJBkAAAAM/nod-yes.gif', keywords: ['yes', 'nod', 'agree', '點頭', '同意', '對', '沒錯'], tags: ['yes', 'nod', 'agree', '點頭', '同意'], category: 'ok' },
+
+  // Tired / Sleepy (社畜必備)
+  { id: 'tired_1', url: 'https://media.tenor.com/VEOFA-Dg_6MAAAAS/tired-sleepy.gif', keywords: ['tired', 'sleepy', 'sleep', '累', '睏', '想睡', '沒精神', '社畜'], tags: ['tired', 'sleepy', 'sleep', '累', '睏', '想睡'], category: 'tired' },
+  { id: 'tired_2', url: 'https://media.tenor.com/5IrfFH9LTVMAAAAS/zzz-sleep.gif', keywords: ['sleep', 'zzz', 'tired', '睡覺', 'zzz', '打瞌睡', '累', '休息'], tags: ['sleep', 'zzz', 'tired', '睡覺', '打瞌睡'], category: 'tired' },
+
+  // No / Refuse (拒絕)
+  { id: 'no_1', url: 'https://media.tenor.com/ulyC_DWCA8wAAAAM/no-nope.gif', keywords: ['no', 'nope', 'refuse', '不', '不行', '拒絕', '不要'], tags: ['no', 'nope', 'refuse', '不', '拒絕'], category: 'no' },
+
+  // Think / Hmm (思考)
+  { id: 'think_1', url: 'https://media.tenor.com/SFgKSNbLHxoAAAAM/thinking-hmm.gif', keywords: ['think', 'hmm', 'wonder', '想', '思考', '嗯', '考慮中'], tags: ['think', 'hmm', 'wonder', '想', '思考', '嗯'], category: 'think' }
 ];
 
-const SAFE_PRESET_GIFS = PRESET_GIFS.map(gif => {
-  const match = gif.url.match(/\/media\/([^\/]+)\//);
-  const id = match ? match[1] : gif.id;
-  return {
-    ...gif,
-    url: `https://i.giphy.com/${id}.gif`
-  };
-});
+// Tenor demo API key - works for reasonable personal use, no registration required
+const TENOR_KEY = 'LIVDSRZULELA';
+
+const SAFE_PRESET_GIFS = PRESET_GIFS;
 
 const DEFAULT_POSTS = [
   {
@@ -780,22 +790,85 @@ export default function App() {
     setGiphyApiKey(key);
   };
 
+  // Map Chinese search keywords to English Tenor search terms
+  const mapChineseToEnglishQuery = (query) => {
+    const chineseMap = {
+      '貓咪': 'cat cute', '貓': 'cat', '可愛': 'cute', '開心': 'happy', '笑': 'laugh',
+      '難過': 'sad cry', '哭': 'cry sad', '生氣': 'angry mad', '憤怒': 'angry rage',
+      '驚訝': 'shocked wow', '驚嚇': 'scared shocked', '搞笑': 'funny meme laugh',
+      '慶祝': 'celebrate party', '跳舞': 'dance party', '鼓掌': 'clapping applause',
+      '讚': 'thumbsup good ok', '好': 'ok thumbsup', '沒問題': 'ok sure',
+      '抱抱': 'hug love', '愛心': 'love heart', '親親': 'kiss love',
+      '爆米花': 'popcorn watching', '看戲': 'watching popcorn drama',
+      '吃瓜': 'popcorn watching gossip', '迷因': 'meme funny',
+      '問號': 'confused what', '傻眼': 'shocked speechless',
+      '翻桌': 'angry table flip', '抓狂': 'crazy mad',
+      '無奈': 'sigh facepalm', '攤手': 'shrug whatever',
+      '點頭': 'nodding yes agree', '拒絕': 'no nope refuse',
+      '累': 'tired sleepy exhausted', '睏': 'sleepy tired',
+      '想睡': 'sleepy zzz', '社畜': 'tired work office',
+      '思考': 'thinking hmm', '嗯': 'thinking hmm',
+      '打招呼': 'hello wave hi', '哈囉': 'hello wave',
+      '拜拜': 'bye wave goodbye', '謝謝': 'thank you thanks',
+      '加油': 'cheer encouragement go', '打氣': 'cheer encouragement',
+      '委屈': 'cry sad upset', '崩潰': 'breakdown crying',
+      '興奮': 'excited happy wow', '期待': 'excited anticipation'
+    };
+    let mapped = query;
+    Object.entries(chineseMap).forEach(([zh, en]) => {
+      if (query.includes(zh)) mapped = mapped.replace(zh, en);
+    });
+    // If still contains Chinese, try translating what we can
+    if (/[\u4e00-\u9fff]/.test(mapped)) {
+      // Fall back to genre-based guess for remaining Chinese
+      return mapped.replace(/[\u4e00-\u9fff]+/g, '').trim() || 'funny meme';
+    }
+    return mapped.trim();
+  };
+
   const loadInitialGifs = async (isComment = false) => {
     const setResults = isComment ? setCommentSearchedGifs : setChatSearchedGifs;
     const setLoading = isComment ? setIsCommentSearchingGifs : setIsSearchingGifs;
     setLoading(true);
 
-    const key = (giphyApiKey && giphyApiKey.trim()) || "dc6zaTOxFJmzC";
+    // 1st: Try Tenor API (Google) - free, no registration, Chinese-friendly
     try {
-      const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(key)}&limit=24&rating=g`;
+      const url = `https://g.tenor.com/v1/trending?key=${TENOR_KEY}&limit=24&locale=zh-TW&contentfilter=off&ar_range=all&media_filter=minimal`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.results && Array.isArray(json.results)) {
+          const mapped = json.results.map(item => ({
+            url: item.media[0]?.tinygif?.url || item.media[0]?.gif?.url || '',
+            preview: item.media[0]?.tinygif?.preview || '',
+            keywords: [item.title, item.content_description].filter(Boolean),
+            category: 'trending',
+            source: 'tenor'
+          })).filter(g => g.url);
+          if (mapped.length > 0) {
+            setResults(mapped);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Tenor initial load error:', err);
+    }
+
+    // 2nd: Try Giphy API (user's key or demo key)
+    const gKey = (giphyApiKey && giphyApiKey.trim()) || 'dc6zaTOxFJmzC';
+    try {
+      const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(gKey)}&limit=24&rating=g`;
       const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         if (json.data && Array.isArray(json.data)) {
           const mapped = json.data.map(item => ({
             url: `https://i.giphy.com/${item.id}.gif`,
-            keywords: [item.title, ...item.tags].filter(Boolean),
-            category: 'trending'
+            keywords: [item.title, ...(item.tags || [])].filter(Boolean),
+            category: 'trending',
+            source: 'giphy'
           }));
           setResults(mapped);
           setLoading(false);
@@ -803,15 +876,17 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.error("Giphy initial load error:", err);
+      console.error('Giphy initial load error:', err);
     }
 
+    // 3rd: Fall back to curated presets
     setResults(SAFE_PRESET_GIFS);
     setLoading(false);
   };
 
   const handleFetchGifs = async (queryText, isComment = false) => {
-    const query = queryText.trim().toLowerCase();
+    const query = queryText.trim();
+    const queryLower = query.toLowerCase();
     const setResults = isComment ? setCommentSearchedGifs : setChatSearchedGifs;
     const setLoading = isComment ? setIsCommentSearchingGifs : setIsSearchingGifs;
 
@@ -821,17 +896,49 @@ export default function App() {
     }
 
     setLoading(true);
-    const key = (giphyApiKey && giphyApiKey.trim()) || "dc6zaTOxFJmzC";
+
+    // Build the search query - map Chinese to English for APIs
+    const englishQuery = mapChineseToEnglishQuery(queryLower);
+
+    // 1st: Try Tenor API with the query
     try {
-      const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=24&rating=g`;
+      const url = `https://g.tenor.com/v1/search?key=${TENOR_KEY}&q=${encodeURIComponent(englishQuery)}&limit=24&locale=zh-TW&contentfilter=off&ar_range=all&media_filter=minimal`;
       const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
-        if (json.data && Array.isArray(json.data)) {
+        if (json.results && Array.isArray(json.results)) {
+          const mapped = json.results.map(item => ({
+            url: item.media[0]?.tinygif?.url || item.media[0]?.gif?.url || '',
+            preview: item.media[0]?.tinygif?.preview || '',
+            keywords: [item.title, item.content_description].filter(Boolean),
+            category: 'search',
+            source: 'tenor'
+          })).filter(g => g.url);
+          if (mapped.length > 0) {
+            setResults(mapped);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Tenor search error:', err);
+    }
+
+    // 2nd: Try Giphy API
+    const gKey = (giphyApiKey && giphyApiKey.trim()) || 'dc6zaTOxFJmzC';
+    try {
+      const searchTerm = englishQuery !== queryLower ? englishQuery : query;
+      const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(gKey)}&q=${encodeURIComponent(searchTerm)}&limit=24&rating=g`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data) && json.data.length > 0) {
           const mapped = json.data.map(item => ({
             url: `https://i.giphy.com/${item.id}.gif`,
-            keywords: [item.title, ...item.tags].filter(Boolean),
-            category: 'search'
+            keywords: [item.title, ...(item.tags || [])].filter(Boolean),
+            category: 'search',
+            source: 'giphy'
           }));
           setResults(mapped);
           setLoading(false);
@@ -839,17 +946,18 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.error("Giphy search fetch error:", err);
+      console.error('Giphy search fetch error:', err);
     }
 
-    const queryWords = query.split(/\s+/).filter(Boolean);
+    // 3rd: Search local preset GIFs by keyword
+    const queryWords = queryLower.split(/\s+/).filter(Boolean);
     const matched = SAFE_PRESET_GIFS.filter(gif => {
-      return queryWords.every(word => 
+      return queryWords.some(word =>
         gif.keywords.some(kw => kw.toLowerCase().includes(word)) ||
         (gif.category && gif.category.toLowerCase().includes(word))
       );
     });
-    setResults(matched);
+    setResults(matched.length > 0 ? matched : SAFE_PRESET_GIFS);
     setLoading(false);
   };
 
@@ -4009,11 +4117,7 @@ export default function App() {
                     fontSize: '12px',
                     color: 'var(--text-bright)'
                   }}
-                  placeholder={
-                    giphyApiKey 
-                      ? (currentLang === "en" ? "Search millions of GIFs from GIPHY..." : "搜尋 GIPHY 數百萬張 GIF 動圖...")
-                      : (currentLang === "en" ? "Search built-in GIFs (e.g. cat, happy, cry)..." : "搜尋內建 GIF（如：cat, happy, cry）...")
-                  }
+                  placeholder={currentLang === "en" ? "Search GIFs... (e.g. cat, happy, funny)" : "搜尋 GIF 動圖...（如：貓咪、開心、生氣）"}
                   value={commentGifSearchQuery}
                   onChange={(e) => {
                     setCommentGifSearchQuery(e.target.value);
@@ -4025,14 +4129,17 @@ export default function App() {
               {/* Categories tags row */}
               <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px', whiteSpace: 'nowrap' }}>
                 {[
-                  { label: '🔥 熱門/全部', val: '' },
-                  { label: '🐱 貓咪', val: 'cat' },
-                  { label: '😂 搞笑', val: 'meme' },
-                  { label: '🎉 慶祝', val: 'happy' },
-                  { label: '😢 難過', val: 'sad' },
-                  { label: '生氣', val: 'angry' },
-                  { label: '😮 驚訝', val: 'shock' },
-                  { label: '❤️ 戀愛', val: 'love' }
+                  { label: '🔥 熱門', val: '' },
+                  { label: '🐱 貓咪', val: '貓咪' },
+                  { label: '😂 搞笑', val: '搞笑' },
+                  { label: '🎉 慶祝', val: '慶祝' },
+                  { label: '😢 難過', val: '難過' },
+                  { label: '😠 生氣', val: '生氣' },
+                  { label: '😮 驚訝', val: '驚訝' },
+                  { label: '❤️ 愛心', val: '愛心' },
+                  { label: '👍 讚', val: '讚' },
+                  { label: '😴 累了', val: '累' },
+                  { label: '🤔 思考', val: '思考' },
                 ].map(pill => (
                   <button
                     key={pill.label}
@@ -5777,11 +5884,7 @@ export default function App() {
                                   fontSize: '12px',
                                   color: 'var(--text-bright)'
                                 }}
-                                placeholder={
-                                  giphyApiKey 
-                                    ? (currentLang === "en" ? "Search millions of GIFs from GIPHY..." : "搜尋 GIPHY 數百萬張 GIF 動圖...")
-                                    : (currentLang === "en" ? "Search built-in GIFs (e.g. cat, happy, cry)..." : "搜尋內建 GIF（如：cat, happy, cry）...")
-                                }
+                                placeholder={currentLang === "en" ? "Search GIFs... (e.g. cat, happy, funny)" : "搜尋 GIF 動圖...（如：貓咪、開心、生氣）"}
                                 value={gifSearchQuery}
                                 onChange={(e) => {
                                   setGifSearchQuery(e.target.value);
@@ -5793,14 +5896,17 @@ export default function App() {
                             {/* Categories tags row */}
                             <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px', whiteSpace: 'nowrap' }}>
                               {[
-                                { label: '🔥 熱門/全部', val: '' },
-                                { label: '🐱 貓咪', val: 'cat' },
-                                { label: '😂 搞笑', val: 'meme' },
-                                { label: '🎉 慶祝', val: 'happy' },
-                                { label: '😢 難過', val: 'sad' },
-                                { label: '生氣', val: 'angry' },
-                                { label: '😮 驚訝', val: 'shock' },
-                                { label: '❤️ 戀愛', val: 'love' }
+                                { label: '🔥 熱門', val: '' },
+                                { label: '🐱 貓咪', val: '貓咪' },
+                                { label: '😂 搞笑', val: '搞笑' },
+                                { label: '🎉 慶祝', val: '慶祝' },
+                                { label: '😢 難過', val: '難過' },
+                                { label: '😠 生氣', val: '生氣' },
+                                { label: '😮 驚訝', val: '驚訝' },
+                                { label: '❤️ 愛心', val: '愛心' },
+                                { label: '👍 讚', val: '讚' },
+                                { label: '😴 累了', val: '累' },
+                                { label: '🤔 思考', val: '思考' },
                               ].map(pill => (
                                 <button
                                   key={pill.label}
