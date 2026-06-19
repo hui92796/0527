@@ -165,9 +165,11 @@ export default function UserProfile({
             width: '80px',
             height: '80px',
             borderRadius: '50%',
-            background: profileUser.avatarUrl ? `url(${profileUser.avatarUrl})` : (profileUser.avatarBg || 'var(--bg-elevated)'),
+            backgroundImage: profileUser.avatarUrl ? `url(${profileUser.avatarUrl})` : 'none',
+            backgroundColor: profileUser.avatarUrl ? 'transparent' : (profileUser.avatarBg || 'var(--bg-elevated)'),
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -175,7 +177,8 @@ export default function UserProfile({
             fontWeight: 'bold',
             color: '#fff',
             border: '2px solid var(--neon-cyan)',
-            boxShadow: '0 0 10px rgba(0, 243, 255, 0.4)'
+            boxShadow: '0 0 10px rgba(0, 243, 255, 0.4)',
+            flexShrink: 0
           }}>
             {!profileUser.avatarUrl && (profileUser.avatarLetter || profileUser.name.substring(0, 2).toUpperCase())}
           </div>

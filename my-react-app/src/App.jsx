@@ -3487,12 +3487,15 @@ export default function App() {
 
               return (
                 <div className="user-avatar" style={{
-                  background: avatarUrl ? `url(${avatarUrl})` : (avatarBg || (post.isDefault ? 'var(--bg-elevated)' : 'linear-gradient(135deg, var(--neon-green-dim) 0%, var(--neon-cyan) 100%)')),
+                  backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
+                  backgroundColor: avatarUrl ? 'transparent' : (avatarBg || (post.isDefault ? 'var(--bg-elevated)' : 'linear-gradient(135deg, var(--neon-green-dim) 0%, var(--neon-cyan) 100%)')),
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
                   color: post.isDefault ? 'var(--neon-green)' : '#ffffff',
                   position: 'relative',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  flexShrink: 0
                 }} onClick={() => {
                   setProfileViewUid(post.uid);
                   setCurrentPage("profile");
@@ -3613,16 +3616,19 @@ export default function App() {
                         width: '28px', 
                         height: '28px', 
                         borderRadius: '50%', 
-                        background: avatarUrl ? `url(${avatarUrl})` : (avatarBg || 'var(--bg-elevated)'),
+                        backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
+                        backgroundColor: avatarUrl ? 'transparent' : (avatarBg || 'var(--bg-elevated)'),
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center', 
                         fontSize: '10px', 
                         fontWeight: 'bold',
                         color: '#ffffff',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        flexShrink: 0
                       }} onClick={() => {
                         setProfileViewUid(c.uid);
                         setCurrentPage("profile");
@@ -4836,15 +4842,18 @@ export default function App() {
                                   <div className="user-avatar" style={{ 
                                     width: '28px', 
                                     height: '28px', 
-                                    background: sender.avatarUrl ? `url(${sender.avatarUrl})` : (sender.avatarBg || 'var(--bg-elevated)'), 
+                                    backgroundImage: sender.avatarUrl ? `url(${sender.avatarUrl})` : 'none',
+                                    backgroundColor: sender.avatarUrl ? 'transparent' : (sender.avatarBg || 'var(--bg-elevated)'), 
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center',
+                                    backgroundRepeat: 'no-repeat',
                                     borderRadius: '50%', 
                                     color: '#fff', 
                                     fontSize: '9px', 
                                     display: 'flex', 
                                     alignItems: 'center', 
-                                    justifyContent: 'center' 
+                                    justifyContent: 'center',
+                                    flexShrink: 0
                                   }}>
                                     {!sender.avatarUrl && (sender.avatarLetter || sender.name.substring(0, 2).toUpperCase())}
                                   </div>
@@ -4931,7 +4940,8 @@ export default function App() {
                                 fontWeight: 'bold',
                                 display: 'flex', 
                                 alignItems: 'center', 
-                                justifyContent: 'center' 
+                                justifyContent: 'center',
+                                flexShrink: 0
                               }}>
                                 👥
                               </div>
@@ -5003,16 +5013,19 @@ export default function App() {
                                 <div className="user-avatar" style={{ 
                                   width: '30px', 
                                   height: '30px', 
-                                  background: u.avatarUrl ? `url(${u.avatarUrl})` : (u.avatarBg || 'var(--bg-elevated)'), 
+                                  backgroundImage: u.avatarUrl ? `url(${u.avatarUrl})` : 'none',
+                                  backgroundColor: u.avatarUrl ? 'transparent' : (u.avatarBg || 'var(--bg-elevated)'), 
                                   backgroundSize: 'cover',
                                   backgroundPosition: 'center',
+                                  backgroundRepeat: 'no-repeat',
                                   borderRadius: '50%', 
                                   color: '#fff', 
                                   fontSize: '10px', 
                                   display: 'flex', 
                                   alignItems: 'center', 
                                   justifyContent: 'center', 
-                                  position: 'relative' 
+                                  position: 'relative',
+                                  flexShrink: 0
                                 }}>
                                   {!u.avatarUrl && (u.avatarLetter || u.name.substring(0, 2).toUpperCase())}
                                   <span style={{
@@ -5085,16 +5098,19 @@ export default function App() {
                                 <div className="user-avatar" style={{ 
                                   width: '28px', 
                                   height: '28px', 
-                                  background: u.avatarUrl ? `url(${u.avatarUrl})` : (u.avatarBg || 'var(--bg-elevated)'), 
+                                  backgroundImage: u.avatarUrl ? `url(${u.avatarUrl})` : 'none',
+                                  backgroundColor: u.avatarUrl ? 'transparent' : (u.avatarBg || 'var(--bg-elevated)'), 
                                   backgroundSize: 'cover',
                                   backgroundPosition: 'center',
+                                  backgroundRepeat: 'no-repeat',
                                   borderRadius: '50%', 
                                   color: '#fff', 
                                   fontSize: '9px', 
                                   display: 'flex', 
                                   alignItems: 'center', 
                                   justifyContent: 'center', 
-                                  position: 'relative' 
+                                  position: 'relative',
+                                  flexShrink: 0
                                 }}>
                                   {!u.avatarUrl && (u.avatarLetter || u.name.substring(0, 2).toUpperCase())}
                                   <span style={{
@@ -5179,18 +5195,22 @@ export default function App() {
                                 <div className="user-avatar" style={{ 
                                   width: '32px', 
                                   height: '32px', 
+                                  backgroundImage: activeChatFriend.type !== "group" && avatarUrl ? `url(${avatarUrl})` : 'none',
                                   background: activeChatFriend.type === "group" 
                                     ? 'linear-gradient(135deg, var(--neon-cyan), var(--neon-green))'
-                                    : (avatarUrl ? `url(${avatarUrl})` : (avatarBg || 'var(--bg-elevated)')), 
+                                    : undefined,
+                                  backgroundColor: activeChatFriend.type !== "group" && !avatarUrl ? (avatarBg || 'var(--bg-elevated)') : undefined,
                                   backgroundSize: 'cover',
                                   backgroundPosition: 'center',
+                                  backgroundRepeat: 'no-repeat',
                                   borderRadius: '50%', 
                                   color: activeChatFriend.type === "group" ? '#000' : '#fff', 
                                   fontSize: '10px', 
                                   display: 'flex', 
                                   alignItems: 'center', 
                                   justifyContent: 'center',
-                                  fontWeight: activeChatFriend.type === "group" ? 'bold' : 'normal'
+                                  fontWeight: activeChatFriend.type === "group" ? 'bold' : 'normal',
+                                  flexShrink: 0
                                 }}>
                                   {activeChatFriend.type === "group" ? "👥" : (!avatarUrl && (avatarLetter || displayName.substring(0, 2).toUpperCase()))}
                                 </div>
