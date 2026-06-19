@@ -2824,6 +2824,97 @@ export default function App() {
     }
   };
 
+  // Delete Group Chat
+  const handleDeleteGroup = async (group) => {
+    if (!group) return;
+    const confirmDelete = window.confirm(
+      currentLang === "en" 
+        ? `Are you sure you want to delete the group "${group.name}"? This will also delete all messages in it.` 
+        : `確定要刪除群組「${group.name}」嗎？這將會刪除該群組內的所有訊息。`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      // 1. Delete group chat document from "chats"
+      await deleteDoc(doc(db, "chats", group.id));
+
+      // 2. Delete messages in "messages" belonging to this group
+      const msgQuery = query(collection(db, "messages"), where("chatId", "==", group.id));
+      const msgSnap = await getDocs(msgQuery);
+      const batch = writeBatch(db);
+      msgSnap.forEach(d => {
+        batch.delete(doc(db, "messages", d.id));
+      });
+      await batch.commit();
+
+      showToast(currentLang === "en" ? "Group deleted successfully!" : "已成功刪除群組！");
+      if (activeChatFriend && activeChatFriend.id === group.id) {
+        setActiveChatFriend(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete group:", err);
+      showToast(currentLang === "en" ? "Failed to delete group" : "刪除群組失敗");
+    }
+  };
+
+  // Delete a friend
+  const handleDeleteFriend = async (friend) => {
+    if (!friend) return;
+    const confirmDelete = window.confirm(
+      currentLang === "en" 
+        ? `Are you sure you want to delete "${friend.name}" from your friends?` 
+        : `確定要將「${friend.name}」從好友名單中刪除嗎？`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const currentUserUid = currentUser.googleId || currentUser.uid;
+      const friendUid = friend.googleId || friend.uid;
+      if (!currentUserUid || !friendUid) return;
+
+      // Query accepted friend requests between currentUser and the friend
+      const q1 = query(
+        collection(db, "friendRequests"),
+        where("fromUid", "==", currentUserUid),
+        where("toUid", "==", friendUid),
+        where("status", "==", "accepted")
+      );
+      const q2 = query(
+        collection(db, "friendRequests"),
+        where("fromUid", "==", friendUid),
+        where("toUid", "==", currentUserUid),
+        where("status", "==", "accepted")
+      );
+
+      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      
+      const batch = writeBatch(db);
+      let found = false;
+
+      snap1.forEach(d => {
+        batch.delete(doc(db, "friendRequests", d.id));
+        found = true;
+      });
+      snap2.forEach(d => {
+        batch.delete(doc(db, "friendRequests", d.id));
+        found = true;
+      });
+
+      if (found) {
+        await batch.commit();
+        showToast(currentLang === "en" ? "Friend deleted successfully!" : "已成功刪除好友！");
+        if (activeChatFriend && (activeChatFriend.googleId === friendUid || activeChatFriend.uid === friendUid)) {
+          setActiveChatFriend(null);
+        }
+      } else {
+        showToast(currentLang === "en" ? "Friend relationship not found" : "找不到好友關係");
+      }
+    } catch (err) {
+      console.error("Failed to delete friend:", err);
+      showToast(currentLang === "en" ? "Failed to delete friend" : "刪除好友失敗");
+    }
+  };
+
   // Add / Toggle Emoji Reaction
   const handleEmojiReact = async (messageId, emoji, currentReactions = {}) => {
     const currentUserUid = currentUser.googleId || currentUser.uid;
@@ -5112,24 +5203,72 @@ export default function App() {
                                   </div>
                                 </div>
                               </div>
-                              {activeChatFriend.type === "group" && (
-                                <button
-                                  style={{
-                                    padding: '6px 12px',
-                                    background: 'rgba(61, 220, 151, 0.1)',
-                                    border: '1px solid var(--neon-green)',
-                                    color: 'var(--neon-green)',
-                                    borderRadius: '6px',
-                                    fontSize: '12px',
-                                    cursor: 'pointer',
-                                    fontWeight: 'bold',
-                                    transition: 'all 0.2s'
-                                  }}
-                                  onClick={handleInviteToGroup}
-                                >
-                                  ➕ {currentLang === "en" ? "Invite Friend" : "邀請好友"}
-                                </button>
-                              )}
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                {activeChatFriend.type === "group" ? (
+                                  <>
+                                    <button
+                                      style={{
+                                        padding: '6px 12px',
+                                        background: 'rgba(61, 220, 151, 0.1)',
+                                        border: '1px solid var(--neon-green)',
+                                        color: 'var(--neon-green)',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                      onClick={handleInviteToGroup}
+                                    >
+                                      ➕ {currentLang === "en" ? "Invite" : "邀請"}
+                                    </button>
+                                    <button
+                                      style={{
+                                        padding: '6px 12px',
+                                        background: 'rgba(255, 107, 107, 0.1)',
+                                        border: '1px solid var(--neon-red)',
+                                        color: 'var(--neon-red)',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                      onClick={() => handleDeleteGroup(activeChatFriend)}
+                                    >
+                                      <Trash2 style={{ width: '13px', height: '13px' }} />
+                                      {currentLang === "en" ? "Delete Group" : "刪除群組"}
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    style={{
+                                      padding: '6px 12px',
+                                      background: 'rgba(255, 107, 107, 0.1)',
+                                      border: '1px solid var(--neon-red)',
+                                      color: 'var(--neon-red)',
+                                      borderRadius: '6px',
+                                      fontSize: '12px',
+                                      cursor: 'pointer',
+                                      fontWeight: 'bold',
+                                      transition: 'all 0.2s',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                    onClick={() => handleDeleteFriend(activeChatFriend)}
+                                  >
+                                    <UserX style={{ width: '13px', height: '13px' }} />
+                                    {currentLang === "en" ? "Delete Friend" : "刪除好友"}
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           );
                         })()}
